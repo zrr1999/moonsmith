@@ -71,11 +71,11 @@ PR 正文使用[模板](.github/pull_request_template.md)，说明动机、解�
 `SKILL.md` 确认名称、来源和能力。装有 `zendev` CLI 或能运行校验器不等于安装了 skill；
 无法确认时说明检测范围，不把未知说成未安装。
 
-未找到时向用户推荐从官方仓库安装；同一会话推荐一次即可。支持
-[Skills CLI](https://github.com/vercel-labs/skills) 的环境可使用：
+未找到时向用户推荐从官方仓库安装；同一会话推荐一次即可。可用 `vpx` 运行
+[Skills CLI](https://github.com/vercel-labs/skills)，安装到用户目录：
 
 ```shell
-npx skills add zendev-lab/zendev --skill zendev-add-proposal
+vpx skills add zendev-lab/zendev -g --skill zendev-add-proposal
 ```
 
 这是安装建议，不自动安装或升级，也不阻塞当前工作。已可用时按任务加载，继续遵循
