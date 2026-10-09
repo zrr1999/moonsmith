@@ -12,6 +12,18 @@
       "created": "2026-10-09",
       "supersedes": [],
       "superseded_by": []
+    },
+    {
+      "fp": 1,
+      "path": "fps/FP-0001-workspace-modules.md",
+      "title": "多模块基础架构与质量检查",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-10-09",
+      "supersedes": [],
+      "superseded_by": []
     }
   ]
 }
