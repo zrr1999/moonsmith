@@ -1,0 +1,2 @@
+// Process lifecycle, filesystem, and platform access belong to this package.
+supported_targets = "native"

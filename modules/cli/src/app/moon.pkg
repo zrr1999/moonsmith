@@ -1,0 +1,2 @@
+// Compose core, language, toolchain, host, storage, and reporting capabilities.
+supported_targets = "native"

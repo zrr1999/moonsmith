@@ -16,6 +16,14 @@ format:
 check:
     uvx prek run --all-files
 
+# Build all workspace modules and the native executable
+build:
+    moon build --target native --deny-warn
+
+# Run the development entry point
+run:
+    moon run modules/cli/src/cmd/moonsmith --target native --deny-warn
+
 # Run tests
 test:
     moon test --target native

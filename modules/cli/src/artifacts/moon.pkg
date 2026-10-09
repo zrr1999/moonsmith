@@ -1,0 +1,2 @@
+// Versioned case storage and append-only execution records, using host for I/O.
+supported_targets = "native"

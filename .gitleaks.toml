@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+# Gitleaks directory scans do not read .gitignore; omit local generated data.
+[[allowlists]]
+description = "Build caches, managed worktrees, and experiment output"
+paths = [
+  '^(\./)?(modules/[^/]+/)?(_build|\.mooncakes)(/|$)',
+  '^(\./)?(\.tools|\.agents/worktrees|runs)(/|$)',
+]

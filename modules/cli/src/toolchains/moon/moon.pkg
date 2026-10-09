@@ -1,0 +1,2 @@
+// Moon toolchain probing, command plans, and diagnostic classification.
+supported_targets = "native"
