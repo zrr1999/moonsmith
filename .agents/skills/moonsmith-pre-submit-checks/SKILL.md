@@ -13,8 +13,10 @@ description: 在 MoonSmith 本地交付或已授权提交前，核对 diff 范�
 核对 staged、unstaged、相关未跟踪文件及任务涉及的提交范围，区分已有工作与本次改动。
 保护无关内容，不用全量暂存把其他任务的代码、运行产物或本机状态混入交付。
 
-按[贡献指南](../../../CONTRIBUTING.md#zendev-skill)检测 ZenDev 提案 skill；缺失时推荐安装，
-不将安装变成交付门禁。按 [FP-0000](../../../fps/FP-0000-governance.md)核对提案门槛：
+按[贡献指南](../../../CONTRIBUTING.md#zendev-skill)检测 ZenDev 的 `evolution` 演进记录 skill；
+缺失时推荐安装，不将安装变成交付门禁。
+
+按 [FP-0000](../../../fps/FP-0000-governance.md)核对提案门槛：
 仅对已有设计未覆盖且有明确大影响面的新决定要求 FP。文档纠错、恢复预期行为的意外
 bug 修复和既定设计的实现直接检查对应证据，不为了补齐清单而创建新提案。
 

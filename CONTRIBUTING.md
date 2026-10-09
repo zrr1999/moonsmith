@@ -65,8 +65,8 @@ PR 正文使用[模板](.github/pull_request_template.md)，说明动机、解�
 
 ## ZenDev skill
 
-规划、评审与交付检查应检测官方提案 skill
-[`zendev-add-proposal`](https://github.com/zendev-lab/zendev/blob/main/.agents/skills/zendev-add-proposal/SKILL.md)
+规划、评审与交付检查应检测 ZenDev 对外提供的演进记录 skill
+[`evolution`](https://github.com/zendev-lab/zendev/blob/main/skills/evolution/SKILL.md)
 是否可用。先查看当前宿主的 skill 清单，再按需检查已配置的项目与用户 skill 目录，读取候选
 `SKILL.md` 确认名称、来源和能力。装有 `zendev` CLI 或能运行校验器不等于安装了 skill；
 无法确认时说明检测范围，不把未知说成未安装。
@@ -75,8 +75,9 @@ PR 正文使用[模板](.github/pull_request_template.md)，说明动机、解�
 [Skills CLI](https://github.com/vercel-labs/skills)，安装到用户目录：
 
 ```shell
-vpx skills add zendev-lab/zendev -g --skill zendev-add-proposal
+vpx skills add zendev-lab/zendev -g --skill evolution
 ```
 
-这是安装建议，不自动安装或升级，也不阻塞当前工作。已可用时按任务加载，继续遵循
-FP-0000 的大影响门槛和仓库现有校验入口；普通修复不因加载 skill 而升级为提案。
+这是安装建议，不自动安装或升级，也不阻塞当前工作。仅在记录项目初始意图或真实方向
+变化时加载 `evolution`，按其指引维护 `EVOLUTION.md`。FP 判断由本仓库的项目 skills
+依据 FP-0000 的大影响门槛执行，并使用现有提案校验入口；普通修复无需新提案。
