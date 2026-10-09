@@ -1,0 +1,6 @@
+/_build/
+/.mooncakes/
+/.tools/
+/.agents/worktrees/
+/runs/
+.DS_Store

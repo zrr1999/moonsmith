@@ -1,0 +1,32 @@
+name: Policy - PR
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: policy-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-message:
+    name: PR message
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check PR title
+        uses: zendev-lab/zendev/actions/validate-title@91087d4d4e9841aaf8cead8b7c6d294a3db63b10 # v0.4.0
+        with:
+          text: ${{ github.event.pull_request.title }}
+          profile: zendev
+      - name: Check PR body
+        if: github.event.pull_request.user.login != 'renovate[bot]'
+        uses: zendev-lab/zendev/actions/validate-body@91087d4d4e9841aaf8cead8b7c6d294a3db63b10 # v0.4.0
+        with:
+          body: ${{ github.event.pull_request.body }}
