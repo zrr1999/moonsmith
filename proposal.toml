@@ -1,0 +1,30 @@
+version = 1
+
+[proposal]
+prefix = "FP"
+number_field = "fp"
+documents_dir = "fps"
+schema = "schemas/fp.schema.json"
+index = "fps-index.json"
+metadata_title = "plain"
+
+[templates]
+Feature = "templates/fp.md"
+Governance = "templates/fp.md"
+
+[graph]
+fields = ["supersedes"]
+
+[index]
+version = 2
+entries_key = "fps"
+fields = [
+  "fp",
+  { name = "path", source = "path" },
+  "title",
+  "type",
+  "authors",
+  "created",
+  "supersedes",
+  { name = "superseded_by", source = "inverse", key = "supersedes" },
+]

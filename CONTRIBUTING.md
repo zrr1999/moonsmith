@@ -48,6 +48,13 @@ PR 正文使用[模板](.github/pull_request_template.md)，说明动机、解�
 
 ## 设计与证据
 
+新契约或治理决定使用 [FP](fps/README.md)。先按 [FP-0000](fps/FP-0000-governance.md)
+判断现有设计是否覆盖本次变化；实现已有设计和保持既定行为的维护无需重复提案。
+提案记录取舍，架构维护整体设计，实现 PR 关联对应文档并附实际验证。
+
+提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
+`fps-index.json`，再运行 `just check`。索引不手工维护；`just check` 和 CI 都检查 FP。
+
 架构和实现按同一个小切片更新。产品方向改变时，在 [EVOLUTION.md](EVOLUTION.md)
 记录日期、触发、变化和理由。比赛范围与验收目标维护在[申报书](docs/project-proposal.md)中，
 实测结果另附工具链、环境与原始记录。
