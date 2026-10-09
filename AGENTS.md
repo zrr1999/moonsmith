@@ -8,3 +8,16 @@
 - 按 [贡献指南](CONTRIBUTING.md) 运行相关检查。公共行为变化同时更新架构及行为测试。
 - PR 标题使用英文，遵循 ZenDev 的 emoji、type 和可选 scope 格式；正文使用仓库模板。
 - 交付到用户指定的终点。远端创建、推送、PR 和发布以当前任务明确授权的范围为准。
+
+## 仓库 Skills
+
+按任务加载对应 skill；只有任务跨越职责边界时才组合使用，不要求每次执行全部流程。
+
+| 任务 | Skill |
+| --- | --- |
+| 功能设计、跨包修改或重构规划 | [moonsmith-change-planning](.agents/skills/moonsmith-change-planning/SKILL.md) |
+| 评审工作区改动、提交或 PR | [moonsmith-code-review](.agents/skills/moonsmith-code-review/SKILL.md) |
+| 新增或修复行为测试、回归测试 | [moonsmith-test-behavior](.agents/skills/moonsmith-test-behavior/SKILL.md) |
+| 本地交付或已授权提交前检查 | [moonsmith-pre-submit-checks](.agents/skills/moonsmith-pre-submit-checks/SKILL.md) |
+
+Skills 随仓库维护，无需个人安装。项目契约和检查命令保留在现有文档中，skills 按需引用。
