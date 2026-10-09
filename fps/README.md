@@ -1,7 +1,8 @@
 # Feature Proposals
 
-FP 保存 MoonSmith 功能与治理设计。先读 [FP-0000](FP-0000-governance.md)，判断是否
-有现有设计尚未覆盖的新决定；实现已有设计、修复既定行为和日常维护可以直接提交实现 PR。
+FP 保存 MoonSmith 影响重大的功能与治理设计。先读 [FP-0000](FP-0000-governance.md)，
+只有现有设计未覆盖的新决定且有明确大影响面时才需要新 FP。文档纠错、恢复预期行为的
+意外 bug 修复、普通兼容增强和既定设计的实现直接推进。
 
 ## 新建提案
 
@@ -25,7 +26,7 @@ FP 保存 MoonSmith 功能与治理设计。先读 [FP-0000](FP-0000-governance.
    📝 docs(fp): supersede FP-0001 with versioned replay records
    ```
 
-编号以文档为准，新提案和修订的 PR 标题不写新编号。实现 PR 关联对应 FP，并分别报告
+编号以文档为准，新提案和修订的 PR 标题不写新编号。需要 FP 的实现 PR 关联对应提案，并分别报告
 实现和验证结果。PR、推送和发布仍遵守当前任务的授权范围。
 
 ## 文档与索引

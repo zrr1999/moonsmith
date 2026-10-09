@@ -48,8 +48,9 @@ PR 正文使用[模板](.github/pull_request_template.md)，说明动机、解�
 
 ## 设计与证据
 
-新契约或治理决定使用 [FP](fps/README.md)。先按 [FP-0000](fps/FP-0000-governance.md)
-判断现有设计是否覆盖本次变化；实现已有设计和保持既定行为的维护无需重复提案。
+只有已有设计未覆盖、且有明确大影响面的新决定才使用 [FP](fps/README.md)，门槛见
+[FP-0000](fps/FP-0000-governance.md#何时需要-fp)。文档纠错、恢复预期行为的意外 bug 修复、
+普通兼容增强和既定设计的实现无需新提案；原 bug 严重或改动量大本身不是提案理由。
 提案记录取舍，架构维护整体设计，实现 PR 关联对应文档并附实际验证。
 
 提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
@@ -61,3 +62,21 @@ PR 正文使用[模板](.github/pull_request_template.md)，说明动机、解�
 
 固定回归案例纳入版本控制；批次实验产物放在忽略的 `runs/`。引用公开缺陷、历史项目或
 第三方代码时保留来源及许可证说明。记录 AI 辅助的范围，人工核验涉及语义和实验的结论。
+
+## ZenDev skill
+
+规划、评审与交付检查应检测官方提案 skill
+[`zendev-add-proposal`](https://github.com/zendev-lab/zendev/blob/main/.agents/skills/zendev-add-proposal/SKILL.md)
+是否可用。先查看当前宿主的 skill 清单，再按需检查已配置的项目与用户 skill 目录，读取候选
+`SKILL.md` 确认名称、来源和能力。装有 `zendev` CLI 或能运行校验器不等于安装了 skill；
+无法确认时说明检测范围，不把未知说成未安装。
+
+未找到时向用户推荐从官方仓库安装；同一会话推荐一次即可。支持
+[Skills CLI](https://github.com/vercel-labs/skills) 的环境可使用：
+
+```shell
+npx skills add zendev-lab/zendev --skill zendev-add-proposal
+```
+
+这是安装建议，不自动安装或升级，也不阻塞当前工作。已可用时按任务加载，继续遵循
+FP-0000 的大影响门槛和仓库现有校验入口；普通修复不因加载 skill 而升级为提案。
