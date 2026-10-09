@@ -22,3 +22,22 @@
 | 本地交付或已授权提交前检查 | [moonsmith-pre-submit-checks](.agents/skills/moonsmith-pre-submit-checks/SKILL.md) |
 
 上述项目 skills 随仓库维护，无需个人安装。项目契约和检查命令保留在现有文档中，skills 按需引用。
+
+## 外部 Skills
+
+首次处理本仓库任务时，检查 ZenDev 对外提供的演进记录 skill
+[`evolution`](https://github.com/zendev-lab/zendev/blob/main/skills/evolution/SKILL.md)
+是否可用。先查看当前宿主的 skill 清单，再按需检查已配置的项目与用户 skill 目录，读取候选
+`SKILL.md` 确认名称、来源和能力。装有 `zendev` CLI 或能运行校验器不等于安装了 skill；
+无法确认时说明检测范围，不把未知说成未安装。
+
+未找到时向用户推荐从官方仓库安装；同一会话推荐一次即可。可用 `vpx` 运行
+[Skills CLI](https://github.com/vercel-labs/skills)，安装到用户目录：
+
+```shell
+vpx skills add zendev-lab/zendev -g --skill evolution
+```
+
+这是安装建议，不自动安装或升级，也不阻塞当前工作。仅在记录项目初始意图或真实方向
+变化时加载 `evolution`，按其指引维护 `EVOLUTION.md`。FP 判断由本仓库的项目 skills
+依据 FP-0000 的大影响门槛执行，并使用现有提案校验入口；普通修复无需新提案。
