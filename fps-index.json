@@ -6,10 +6,14 @@
       "path": "fps/FP-0000-governance.md",
       "title": "MoonSmith 提案约定",
       "type": "Governance",
+      "status": "Draft",
       "authors": [
         "zrr1999"
       ],
       "created": "2026-10-09",
+      "defines": [
+        "feature-proposal"
+      ],
       "supersedes": [],
       "superseded_by": []
     },
@@ -18,22 +22,49 @@
       "path": "fps/FP-0001-workspace-modules.md",
       "title": "多模块基础架构与质量检查",
       "type": "Feature",
+      "status": "Draft",
       "authors": [
         "zrr1999"
       ],
       "created": "2026-10-09",
+      "defines": [
+        "module",
+        "package",
+        "engine",
+        "language-adapter",
+        "application-layer",
+        "host",
+        "shared-contracts"
+      ],
       "supersedes": [],
       "superseded_by": []
     },
     {
       "fp": 2,
       "path": "fps/FP-0002-core-execution-contract.md",
-      "title": "Core 的职责边界与策略扩展",
+      "title": "Engine 的职责边界与策略扩展",
       "type": "Feature",
+      "status": "Draft",
       "authors": [
         "zrr1999"
       ],
       "created": "2026-10-10",
+      "defines": [
+        "case",
+        "work-request",
+        "execution-evidence",
+        "oracle",
+        "assessment",
+        "failure-predicate",
+        "fingerprint",
+        "language-operation",
+        "operation-scheduling",
+        "local-search",
+        "reduction-engine",
+        "confirmation",
+        "case-replay",
+        "search-state-recovery"
+      ],
       "supersedes": [],
       "superseded_by": []
     }

@@ -15,6 +15,11 @@ Governance = "templates/fp.md"
 [graph]
 fields = ["supersedes"]
 
+[defines]
+field = "defines"
+anchor_prefix = "term-"
+id_pattern = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
+
 [index]
 version = 2
 entries_key = "fps"
@@ -23,8 +28,10 @@ fields = [
   { name = "path", source = "path" },
   "title",
   "type",
+  "status",
   "authors",
   "created",
+  "defines",
   "supersedes",
   { name = "superseded_by", source = "inverse", key = "supersedes" },
 ]

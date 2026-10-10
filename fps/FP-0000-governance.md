@@ -2,9 +2,12 @@
 fp: 0
 title: "MoonSmith 提案约定"
 type: Governance
+status: Draft
 authors:
   - "zrr1999"
 created: 2026-10-09
+defines:
+  - feature-proposal
 supersedes: []
 ---
 
@@ -12,9 +15,11 @@ supersedes: []
 
 ## 摘要
 
+<a id="term-feature-proposal"></a>
+
 MoonSmith 使用 Feature Proposal（FP）保存影响重大的功能与治理设计。
 只有现有设计未覆盖且有明确大影响面的新决定才需要 FP，复用 Markdown、Git、PR 和现有 ZenDev 检查。
-提案不编码采纳或实现状态。
+提案以 `Draft` 和 `Proposed` 区分起草与提交讨论，采纳与实现结论由评审和实际证据记录。
 
 ## 动机
 
@@ -49,16 +54,47 @@ MoonSmith 使用 Feature Proposal（FP）保存影响重大的功能与治理设
 已合入的编号不删除或复用。正文使用[模板](../templates/fp.md)，默认中文，保留英文
 技术标识。`Feature` 描述功能设计，`Governance` 描述协作规则。
 
-frontmatter 只包含 `fp`、`title`、`type`、`authors`、`created`、`supersedes`。
+frontmatter 只包含 `fp`、`title`、`type`、`status`、`authors`、`created`、`defines`、`supersedes`。
 作者填写对内容负责的人的小写 GitHub 用户名，不带 `@`；schema 只检查离线格式。
 编号、标题与 H1 必须一致。具体操作见[提案入口](README.md)。
 
-候选直接作为带编号文档评审，不维护单独的草稿目录。提案 PR 复用仓库模板；标题用英文，
+草稿和提交讨论的提案都使用带编号文档，不维护单独的草稿目录。提案 PR 复用仓库模板；标题用英文，
 采用 `📝 docs(fp): propose/revise/supersede ...` 的约定。需要 FP 的实现 PR 关联对应提案，
-独立说明实现范围与验证。影响重大的新决定应在依赖它的实现合入前完成设计评审。
+独立说明实现范围与必要影响；检查记录按贡献指南保存。影响重大的新决定应在依赖它的实现合入前完成设计评审。
 
 提案合并只表示文本进入版本库，不等于采纳、排期或实现。讨论与决策保留在关联 PR 中；
-未合入的候选保留在关闭的 PR 中。提案不维护 `status`、审批人或实现进度字段。
+未合入的候选保留在关闭的 PR 中。提案不维护审批人或实现进度字段。
+
+### 提案状态
+
+`status` 是必填字段，表示提案当前所处的编写与讨论阶段：
+
+| 状态 | 含义 |
+| --- | --- |
+| `Draft` | 起草中，仍有待补充的设计或未决问题；新提案默认使用此状态 |
+| `Proposed` | 作者已整理好设计、兼容性与验证计划，提交讨论和设计评审 |
+
+作者准备好提交讨论时，将 `Draft` 改为 `Proposed`；评审中需要重新起草时可以改回
+`Draft`。状态变更保留原编号、文件名与历史，并重新生成索引。状态不会随 PR 的
+Draft、Ready 或合并操作自动变化；`Proposed` 也不代表设计已被采纳、排期或实现。
+
+两种状态均遵守相同的元数据、章节和关系检查，均纳入 `fps-index.json`，索引保留
+`status`。草稿可以明确列出未决问题和待补充内容，检查通过不代表这些问题已解决。
+
+### 术语定义与引用
+
+跨文档使用且容易混淆的项目概念，由拥有相应决定的 FP 定义。`defines` 列出本提案定义的
+概念标识，没有新定义时填写 `[]`；单纯引用其他提案的概念不加入该列表。
+标识使用小写英文与连字符，匹配 `proposal.toml` 的 `id_pattern`，不依赖中文标题或章节序号。
+
+每个标识在定义正文前对应一个空 HTML 锚点，格式为 `<a id="term-概念标识"></a>`。
+同一概念只保留一个定义位置；引用使用指向该 FP 的普通 Markdown 链接及 `#term-概念标识`。
+定义说明概念含义与责任边界，具体 API、算法、参数和实现进度放在相应实现文档中。
+
+[术语索引](../docs/glossary.md)按主题导航到定义；`fps-index.json` 从元数据生成机器可读的定义归属。
+术语索引只维护名称与链接，架构、调研及模块 README 在相关上下文引用定义，不维护另一套解释。
+增加或调整定义时同步更新导航与引用；修正措辞保留标识。需要迁移定义时，在同一改动中更新
+声明、锚点和所有引用。两种编写状态均要求定义归属唯一，`supersedes` 本身不会转移术语归属。
 
 ### 修订与替代
 
@@ -67,9 +103,22 @@ frontmatter 只包含 `fp`、`title`、`type`、`authors`、`created`、`superse
 引用被替代的 `FP-NNNN`。保留旧提案，反向关系 `superseded_by` 由索引生成。
 提案合入前发生编号冲突时，同步调整文件名、frontmatter、H1、引用和索引。
 
-[设计文档](../docs/project-proposal.md)说明项目范围与架构边界；FP 保存具体决定和取舍；
-[EVOLUTION.md](../EVOLUTION.md)记录方向变化并链接相关 FP。实现时同步更新架构与
-行为测试，实测结论仍须有环境、工具链和原始记录支撑。
+### 文档分工
+
+项目按过去、现在和未来维护互补的记录：
+
+| 时间视角 | 文档 | 责任 |
+| --- | --- | --- |
+| 过去 | [EVOLUTION.md](../EVOLUTION.md) | 保留初始意图，按真实日期记录已经发生的方向变化、触发和理由 |
+| 现在 | FP 及其 `status` | 保存具体设计与取舍，表达提案当前处于起草还是提交讨论；状态变更历史由 Git 保留 |
+| 未来 | [ROADMAP.md](../ROADMAP.md) | 维护长期目标、阶段依赖、推进条件与开放问题，链接相关 FP |
+
+[项目设计](../docs/project-proposal.md)维护范围与验收目标，[原型执行契约](../CONTRIBUTING.md#原型执行契约)
+说明协作关系与当前实现边界；内部调研、方案比较和决策依据保存在[工程笔记](../.agents/notes/README.md)。未来安排变化时更新路线图；方向实质变化时同步追加演进记录；
+提案阶段变化时修改 `status` 并更新索引。路线图不复制提案状态表，演进记录不承担未来排期，
+提案状态不替代实现和实验结果。
+
+实现时同步更新架构与行为测试，实测结论仍须有环境、工具链和原始记录支撑。
 
 ## 兼容性
 
@@ -77,10 +126,14 @@ frontmatter 只包含 `fp`、`title`、`type`、`authors`、`created`、`superse
 改写成 FP；文档中的计划也不因此成为已实现能力。已有设计范围内的实现可直接关联原文，
 只有未被覆盖且影响重大的新决定才需要补充 FP。
 
+引入状态字段时，现有 FP 显式补记为 `Draft`，不从已有文本或代码推断评审结果；后续
+按上述规则提交讨论。模板默认 `Draft`，缺少或填写其他状态时检查失败。
+
 ## 验证
 
-`proposal.toml` 配置固定版本 ZenDev 的元数据、文件名、模板章节、替代关系和
-确定性索引检查。`just check` 与 CI 共用 `zendev-proposal-check`；更新提案后用
+`proposal.toml` 配置固定版本 ZenDev 的元数据、状态取值、文件名、模板章节、替代关系、术语定义和
+确定性索引检查。schema 约束 `defines` 的格式与列表内唯一性；ZenDev 检查声明与锚点对应及
+跨提案的定义归属；lychee 检查本地文档链接及目标锚点。`just check` 与 CI 共用这些门禁；更新提案后用
 `zendev proposal check --fix` 生成 `fps-index.json`。
 
 检查通过说明文档结构与索引一致，不能证明设计已被采纳、实现正确或实验完成。
@@ -88,4 +141,4 @@ frontmatter 只包含 `fp`、`title`、`type`、`authors`、`created`、`superse
 
 参考 [Cue FP-0000](https://github.com/zendev-lab/cue/blob/1a7d822266333fbc7bf509f2a4227c188b2cf928/fps/FP-0000-governance.md)
 与 [ZenDev ZFP-0000](https://github.com/zendev-lab/zendev/blob/6d2c1ca43d2a794e08c9e22459ff7fe81ccf6600/zfps/ZFP-0000-governance.md)
-的轻量、无状态提案方式。
+的轻量提案组织方式。

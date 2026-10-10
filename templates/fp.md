@@ -2,15 +2,17 @@
 fp: 1
 title: "标题"
 type: Feature
+status: Draft
 authors:
   - "your-github-username"
 created: 2026-10-09
+defines: []
 supersedes: []
 ---
 
 # FP-0001: 标题
 
-<!-- 同步替换文件名、fp、标题、H1 和日期；authors 填实际作者的小写 GitHub 用户名，不带 @。 -->
+<!-- 同步替换文件名、fp、标题、H1 和日期；authors 填实际作者的小写 GitHub 用户名，不带 @；提交讨论时将 status 改为 Proposed。 -->
 
 ## 摘要
 
@@ -25,6 +27,9 @@ supersedes: []
 
 说明边界、契约、数据流和依赖方向，解释关键取舍，详细到足以指导实现。
 聚焦设计，省略实施进度和操作过程。
+复用概念时链接定义它的提案；新定义加入 `defines`，并在定义正文前添加对应的
+`<a id="term-概念标识"></a>`。没有定义新概念时保留空数组，规则见
+[FP-0000](../fps/FP-0000-governance.md#术语定义与引用)。
 
 ## 兼容性
 
