@@ -24,6 +24,18 @@
       "created": "2026-10-09",
       "supersedes": [],
       "superseded_by": []
+    },
+    {
+      "fp": 2,
+      "path": "fps/FP-0002-core-execution-contract.md",
+      "title": "Core 的职责边界与策略扩展",
+      "type": "Feature",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-10-10",
+      "supersedes": [],
+      "superseded_by": []
     }
   ]
 }
