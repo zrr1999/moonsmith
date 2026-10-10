@@ -1,2 +1,18 @@
-// Compose core, language, toolchain, host, storage, and reporting capabilities.
+import {
+  "zrr1999/moonsmith-contracts" @contracts,
+  "zrr1999/moonsmith-core" @core,
+  "zrr1999/moonsmith-moonbit" @moonbit,
+  "zrr1999/moonsmith/host",
+  "zrr1999/moonsmith/toolchains/moon",
+  "zrr1999/moonsmith/artifacts",
+  "zrr1999/moonsmith/report",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/string",
+}
+
 supported_targets = "native"
+
+import {
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+} for "wbtest"

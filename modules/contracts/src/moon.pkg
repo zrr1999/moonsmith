@@ -1,1 +1,4 @@
-// Language-neutral configuration, observations, budgets, and case records.
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}

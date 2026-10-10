@@ -1,1 +1,4 @@
-// MoonBit program model, synthesis, semantics, emission, and reduction candidates.
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/random",
+}

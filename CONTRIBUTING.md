@@ -15,8 +15,8 @@
 | `just format` | 格式化 justfile 和 MoonBit 包 |
 | `just check` | 仓库只读门禁，运行 `prek --all-files` |
 | `just build` | 构建 workspace 全部模块及 native 可执行入口 |
-| `just test` | 运行全部模块的 native 测试；当前骨架没有产品测试 |
-| `just run` | 运行开发入口，当前仅显示开发状态 |
+| `just test` | 运行单元测试及真实 MoonBit 工具链集成测试 |
+| `just run` | 生成一个案例，执行三种编译配置并保存结果 |
 
 新增文件需纳入 Git 索引后才能被 `--all-files` 检查。尚不准备暂存内容时可使用
 `git add --intent-to-add <文件>`；单独检查未跟踪文件也可运行
@@ -65,8 +65,7 @@ zizmor 使用离线模式，JSON Schema 检查使用工具内置的 schema。Git
 
 四个模块的 `0.0.0` 都是初始占位版本，尚未发布；后续分别管理版本，无需同步升级。
 `moon.mod` 使用带版本的依赖声明，workspace 内按成员名解析到本地源码。成员版本变化后
-运行 `moon work sync` 更新依赖方声明。当前声明的是模块依赖图；`moon.pkg` 的 import
-只在出现真实调用时添加。
+运行 `moon work sync` 更新依赖方声明。`moon.pkg` 的 import 声明实际调用的包，模块版本依赖与包导入分别维护。
 
 下表列出全部九个 package。contracts、core 和 moonbit 各自的 `src/moon.pkg` 定义根包，
 包名等于模块名。其余六个包位于 CLI 模块内，完整包名为
@@ -88,15 +87,67 @@ Core 和语言包保持纯计算，通过参数与返回值交互。Core 不导�
 报告包不自行读写文件。`app`、CLI、Host、工具链及存储包目前限定为 native，纯计算包保留
 其他后端的使用空间。后续 Rust、Swift 适配器与 `moonbit` 并列，由 `app` 选择和装配。
 
-当前库包只声明边界，尚未定义公共 API。先在 Core、MoonBit 模块内按文件组织算法，实际规模
-需要时再拆成子包。各包的行为测试放在相应包内，优先通过公共接口测试。模块拆分的理由和
-兼容性见 [FP-0001](fps/FP-0001-workspace-modules.md)。
+Core 提供独立于语言的结果判定和泛型归约状态机，MoonBit 模块提供类型化程序、生成、
+求值、源码输出及归约候选。各包的行为测试放在相应包内，优先通过公共接口测试。
+模块拆分的理由和兼容性见 [FP-0001](fps/FP-0001-workspace-modules.md)。
 
 [.alint.yml](.alint.yml) 检查 workspace 布局、模块与包清单、当前组件之间的依赖方向，并阻止
 纯计算组件直接导入已列出的环境与 I/O 依赖。import 检查覆盖 `moon.mod` 与 `moon.pkg`，
 依赖 `moon fmt` 规范化的格式；新增模块、包或依赖时同步核对规则。
 `just check` 和 CI 都通过 prek 执行 alint，单独运行可用
 `uvx prek run alint --all-files`。
+
+## 原型执行契约
+
+原型使用 `int-bool-v1`：整数常量、加减、布尔条件、分支和三个顺序局部绑定。显式种子驱动
+标准库 ChaCha8，生成深度限定为 `0..4`；程序不含循环、递归或 I/O，除输出一个整数外无副作用。
+生成树区分整数与布尔表达式，变量只能引用已有绑定；参考求值器用 Int64 计算中间值，拒绝
+越界的 Int 运算及非法引用，包括未执行分支。生成种子、深度及 profile 相同则源码相同。
+
+```mermaid
+flowchart LR
+    CLI[CLI] --> App[app]
+    App --> Language[MoonBit 生成与参考求值]
+    App --> Compiler[toolchains/moon]
+    Compiler --> Host[Host 进程与文件系统]
+    App --> Core[Core 判定与归约搜索]
+    App --> Store[artifacts]
+    App --> Report[report]
+    Language -. 类型化归约候选 .-> App
+```
+
+Core 接收配置标识、参考输出及执行观察值，不导入 MoonBit AST 或宿主 I/O。
+`Reducer[P]` 接收语言提供的候选、合法性和规模函数；`app` 执行候选，把判定交还 Core。
+Core 只接受合法、更小且保留原 fingerprint 的候选，并为检查过的候选计入预算。测试另用
+整数模型驱动同一归约器，验证搜索不依赖 MoonBit 表示；Rust、Swift 的语义适配尚待各自实现。
+
+工具链按 native debug、native release、wasm-gc debug 顺序执行。每个案例尝试使用全新目录，
+先运行 `moon build`，再直接运行 native 产物或交给 `moonrun`，分别记录编译与执行状态。
+编译超时为 30 秒，程序执行超时为 2 秒，每个输出流上限为 64 KiB。
+Host 通过固定版本 `moonbitlang/async@0.22.4` 收集输出及回收直接子进程；进程树隔离与后代
+清理尚未实现，因此这个原型只执行自身生成的受限程序，不作为任意不可信程序的沙箱。
+
+所有配置都成功且输出文本精确对应参考文本时，判定为 `Match`。非零退出和结果不一致记录为
+异常候选；其他配置中的超时或缺失观察不能掩盖已观测到的明确异常。没有明确异常时，
+超时、输出超限、宿主错误及缺失观察值记录为 `Inconclusive`。fingerprint 由配置、
+阶段及异常类别（含退出码）组成，用于维持当前归约判据，尚不保证不同案例属于同一个编译器缺陷。
+归约默认最多检查 16 个候选，可用 `--budget 0..64` 调整；最终结果在新目录复测，不声称全局最小。
+
+`demo` 在 native release 执行成功后设置单独的 `injected_stdout`，原始 stdout/stderr 保留。
+报告明确标注故障注入。真实执行中发现异常仍需人工确认，多个配置一致也不等于编译器完全正确。
+
+`runs/` 下每个案例包含 `case.json` 与 `original.mbt`。每次执行、归约候选、最终确认和重放都
+追加独立的 `attempts/run-*/`，保存可直接构建的项目、`report.md` 和 `attempt.json`。
+所有记录使用独占创建；`attempt.json` 最后写入，缺少它的目录表示未完成尝试。
+stdout/stderr 以 UTF-8 文本记录，无效编码使用替换字符。重放校验 profile、种子对应的源码和
+参考结果，在当前工具链上重新运行原案例，并保留原有文件。故障注入案例重放时继续使用其
+明确记录的注入模式。
+
+CLI 退出码：`0` 为一致，`2` 为异常候选（包括演示注入），`3` 为无法判定，`1` 为参数或操作错误。
+`just run --help` 查看入口；`just run demo` 和对应的重放预期返回 `2`。
+测试分别覆盖确定性、手算参考值、非法作用域及溢出、失败判据保持、预算、子进程退出、
+输出上限、原始案例保留和真实工具链执行。当前原型覆盖两个后端、三种配置，完整比赛矩阵
+及更丰富的语言构造按申报书继续扩展。
 
 ## 提交与 PR
 

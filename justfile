@@ -20,9 +20,9 @@ check:
 build:
     moon build --target native --deny-warn
 
-# Run the development entry point
-run:
-    moon run modules/cli/src/cmd/moonsmith --target native --deny-warn
+# Run the prototype (pass demo, replay, or --help as arguments)
+run *args="run":
+    moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- {{ args }}
 
 # Run tests
 test:

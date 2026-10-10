@@ -1,3 +1,9 @@
+import {
+  "moonbitlang/async",
+  "zrr1999/moonsmith/app",
+  "zrr1999/moonsmith/host",
+}
+
 pkgtype(kind: "executable")
 
 supported_targets = "native"

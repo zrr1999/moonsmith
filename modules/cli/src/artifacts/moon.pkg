@@ -1,2 +1,7 @@
-// Versioned case storage and append-only execution records, using host for I/O.
+import {
+  "zrr1999/moonsmith-contracts" @contracts,
+  "zrr1999/moonsmith/host",
+  "moonbitlang/core/json",
+}
+
 supported_targets = "native"

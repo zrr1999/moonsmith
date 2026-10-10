@@ -1,2 +1,6 @@
-// Moon toolchain probing, command plans, and diagnostic classification.
+import {
+  "zrr1999/moonsmith-contracts" @contracts,
+  "zrr1999/moonsmith/host",
+}
+
 supported_targets = "native"

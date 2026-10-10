@@ -1,1 +1,4 @@
-// Render supplied records without launching processes or accessing files.
+import {
+  "zrr1999/moonsmith-contracts" @contracts,
+  "moonbitlang/core/debug",
+}
