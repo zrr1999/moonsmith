@@ -56,10 +56,12 @@ pub fn reference_assessment(
       oracle: "reference",
       configuration,
       phase: Execute,
-      outcome: if phase == Build {
+      outcome: if phase == Execute {
+        outcome
+      } else if outcome is Violated(_) {
         NotApplicable
       } else {
-        outcome
+        Insufficient(MissingObservation)
       },
     })
   }

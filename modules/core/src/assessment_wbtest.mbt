@@ -81,6 +81,15 @@ test "reference phase results distinguish a lost failure from unavailable eviden
     match_failure(build_predicate, timeout),
     @contracts.Undetermined,
   )
+  @debug.assert_eq(
+    match_failure(run_predicate, timeout),
+    @contracts.Undetermined,
+  )
+  let absent = reference_assessment("42\n", ["test"], [])
+  @debug.assert_eq(
+    match_failure(run_predicate, absent),
+    @contracts.Undetermined,
+  )
 }
 
 ///|
