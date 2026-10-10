@@ -184,6 +184,7 @@ PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“�
 [FP-0000](fps/FP-0000-governance.md#何时需要-fp)。文档纠错、恢复预期行为的意外 bug 修复、
 普通兼容增强和既定设计的实现无需新提案；原 bug 严重或改动量大本身不是提案理由。
 提案记录取舍，架构维护整体设计，实现 PR 关联对应文档并说明最终行为及必要影响。
+内部调研、方案比较与决策依据归入[工程笔记](.agents/notes/README.md)，公开契约仍在对应文档维护。
 
 提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
 `fps-index.json`，再运行 `just check`。索引不手工维护；`just check` 和 CI 都检查 FP。

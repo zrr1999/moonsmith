@@ -30,3 +30,5 @@ just run replay runs/case-<id>   # 重放打印出的案例目录
 源码、执行记录和报告保存在 `runs/`；`demo` 不代表发现编译器缺陷。
 
 完整设计见[项目申报书](docs/project-proposal.md)，开发与测试见[贡献指南](CONTRIBUTING.md)。
+
+内部调研与方案比较见[工程笔记](.agents/notes/README.md)。

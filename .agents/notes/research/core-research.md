@@ -12,12 +12,12 @@
 ## 1 仓库事实与问题
 
 交付时按 `main` 的 `a6fa34549021ae71c3eb659f0595632aa3ed1865` 重新核查源码。
-原型已经包含[判定器](../modules/core/src/oracle.mbt)、[泛型归约器](../modules/core/src/reducer.mbt)
-和[应用编排](../modules/cli/src/app/campaign.mbt)，并有行为及工具链集成测试；本轮未重新执行产品实验。
+原型已经包含[判定器](../../../modules/core/src/oracle.mbt)、[泛型归约器](../../../modules/core/src/reducer.mbt)
+和[应用编排](../../../modules/cli/src/app/campaign.mbt)，并有行为及工具链集成测试；本轮未重新执行产品实验。
 早期调研基于 `33f3c8f7f40ca43e9c49ed7a200b0a2bbc5efc4d` 加未提交设计的骨架现场，
 该现场已不能代表当前实现。
 
-[FP-0001](../fps/FP-0001-workspace-modules.md)与[贡献指南](../CONTRIBUTING.md#原型执行契约)
+[FP-0001](../../../fps/FP-0001-workspace-modules.md)与[贡献指南](../../../CONTRIBUTING.md#原型执行契约)
 规定 Core 纯计算、语言适配器拥有程序与语义、Host 拥有进程和文件系统，app 装配。
 现有 `judge` 返回遇到的首个明确异常；`Reducer[P]` 以候选列表、严格下降和 fingerprint 相等推进；
 完整执行与确认流程位于 app。这些是现有实现事实，不是对未来所有 Oracle 和搜索方法的约束。
@@ -106,7 +106,7 @@ GitHub 源码链接固定到本轮读取的提交，已读取关键文件内容�
 
 `splitmix` 的当前公开接口提供显式 seed 的构造、`next_uint64`、`clone` 和 `split`；调用不带 limit 的
 `next_uint64` 避免将有界采样的拒绝次数混入案例编号分配。这是调度实现的候选依据，
-固定版本下的向量及不同构建后端的一致性仍需验证。现有[生成器](../modules/moonbit/src/generate.mbt)
+固定版本下的向量及不同构建后端的一致性仍需验证。现有[生成器](../../../modules/moonbit/src/generate.mbt)
 使用 ChaCha8；这里的可行性核查不要求替换它，也不是种子派生协议或跨版本生成相同程序的承诺。
 
 本轮设计由 AI 辅助调研与起草。文档门禁只能验证结构、链接和仓库约束；编排、缓存隔离、
