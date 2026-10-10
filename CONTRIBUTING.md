@@ -72,17 +72,17 @@ zizmor 使用离线模式，JSON Schema 检查使用工具内置的 schema。Git
 包名等于模块名。其余六个包位于 CLI 模块内，完整包名为
 `zrr1999/moonsmith/<相对 src 的路径>`。
 
-| 包 | 职责 | 允许的仓库内依赖 |
-| --- | --- | --- |
-| `contracts` | 语言无关的配置、观察值、预算和案例记录 | 无 |
-| `core` | 纯测试编排、判定和归约搜索 | `contracts` |
-| `moonbit` | MoonBit 程序表示、生成、解释、源码输出和归约候选 | `contracts` |
-| `host` | 进程生命周期、文件系统及平台访问 | `contracts` |
-| `toolchains/moon` | Moon 工具链探测、命令计划及诊断分类 | `contracts`、`host` |
-| `artifacts` | 案例持久化和追加式执行记录 | `contracts`、`host` |
-| `report` | 从传入的记录生成报告 | `contracts` |
-| `app` | 装配具体适配器，协调执行、存储及报告 | 上述各包 |
-| `cmd/moonsmith` | CLI 参数、终端交互和退出码 | `app`、`host` |
+| 包 | 所属模块 | 职责 | 允许的仓库内依赖 |
+| --- | --- | --- | --- |
+| `contracts` | `zrr1999/moonsmith-contracts` | 语言无关的配置、观察值、预算和案例记录 | 无 |
+| `core` | `zrr1999/moonsmith-core` | 纯测试编排、判定和归约搜索 | `contracts` |
+| `moonbit` | `zrr1999/moonsmith-moonbit` | MoonBit 程序表示、生成、解释、源码输出和归约候选 | `contracts` |
+| `host` | `zrr1999/moonsmith` | 进程生命周期、文件系统及平台访问 | `contracts` |
+| `toolchains/moon` | `zrr1999/moonsmith` | Moon 工具链探测、命令计划及诊断分类 | `contracts`、`host` |
+| `artifacts` | `zrr1999/moonsmith` | 案例持久化和追加式执行记录 | `contracts`、`host` |
+| `report` | `zrr1999/moonsmith` | 从传入的记录生成报告 | `contracts` |
+| `app` | `zrr1999/moonsmith` | 装配具体适配器，协调执行、存储及报告 | 上述各包 |
+| `cmd/moonsmith` | `zrr1999/moonsmith` | CLI 参数、终端交互和退出码 | `app`、`host` |
 
 Core 和语言包保持纯计算，通过参数与返回值交互。Core 不导入 MoonBit AST、Host 或存储包；
 报告包不自行读写文件。`app`、CLI、Host、工具链及存储包目前限定为 native，纯计算包保留
