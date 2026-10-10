@@ -25,12 +25,14 @@ pub fn reference_assessment(
   }
   for configuration in configurations {
     if configurations.filter(c => c == configuration).length() != 1 {
-      results.push({
-        oracle: "reference",
-        configuration,
-        phase: Execute,
-        outcome: Insufficient(MissingObservation),
-      })
+      for phase in [@contracts.Build, @contracts.Execute] {
+        results.push({
+          oracle: "reference",
+          configuration,
+          phase,
+          outcome: Insufficient(MissingObservation),
+        })
+      }
       continue
     }
     let verdict = judge_configuration(expected, configuration, observations)
@@ -39,7 +41,27 @@ pub fn reference_assessment(
       Finding(f) => (f.phase, @contracts.Violated(f.kind))
       Inconclusive(f) => (f.phase, @contracts.Insufficient(f.kind))
     }
-    results.push({ oracle: "reference", configuration, phase, outcome, })
+    // Keep each check's identity stable when a build failure disappears.
+    results.push({
+      oracle: "reference",
+      configuration,
+      phase: Build,
+      outcome: if phase == Build {
+        outcome
+      } else {
+        Satisfied
+      },
+    })
+    results.push({
+      oracle: "reference",
+      configuration,
+      phase: Execute,
+      outcome: if phase == Build {
+        NotApplicable
+      } else {
+        outcome
+      },
+    })
   }
   @contracts.Assessment::new(results)
 }

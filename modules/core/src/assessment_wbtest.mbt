@@ -6,7 +6,7 @@ test "reference assessment preserves all findings and incomplete configurations"
   let report = reference_assessment("42\n", ["test", "other", "missing"], [
     build, wrong, other,
   ])
-  @debug.assert_eq(report.results().length(), 3)
+  @debug.assert_eq(report.results().length(), 6)
   @debug.assert_eq(findings(report).length(), 2)
   assert_false(report.is_complete())
   @debug.assert_eq(
@@ -22,6 +22,65 @@ test "reference assessment preserves all findings and incomplete configurations"
     @contracts.Preserved,
   )
   assert_false(reordered.is_complete())
+}
+
+///|
+test "reference phase results distinguish a lost failure from unavailable evidence" {
+  let build_predicate : @contracts.FailurePredicate = {
+    oracle: "reference",
+    fingerprint: { configuration: "test", phase: Build, kind: Exit(9), },
+  }
+  let run_predicate : @contracts.FailurePredicate = {
+    oracle: "reference",
+    fingerprint: { configuration: "test", phase: Execute, kind: Mismatch, },
+  }
+  let build = observation(Build, Exited(0), "")
+  let run = observation(Execute, Exited(0), "42\n")
+  let success = reference_assessment("42\n", ["test"], [build, run])
+  @debug.assert_eq(
+    match_failure(build_predicate, success),
+    @contracts.NotPreserved,
+  )
+  @debug.assert_eq(
+    match_failure(run_predicate, success),
+    @contracts.NotPreserved,
+  )
+  let wrong = reference_assessment("42\n", ["test"], [
+    build,
+    observation(Execute, Exited(0), "41\n"),
+  ])
+  @debug.assert_eq(
+    match_failure(build_predicate, wrong),
+    @contracts.NotPreserved,
+  )
+  @debug.assert_eq(match_failure(run_predicate, wrong), @contracts.Preserved)
+  let failed_build = reference_assessment("42\n", ["test"], [
+    observation(Build, Exited(9), ""),
+  ])
+  @debug.assert_eq(
+    match_failure(build_predicate, failed_build),
+    @contracts.Preserved,
+  )
+  @debug.assert_eq(
+    match_failure(run_predicate, failed_build),
+    @contracts.Inapplicable,
+  )
+  let missing_run = reference_assessment("42\n", ["test"], [build])
+  @debug.assert_eq(
+    match_failure(build_predicate, missing_run),
+    @contracts.NotPreserved,
+  )
+  @debug.assert_eq(
+    match_failure(run_predicate, missing_run),
+    @contracts.Undetermined,
+  )
+  let timeout = reference_assessment("42\n", ["test"], [
+    observation(Build, TimedOut, ""),
+  ])
+  @debug.assert_eq(
+    match_failure(build_predicate, timeout),
+    @contracts.Undetermined,
+  )
 }
 
 ///|
