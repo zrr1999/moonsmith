@@ -3,8 +3,10 @@
 设计日期：2026 年 10 月 10 日。本文细化[FP-0001](../fps/FP-0001-workspace-modules.md)中的 Core 协作模型，
 与 [FP-0002](../fps/FP-0002-core-execution-contract.md)共同约束职责和正确性边界。
 算法、默认参数与工程机制的比较保留在[调研记录](core-research.md)，不作为固定实现要求。
-现有原型已有[判定器](../modules/core/src/oracle.mbt)和[泛型归约器](../modules/core/src/reducer.mbt)，
-执行与确认流程由[app](../modules/cli/src/app/campaign.mbt)推进。当前行为见
+当前基础实现包含[独立判断契约](../modules/contracts/src/assessment.mbt)、
+[判定器](../modules/core/src/oracle.mbt)和[归约会话](../modules/core/src/session.mbt)。
+现有[枚举归约器](../modules/core/src/reducer.mbt)复用该会话；
+执行与确认流程仍由[app](../modules/cli/src/app/campaign.mbt)推进。当前行为见
 [原型执行契约](../CONTRIBUTING.md#原型执行契约)；下文是演进设计，不能据此宣称原型已满足全部保证。
 
 ## 1 目标与设计范围
@@ -138,6 +140,25 @@ Core 不假定单个操作合法就意味着任意组合合法。
 
 案例重放保留实际输入与执行上下文，搜索状态恢复单独设计；两者不相互隐含。
 保持公开契约的算法替换按正常实现演进；改变语义或责任时遵守提案约定。
+
+### 当前基础实现
+
+`Assessment` 保存各 Oracle 的判断，`FailurePredicate` 和 `match_failure` 明确原型归约要保持的
+Oracle、配置、阶段与异常类别。参考判断一次保留全部配置结果，原型报告的主结论仅是展示视图。
+复杂关系判据、确认策略与跨案例编排仍待实现。
+
+`ReductionSession[P]` 接收外部选择的候选，将合法性、接受资格、失败保持、候选预算和记录集中管理。
+接受规则与最佳结果排序分别传入，允许策略探索不同规模的中间程序而保留原程序和最佳已知结果。
+当前会话一次等待一个候选，以会话标识和尝试序号关联响应；预算计数包括非法与不符合接受规则的候选。
+这些是基础实现的具体选择，不约束未来的调度方式或并行度。
+
+策略切换继续使用同一会话，不重置预算。现有 `Reducer[P]` 提供严格下降的枚举驱动；
+行为测试另以线性与二分搜索驱动同一公共引擎，检验候选选择可独立替换。
+会话不引入隐式随机性，确定性依赖固定输入、反馈顺序、不可变程序值与纯回调。
+
+候选、决定、证据与停止原因保存在追加式内存记录中。取消阻止迟到响应推进会话，进程回收仍由 Host 负责。
+新记录尚未接入案例持久化或搜索恢复，原型 `Case` / `Attempt` 格式不变；
+CLI 仅适配新的归约接口。库接口约束见[Core README](../modules/core/README.md)。
 
 ## 7 验收边界
 
