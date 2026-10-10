@@ -5,6 +5,7 @@
 
 - [Engine 架构调研](research/engine-research.md)：编排、判定、归约与重放的参考机制和实现候选。
 - [对比项目与基准规划](research/comparison-projects.md)：外部项目清单、比较边界和实验方法。
+- [MoonBit 程序模型与语义契约](design/moonbit-semantics.md)：独立设计稿，以现有原型检验共同不变量与扩展条件，提案编号暂未确定。
 
 公开的产品目标和使用说明保留在 [README](../../README.md)、[项目申报书](../../docs/project-proposal.md)
 和[贡献指南](../../CONTRIBUTING.md)；跨文档设计决定由 [FP](../../fps/README.md) 维护。
