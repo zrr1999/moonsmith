@@ -82,15 +82,15 @@ flowchart LR
     App --> Language[MoonBit 生成与参考求值]
     App --> Compiler[toolchains/moon]
     Compiler --> Host[Host 进程与文件系统]
-    App --> Core[Core 判定与归约搜索]
+    App --> Engine[Engine 判定与归约搜索]
     App --> Store[artifacts]
     App --> Report[report]
     Language -. 类型化归约候选 .-> App
 ```
 
-Core 接收配置标识、参考输出及执行观察值，不导入 MoonBit AST 或宿主 I/O。
-`Reducer[P]` 接收语言提供的候选、合法性和规模函数；`app` 执行候选，把判定交还 Core。
-Core 只接受合法、更小且保留原 fingerprint 的候选，并为检查过的候选计入预算。测试另用
+Engine 接收配置标识、参考输出及执行观察值，不导入 MoonBit AST 或宿主 I/O。
+`Reducer[P]` 接收语言提供的候选、合法性和规模函数；`app` 执行候选，把判定交还 Engine。
+Engine 只接受合法、更小且保留原 fingerprint 的候选，并为检查过的候选计入预算。测试另用
 整数模型驱动同一归约器，验证搜索不依赖 MoonBit 表示；Rust、Swift 的语义适配尚待各自实现。
 
 工具链按 native debug、native release、wasm-gc debug 顺序执行。每个案例尝试使用全新目录，
@@ -153,7 +153,8 @@ PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“�
 只有已有设计未覆盖、且有明确大影响面的新决定才使用 [FP](fps/README.md)，门槛见
 [FP-0000](fps/FP-0000-governance.md#何时需要-fp)。文档纠错、恢复预期行为的意外 bug 修复、
 普通兼容增强和既定设计的实现无需新提案；原 bug 严重或改动量大本身不是提案理由。
-提案记录取舍，架构维护整体设计，实现 PR 关联对应文档并说明最终行为及必要影响。
+提案记录取舍，`status` 表示提案当前所处阶段；[ROADMAP.md](ROADMAP.md)维护未来目标、
+依赖和推进条件。架构维护整体设计，实现 PR 关联对应文档并说明最终行为及必要影响。
 内部调研、方案比较与决策依据归入[工程笔记](.agents/notes/README.md)，公开契约仍在对应文档维护。
 
 提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
@@ -162,7 +163,8 @@ PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“�
 更新[术语索引](docs/glossary.md)并让其他文档链接该定义；不要把具体类型或算法选择写成概念的统一要求。
 
 架构和实现按同一个小切片更新。产品方向改变时，在 [EVOLUTION.md](EVOLUTION.md)
-记录日期、触发、变化和理由。比赛范围与验收目标维护在[申报书](docs/project-proposal.md)中，
+记录已经发生的变化及其日期、触发和理由，并同步修订路线图中的未来安排。
+文档分工见 [FP-0000](fps/FP-0000-governance.md#文档分工)。比赛范围与验收目标维护在[申报书](docs/project-proposal.md)中，
 实测结果另附工具链、环境与原始记录。
 
 固定回归案例纳入版本控制；批次实验产物放在忽略的 `runs/`。引用公开缺陷、历史项目或

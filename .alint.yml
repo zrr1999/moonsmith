@@ -22,7 +22,7 @@ rules:
 
   - id: library-package-manifests
     kind: dir_contains
-    select: "modules/{contracts,core,moonbit}/src"
+    select: "modules/{contracts,engine,moonbit}/src"
     require:
       - moon.pkg
     level: error
@@ -59,15 +59,15 @@ rules:
     level: error
     message: "Shared contracts must not depend on other MoonSmith components."
 
-  - id: core-stays-language-neutral
+  - id: engine-stays-language-neutral
     kind: import_gate
     paths:
-      - modules/core/moon.mod
-      - modules/core/src/**/moon.pkg
+      - modules/engine/moon.mod
+      - modules/engine/src/**/moon.pkg
     import_pattern: *moonbit_import
     forbid: '^zrr1999/moonsmith(-moonbit)?(/|@|$)'
     level: error
-    message: "Core may use contracts, not the MoonBit adapter or CLI module."
+    message: "Engine may use contracts, not the MoonBit adapter or CLI module."
 
   - id: moonbit-does-not-own-orchestration
     kind: import_gate
@@ -75,23 +75,23 @@ rules:
       - modules/moonbit/moon.mod
       - modules/moonbit/src/**/moon.pkg
     import_pattern: *moonbit_import
-    forbid: '^zrr1999/moonsmith(-core)?(/|@|$)'
+    forbid: '^zrr1999/moonsmith(-engine)?(/|@|$)'
     level: error
-    message: "The MoonBit adapter may use contracts, not Core or CLI orchestration."
+    message: "The MoonBit adapter may use contracts, not Engine or CLI orchestration."
 
   - id: reports-depend-only-on-contracts
     kind: import_gate
     paths: modules/cli/src/report/**/moon.pkg
     import_pattern: *moonbit_import
-    forbid: '^zrr1999/moonsmith(-core|-moonbit)?(/|@|$)'
+    forbid: '^zrr1999/moonsmith(-engine|-moonbit)?(/|@|$)'
     level: error
     message: "Reports render supplied records and may depend only on shared contracts."
 
   - id: pure-packages-have-no-host-imports
     kind: import_gate
     paths:
-      - modules/{contracts,core,moonbit}/moon.mod
-      - modules/{contracts,core,moonbit}/src/**/moon.pkg
+      - modules/{contracts,engine,moonbit}/moon.mod
+      - modules/{contracts,engine,moonbit}/src/**/moon.pkg
       - modules/cli/src/report/**/moon.pkg
     import_pattern: *moonbit_import
     forbid: '^moonbitlang/(core/env|async|x/(fs|sys))(/|@|$)'
@@ -102,7 +102,7 @@ rules:
     kind: import_gate
     paths: modules/cli/src/{host,artifacts,toolchains}/**/moon.pkg
     import_pattern: *moonbit_import
-    forbid: '^zrr1999/moonsmith(-(core|moonbit)|/(app|artifacts|cmd|report|toolchains))(/|@|$)'
+    forbid: '^zrr1999/moonsmith(-(engine|moonbit)|/(app|artifacts|cmd|report|toolchains))(/|@|$)'
     level: error
     message: "Infrastructure may depend only on contracts and Host, not higher layers or peers."
 
@@ -118,6 +118,6 @@ rules:
     kind: import_gate
     paths: modules/cli/src/cmd/**/moon.pkg
     import_pattern: *moonbit_import
-    forbid: '^zrr1999/moonsmith(-(contracts|core|moonbit)|/(artifacts|report|toolchains))(/|@|$)'
+    forbid: '^zrr1999/moonsmith(-(contracts|engine|moonbit)|/(artifacts|report|toolchains))(/|@|$)'
     level: error
     message: "Compose language and compiler capabilities in app; the CLI uses app and Host."

@@ -6,6 +6,7 @@
       "path": "fps/FP-0000-governance.md",
       "title": "MoonSmith 提案约定",
       "type": "Governance",
+      "status": "Draft",
       "authors": [
         "zrr1999"
       ],
@@ -21,6 +22,7 @@
       "path": "fps/FP-0001-workspace-modules.md",
       "title": "多模块基础架构与质量检查",
       "type": "Feature",
+      "status": "Draft",
       "authors": [
         "zrr1999"
       ],
@@ -28,7 +30,7 @@
       "defines": [
         "module",
         "package",
-        "core",
+        "engine",
         "language-adapter",
         "application-layer",
         "host",

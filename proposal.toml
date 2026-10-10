@@ -28,6 +28,7 @@ fields = [
   { name = "path", source = "path" },
   "title",
   "type",
+  "status",
   "authors",
   "created",
   "defines",
