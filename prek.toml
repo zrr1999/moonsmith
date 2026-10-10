@@ -43,6 +43,7 @@ repo = "https://github.com/zendev-lab/zendev"
 rev = "v0.4.0"
 hooks = [
   { id = "zendev-message-check", args = ["--profile", "zendev"], stages = ["commit-msg"] },
+  { id = "zendev-proposal-check", stages = ["pre-commit"] },
 ]
 
 [[repos]]

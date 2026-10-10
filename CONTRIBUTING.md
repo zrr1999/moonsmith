@@ -43,10 +43,21 @@ uvx --from zendev==0.4.0 zendev message check --title --profile zendev --text "�
 ```
 
 PR 正文使用[模板](.github/pull_request_template.md)，说明动机、解决方案和实际验证。
+正文面向不了解会话背景的评审者，聚焦本 PR 相对 base 的改动：解决的问题、最终设计或
+行为、影响及直接相关的验证。依赖、兼容性和迁移信息仅在影响评审或使用时补充；省略
+操作流水、协作过程、其他 PR 的工作总结和与本次改动无关的能力说明。
 所有 PR 都检查标题；依赖更新机器人仅豁免正文模板。机器校验格式，英文表述由提交者及
 评审者核对。提交、推送和 PR 的交付范围以当前任务的明确授权为准。
 
 ## 设计与证据
+
+只有已有设计未覆盖、且有明确大影响面的新决定才使用 [FP](fps/README.md)，门槛见
+[FP-0000](fps/FP-0000-governance.md#何时需要-fp)。文档纠错、恢复预期行为的意外 bug 修复、
+普通兼容增强和既定设计的实现无需新提案；原 bug 严重或改动量大本身不是提案理由。
+提案记录取舍，架构维护整体设计，实现 PR 关联对应文档并附实际验证。
+
+提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
+`fps-index.json`，再运行 `just check`。索引不手工维护；`just check` 和 CI 都检查 FP。
 
 架构和实现按同一个小切片更新。产品方向改变时，在 [EVOLUTION.md](EVOLUTION.md)
 记录日期、触发、变化和理由。比赛范围与验收目标维护在[申报书](docs/project-proposal.md)中，

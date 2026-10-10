@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "fps": [
+    {
+      "fp": 0,
+      "path": "fps/FP-0000-governance.md",
+      "title": "MoonSmith 提案约定",
+      "type": "Governance",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-10-09",
+      "supersedes": [],
+      "superseded_by": []
+    }
+  ]
+}
