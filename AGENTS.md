@@ -16,7 +16,7 @@
 
 | 任务 | Skill |
 | --- | --- |
-| 功能设计、跨包修改或重构规划 | [moonsmith-change-planning](.agents/skills/moonsmith-change-planning/SKILL.md) |
+| 功能设计、FP 起草与实质修订、跨包修改或重构规划 | [moonsmith-change-planning](.agents/skills/moonsmith-change-planning/SKILL.md) |
 | 评审工作区改动、提交或 PR | [moonsmith-code-review](.agents/skills/moonsmith-code-review/SKILL.md) |
 | 新增或修复行为测试、回归测试 | [moonsmith-test-behavior](.agents/skills/moonsmith-test-behavior/SKILL.md) |
 | 本地交付或已授权提交前检查 | [moonsmith-pre-submit-checks](.agents/skills/moonsmith-pre-submit-checks/SKILL.md) |
