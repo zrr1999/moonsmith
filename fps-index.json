@@ -38,6 +38,30 @@
       ],
       "supersedes": [],
       "superseded_by": []
+    },
+    {
+      "fp": 2,
+      "path": "fps/FP-0002-moonbit-semantic-contract.md",
+      "title": "MoonBit 程序模型与语义契约",
+      "type": "Feature",
+      "status": "Draft",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-10-10",
+      "defines": [
+        "semantic-profile",
+        "moonbit-program",
+        "program-well-formedness",
+        "profile-admission",
+        "reference-evaluation",
+        "observation-protocol",
+        "structural-feature",
+        "semantics-preserving-transformation",
+        "reduction-candidate"
+      ],
+      "supersedes": [],
+      "superseded_by": []
     }
   ]
 }
