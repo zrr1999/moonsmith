@@ -1,4 +1,4 @@
-name = "zrr1999/moonsmith-core"
+name = "zrr1999/moonsmith-engine"
 
 version = "0.0.0"
 

@@ -1,6 +1,6 @@
 import {
   "zrr1999/moonsmith-contracts" @contracts,
-  "zrr1999/moonsmith-core" @core,
+  "zrr1999/moonsmith-engine" @engine,
   "zrr1999/moonsmith-moonbit" @moonbit,
   "zrr1999/moonsmith/host",
   "zrr1999/moonsmith/toolchains/moon",

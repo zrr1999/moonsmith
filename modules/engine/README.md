@@ -1,7 +1,7 @@
-# MoonSmith Core
+# MoonSmith Engine
 
 本模块当前提供语言无关的结果判定与有预算归约搜索，仅依赖共享契约。
-[Core 的职责](../../fps/FP-0001-workspace-modules.md#term-core)及[术语定义](../../docs/glossary.md)
+[Engine 的职责](../../fps/FP-0001-workspace-modules.md#term-engine)及[术语定义](../../docs/glossary.md)
 由提案维护；下文说明现有 API，不把当前算法作为统一设计要求。
 
 `judge` 比较完整配置矩阵与参考输出，区分一致、异常候选和无法判定。

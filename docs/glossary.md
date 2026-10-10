@@ -12,7 +12,7 @@
 | 提案 | Feature Proposal（FP） | [FP-0000](../fps/FP-0000-governance.md#term-feature-proposal) |
 | 模块 | module | [FP-0001](../fps/FP-0001-workspace-modules.md#term-module) |
 | 包 | package | [FP-0001](../fps/FP-0001-workspace-modules.md#term-package) |
-| 通用核心 | Core | [FP-0001](../fps/FP-0001-workspace-modules.md#term-core) |
+| 通用引擎 | Engine | [FP-0001](../fps/FP-0001-workspace-modules.md#term-engine) |
 | 语言适配器 | language adapter | [FP-0001](../fps/FP-0001-workspace-modules.md#term-language-adapter) |
 | 应用装配层 | application layer | [FP-0001](../fps/FP-0001-workspace-modules.md#term-application-layer) |
 | 宿主环境访问层 | Host | [FP-0001](../fps/FP-0001-workspace-modules.md#term-host) |

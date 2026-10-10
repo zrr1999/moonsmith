@@ -9,7 +9,7 @@
 | 模块目录 | 职责 |
 | --- | --- |
 | `modules/contracts` | 共享数据契约 |
-| `modules/core` | 结果判定与通用归约，不依赖具体语言 |
+| `modules/engine` | 结果判定与通用归约，不依赖具体语言 |
 | `modules/moonbit` | MoonBit 程序生成、参考求值、源码输出与归约候选 |
 | `modules/cli` | 命令行、编译执行、案例存储与重放 |
 
@@ -34,7 +34,9 @@ just run replay runs/case-<id>   # 重放打印出的案例目录
 | 文档 | 内容 |
 | --- | --- |
 | [项目申报书](docs/project-proposal.md) | 产品范围与预期验收目标 |
-| [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 设计决定、概念定义及引用规则 |
+| [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 当前提案阶段、设计决定、概念定义及引用规则 |
+| [项目演进](EVOLUTION.md) | 过去的方向变化与原因 |
+| [长期路线图](ROADMAP.md) | MoonSmith 向 SemaForge 渐进提取的目标、依赖与推进门槛 |
 | [工程笔记](.agents/notes/README.md) | 来源证据、备选机制与实验规划 |
 | [贡献指南](CONTRIBUTING.md) | 开发入口、原型执行契约与交付约定 |
-| [Contracts](modules/contracts/README.md)、[Core](modules/core/README.md)、[MoonBit](modules/moonbit/README.md)、[CLI](modules/cli/README.md) | 各模块现有 API、使用方式与实现限制 |
+| [Contracts](modules/contracts/README.md)、[Engine](modules/engine/README.md)、[MoonBit](modules/moonbit/README.md)、[CLI](modules/cli/README.md) | 各模块现有 API、使用方式与实现限制 |

@@ -2,6 +2,7 @@
 fp: 1
 title: "标题"
 type: Feature
+status: Draft
 authors:
   - "your-github-username"
 created: 2026-10-09
@@ -11,7 +12,7 @@ supersedes: []
 
 # FP-0001: 标题
 
-<!-- 同步替换文件名、fp、标题、H1 和日期；authors 填实际作者的小写 GitHub 用户名，不带 @。 -->
+<!-- 同步替换文件名、fp、标题、H1 和日期；authors 填实际作者的小写 GitHub 用户名，不带 @；提交讨论时将 status 改为 Proposed。 -->
 
 ## 摘要
 

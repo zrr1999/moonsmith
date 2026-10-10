@@ -1,24 +1,25 @@
-# Core 架构调研
+# Engine 架构调研
 
-调研日期：2026 年 10 月 10 日。目标是研究 MoonSmith Core 的编排、判定、归约与重放边界。
+调研日期：2026 年 10 月 10 日。目标是研究 MoonSmith Engine 的编排、判定、归约与重放边界。
 本轮读取了当前 workspace、已有设计、官方文档、作者论文和下列固定提交的关键源码。
 **没有运行第三方 benchmark、历史编译器复现或 MoonSmith 产品实验。** 源码观察与本项目建议分别列出。
 
-完整生态清单继续维护在[对比项目与基准规划](comparison-projects.md)；本文深入其中与 Core 直接相关的
+完整生态清单继续维护在[对比项目与基准规划](comparison-projects.md)；本文深入其中与 Engine 直接相关的
 机制，并补充 LibAFL、Hypothesis、本机 MoonBit QuickCheck 及归约算法研究。
-本文保存来源观察、备选方案与实现候选，为 Core 的职责和策略边界提供依据。具体算法和参数不构成提案要求，
+本文保存来源观察、备选方案与实现候选，为 Engine 的职责和策略边界提供依据。具体算法和参数不构成提案要求，
 也不因来源项目采用过某种做法就成为 MoonSmith 的默认实现。
 
 ## 1 仓库事实与问题
 
 交付时按 `main` 的 `a6fa34549021ae71c3eb659f0595632aa3ed1865` 重新核查源码。
-原型已经包含[判定器](../../../modules/core/src/oracle.mbt)、[泛型归约器](../../../modules/core/src/reducer.mbt)
+后续 Core 更名为 Engine，本文同步使用新名称和路径；以下实现观察仍以该原型基线为准。
+原型已经包含[判定器](../../../modules/engine/src/oracle.mbt)、[泛型归约器](../../../modules/engine/src/reducer.mbt)
 和[应用编排](../../../modules/cli/src/app/campaign.mbt)，并有行为及工具链集成测试；本轮未重新执行产品实验。
 早期调研基于 `33f3c8f7f40ca43e9c49ed7a200b0a2bbc5efc4d` 加未提交设计的骨架现场，
 该现场已不能代表当前实现。
 
 [FP-0001](../../../fps/FP-0001-workspace-modules.md)与[贡献指南](../../../CONTRIBUTING.md#原型执行契约)
-规定 Core 纯计算、语言适配器拥有程序与语义、Host 拥有进程和文件系统，app 装配。
+规定 Engine 纯计算、语言适配器拥有程序与语义、Host 拥有进程和文件系统，app 装配。
 现有 `judge` 返回遇到的首个明确异常；`Reducer[P]` 以候选列表、严格下降和 fingerprint 相等推进；
 完整执行与确认流程位于 app。这些是现有实现事实，不是对未来所有 Oracle 和搜索方法的约束。
 
@@ -27,7 +28,7 @@
 
 本轮需要补齐的内容是：
 
-- app 与 Core 谁决定下一步，跨边界结果怎样关联到正确案例与任务。
+- app 与 Engine 谁决定下一步，跨边界结果怎样关联到正确案例与任务。
 - 多种 Oracle 同时工作时，部分失败、缺配置和参考求值失败怎样汇总。
 - 原失败判据如何被冻结，参考与变形关系在归约过程中怎样重新计算。
 - 种子、逻辑预算、时间预算、取消和重复确认的统计语义。
@@ -38,9 +39,9 @@
 | 来源 | 核查到的机制 | 对 MoonSmith 的借鉴建议，待讨论 |
 | --- | --- | --- |
 | [LibAFL Feedback](https://github.com/AFLplusplus/LibAFL/blob/70259b66bcbdc322b81ee59e71d83f27e0187c35/docs/src/core_concepts/feedback.md)、[StdFuzzer](https://github.com/AFLplusplus/LibAFL/blob/70259b66bcbdc322b81ee59e71d83f27e0187c35/crates/libafl/src/fuzzer/mod.rs) | Observer 提供观察；Feedback 决定样本是否有探索价值；Objective 表达目标命中。`StdFuzzer` 分别持有 scheduler、feedback、objective | 执行证据、异常判定和探索反馈分开。首版只需要前两者，特征共现不能自动成为编译器覆盖率 |
-| [Csmith 作者论文](https://users.cs.utah.edu/~regehr/papers/pldi11-preprint.pdf) | 通过约束生成空间排除破坏差分比较的未定义和未指定行为 | 可比较资格是语言 profile 的责任；Core 只消费检查结果，不补写一份类型系统或整数语义 |
+| [Csmith 作者论文](https://users.cs.utah.edu/~regehr/papers/pldi11-preprint.pdf) | 通过约束生成空间排除破坏差分比较的未定义和未指定行为 | 可比较资格是语言 profile 的责任；Engine 只消费检查结果，不补写一份类型系统或整数语义 |
 | [YARPGen](https://github.com/intel/yarpgen/blob/1adb290f453505838f3aa33dc571f292b0c1810f/README.md)、[执行脚本](https://github.com/intel/yarpgen/blob/1adb290f453505838f3aa33dc571f292b0c1810f/scripts/run_gen.py) | 生成时控制数值范围；独立脚本驱动编译器和配置、收集输出分组与超时 | 显式执行矩阵和阶段记录有价值。项目选择保留完整规范值；上游 checksum 和多数结果分组不作为本项目正确性证明 |
-| [Fuzzilli MinimizationHelper](https://github.com/googleprojectzero/fuzzilli/blob/a9d7aff02d8b8d97c8fd8089aea894d24bc11f1e/Sources/Fuzzilli/Minimization/MinimizationHelper.swift)、[Minimizer](https://github.com/googleprojectzero/fuzzilli/blob/a9d7aff02d8b8d97c8fd8089aea894d24bc11f1e/Sources/Fuzzilli/Minimization/Minimizer.swift) | 先检查候选静态有效性，再执行并检查原 `ProgramAspects`；不同 reducer 按明确顺序运行；生成新的归约副本 | 把合法性、目标行为和候选提交分成三个关口。保留原件，Core 拥有接受决定，语言层拥有变换 |
+| [Fuzzilli MinimizationHelper](https://github.com/googleprojectzero/fuzzilli/blob/a9d7aff02d8b8d97c8fd8089aea894d24bc11f1e/Sources/Fuzzilli/Minimization/MinimizationHelper.swift)、[Minimizer](https://github.com/googleprojectzero/fuzzilli/blob/a9d7aff02d8b8d97c8fd8089aea894d24bc11f1e/Sources/Fuzzilli/Minimization/Minimizer.swift) | 先检查候选静态有效性，再执行并检查原 `ProgramAspects`；不同 reducer 按明确顺序运行；生成新的归约副本 | 把合法性、目标行为和候选提交分成三个关口。保留原件，Engine 拥有接受决定，语言层拥有变换 |
 | [C-Reduce 驱动](https://github.com/csmith-project/creduce/blob/31e855e290970cba0286e5032971509c0e7c0a80/creduce/creduce.in)、[作者论文](https://users.cs.utah.edu/~regehr/papers/pldi12-preprint.pdf) | 通用搜索调用领域变换与外部 interestingness test；测试需要确定性、独立目录及超时边界；论文专门讨论归约引入无效程序的问题 | 借鉴有序变换与保持判据的搜索，但不用任意非零退出或字符串匹配充当编译器异常契约 |
 | [Perses](https://github.com/uw-pluverse/perses/blob/bb7bc6521bebff54729d54eaac22b5b046bede96/README.md) | 根据语法约束候选空间，由测试脚本判定是否保留；支持候选缓存与不同列表归约算法 | 语法有效性和失败保持应分开；MoonBit 首版还需要类型、绑定及 profile 检查。暂不引入语法框架或算法插件体系 |
 | [wasm-shrink 实现](https://github.com/bytecodealliance/wasm-tools/blob/3505209492e7ded0b4fc1580beb35cf655868bfc/crates/wasm-shrink/src/lib.rs) | 先验证原输入和判据，使用显式 seed、尝试限额和去重集合；搜索点 `current` 与最小已知结果 `best` 分开，允许部分非缩小移动 | 搜索方法、接受规则和最佳结果可以分离。严格下降与非单调探索是不同实现取舍，需要分别声明预算和停止保证 |
@@ -57,7 +58,7 @@
 
 本机标准库的 QuickCheck `driver.mbt` 在收缩时区分 `Falsified` 与 `Raised`，但所有 `Raised` 彼此匹配。
 它适合通用性质测试，不能据此保持某个编译阶段、特定配置集合或观察分区。
-MoonSmith 应复用其性质测试能力，而把 `FailurePredicate` 的冻结与匹配留在 Core。
+MoonSmith 应复用其性质测试能力，而把 `FailurePredicate` 的冻结与匹配留在 Engine。
 
 MoonGrammata 的归约入口直接调用 `Target` 并比较 fingerprint；这与其通用字节目标一致。
 MoonSmith 的进程、解释器和多配置观察有独立所有者，因此可比较显式任务往返与注入回调的成本，
@@ -78,17 +79,17 @@ MoonGrammata 在没有接受任何归约步骤时返回 `NoReductionPossible`。
 
 wasm-shrink 固定提交的 README 库示例仍把通知回调写成 `run` 参数，而同提交源码采用
 `on_new_smallest` 配置及单一 predicate 参数。本轮以源码核对机制，不把示例签名复制为 API。
-Core 无需引入 LibAFL、Fuzzilli、Perses 或其他运行时；本轮也没有修改依赖。
+Engine 无需引入 LibAFL、Fuzzilli、Perses 或其他运行时；本轮也没有修改依赖。
 
-## 4 三种 Core 组织方式
+## 4 三种 Engine 组织方式
 
 | 方案 | 收益 | 需要评估的代价 | 与当前设计方向的关系 |
 | --- | --- | --- | --- |
-| Core 通过注入的 Language、Runner、Store 能力推进流程 | 调用链直接；实现可替换；编排仍集中在库内 | 需要明确异步、取消和保存失败的传播，以及副作用与纯计算边界 | 具体能力调用可由装配层承担，Core 不直接依赖 Host 或 Store |
-| Core 提供纯算法函数，流程写在 app | Core 简单；可单独组合算法；应用可选择不同流程 | 确认、预算和归约状态可能分散，需明确哪些流程是库契约 | 独立算法可以复用，但不把 Core 拥有的流程决定转移给 app |
-| Core 用显式状态推进并返回任务，app 执行与回传 | 决策集中；可用脚本化证据驱动；执行方式可以替换 | 增加任务/结果协议、关联校验和跨边界数据传递 | 符合编排与执行分离；具体协议与任务粒度仍属于实现选择 |
+| Engine 通过注入的 Language、Runner、Store 能力推进流程 | 调用链直接；实现可替换；编排仍集中在库内 | 需要明确异步、取消和保存失败的传播，以及副作用与纯计算边界 | 具体能力调用可由装配层承担，Engine 不直接依赖 Host 或 Store |
+| Engine 提供纯算法函数，流程写在 app | Engine 简单；可单独组合算法；应用可选择不同流程 | 确认、预算和归约状态可能分散，需明确哪些流程是库契约 | 独立算法可以复用，但不把 Engine 拥有的流程决定转移给 app |
+| Engine 用显式状态推进并返回任务，app 执行与回传 | 决策集中；可用脚本化证据驱动；执行方式可以替换 | 增加任务/结果协议、关联校验和跨边界数据传递 | 符合编排与执行分离；具体协议与任务粒度仍属于实现选择 |
 
-三种组织方式需要围绕 Core 拥有编排、app 执行与回传的责任划分评估；任务枚举、会话编码、
+三种组织方式需要围绕 Engine 拥有编排、app 执行与回传的责任划分评估；任务枚举、会话编码、
 在途数量或持久化顺序属于实现选择。源码比较不能单独证明某种接口最优。
 
 ## 5 版本与证据边界

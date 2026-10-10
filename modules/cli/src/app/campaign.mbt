@@ -19,7 +19,7 @@ async fn execute(
   let workspace = @artifacts.begin_attempt(directory)
   @moon.prepare(workspace, source)
   let observations = @moon.observe(workspace, inject=injected)
-  let verdict = @core.judge(expected, @moon.configurations(), observations)
+  let verdict = @engine.judge(expected, @moon.configurations(), observations)
   let attempt : @contracts.Attempt = {
     purpose,
     compiler,
@@ -78,7 +78,7 @@ pub async fn run(
   let mut final_attempt = original
   let mut attempts = 0
   if original.verdict is Finding(fingerprint) {
-    let search = @core.Reducer::new(
+    let search = @engine.Reducer::new(
       program,
       fingerprint,
       limit=reduction_limit,
