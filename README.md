@@ -30,3 +30,5 @@ just run replay runs/case-<id>   # 重放打印出的案例目录
 源码、执行记录和报告保存在 `runs/`；`demo` 不代表发现编译器缺陷。
 
 完整设计见[项目申报书](docs/project-proposal.md)，开发与测试见[贡献指南](CONTRIBUTING.md)。
+Core 的后续职责与策略边界见[架构设计](docs/core-architecture.md)和
+[FP-0002](fps/FP-0002-core-execution-contract.md)，依据见[调研记录](docs/core-research.md)。
