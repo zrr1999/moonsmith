@@ -1,6 +1,7 @@
 # MoonSmith CLI
 
-装配 Core、MoonBit 适配器、宿主执行、案例存储和报告，提供生成、比较、归约与重放原型。
+通过[应用装配层](../../fps/FP-0001-workspace-modules.md#term-application-layer)连接 Core、MoonBit 适配器、
+宿主执行、案例存储和报告，提供生成、比较、归约与重放原型。
 
 在仓库根目录运行 `just run`，用 `just run demo` 演示故障注入与归约，用
 `just run replay <案例目录>` 追加一次原案例重放。命令行帮助见 `just run --help`。

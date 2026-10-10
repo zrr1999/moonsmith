@@ -5,6 +5,14 @@ type: Feature
 authors:
   - "zrr1999"
 created: 2026-10-09
+defines:
+  - module
+  - package
+  - core
+  - language-adapter
+  - application-layer
+  - host
+  - shared-contracts
 supersedes: []
 ---
 
@@ -30,8 +38,15 @@ Swift 保留扩展空间。单 module 内部拆包只能提供源码边界，核
 
 ### 模块与发布边界
 
-module 是版本与发布单位，package 是 module 内部的编译与命名空间单位。采用
-[Moon workspace](https://docs.moonbitlang.com/en/stable/toolchain/moon/workspace.html)
+<a id="term-module"></a>
+
+模块（module）是版本与发布单位，以 `moon.mod` 声明名称、版本和模块依赖。
+
+<a id="term-package"></a>
+
+包（package）是 module 内部的编译与命名空间单位，以 `moon.pkg` 声明包配置及导入。
+
+采用 [Moon workspace](https://docs.moonbitlang.com/en/stable/toolchain/moon/workspace.html)
 管理本地成员，根目录只保留 `moon.work`，不再定义外层 module。
 
 | 目录 | Module 名称 | 仓库内模块依赖 |
@@ -68,9 +83,36 @@ Host、工具链、存储和报告服务于 CLI 的执行流程，作为其内�
 | `app` | `zrr1999/moonsmith` | 装配适配器，协调执行、存储及报告 | 上述各包 |
 | `cmd/moonsmith` | `zrr1999/moonsmith` | CLI 参数、终端交互和退出码 | `app`、`host` |
 
-contracts 只承载跨模块交互所需的数据，语言 AST 由各适配器定义，宿主资源由 Host 管理。
-app 将语言能力和宿主执行结果接入 Core；Core 根据观察值进行判定和搜索，语言适配器负责
-程序合法性与归约候选。纯计算使用显式输入、种子与预算，报告包只处理传入的记录。
+### 协作角色
+
+以下定义说明责任归属，不要求每个角色单独发布一个 module。
+
+<a id="term-core"></a>
+
+Core 是语言无关的纯计算层，负责测试编排、证据判定和归约搜索，拥有接受与停止的决定。
+它通过共享契约使用语言能力与执行事实，不解释具体语言 AST，也不直接访问宿主 I/O。
+
+<a id="term-language-adapter"></a>
+
+语言适配器（language adapter）拥有某种语言的程序表示与语义，包括生成、合法性检查、
+参考求值、观察协议、源码输出与归约候选。语言 AST 和改写上下文留在适配器中。
+
+<a id="term-application-layer"></a>
+
+应用装配层（application layer，当前为 `app`）连接 Core、语言及工具链能力，
+执行 Core 请求的工作并关联、回传结果，协调证据保存和报告；它不另行定义判定与接受规则。
+
+<a id="term-host"></a>
+
+Host 是宿主环境访问层，负责进程生命周期、文件系统及外部资源，拥有资源句柄和实际执行事实。
+工具链与存储通过 Host 访问环境，Core 和语言适配器不持有宿主资源。
+
+<a id="term-shared-contracts"></a>
+
+共享契约（shared contracts，当前为 `contracts`）只表达实际跨组件使用的数据，
+包括配置、观察值、预算、判据和记录；不承载语言 AST、宿主资源或具体算法状态。
+
+纯计算使用显式输入、种子与预算，报告包只处理传入的记录。
 CLI、app、Host、工具链与存储包先限定为 native，其余包保留其他后端的使用空间。
 Rust、Swift 适配器后续作为与 MoonBit 并列的 module 接入，由 app 装配。
 

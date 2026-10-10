@@ -29,6 +29,12 @@ just run replay runs/case-<id>   # 重放打印出的案例目录
 原型覆盖确定性的整数、布尔和分支子集，比较 native debug、native release、wasm-gc。
 源码、执行记录和报告保存在 `runs/`；`demo` 不代表发现编译器缺陷。
 
-完整设计见[项目申报书](docs/project-proposal.md)，开发与测试见[贡献指南](CONTRIBUTING.md)。
+## 文档导航
 
-内部调研与方案比较见[工程笔记](.agents/notes/README.md)。
+| 文档 | 内容 |
+| --- | --- |
+| [项目申报书](docs/project-proposal.md) | 产品范围与预期验收目标 |
+| [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 设计决定、概念定义及引用规则 |
+| [工程笔记](.agents/notes/README.md) | 来源证据、备选机制与实验规划 |
+| [贡献指南](CONTRIBUTING.md) | 开发入口、原型执行契约与交付约定 |
+| [Contracts](modules/contracts/README.md)、[Core](modules/core/README.md)、[MoonBit](modules/moonbit/README.md)、[CLI](modules/cli/README.md) | 各模块现有 API、使用方式与实现限制 |

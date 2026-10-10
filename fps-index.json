@@ -10,6 +10,9 @@
         "zrr1999"
       ],
       "created": "2026-10-09",
+      "defines": [
+        "feature-proposal"
+      ],
       "supersedes": [],
       "superseded_by": []
     },
@@ -22,6 +25,15 @@
         "zrr1999"
       ],
       "created": "2026-10-09",
+      "defines": [
+        "module",
+        "package",
+        "core",
+        "language-adapter",
+        "application-layer",
+        "host",
+        "shared-contracts"
+      ],
       "supersedes": [],
       "superseded_by": []
     }

@@ -1,6 +1,7 @@
 # MoonSmith MoonBit Adapter
 
-拥有 MoonBit 的类型化程序、确定性生成、参考求值、源码输出及归约候选。
+作为 MoonBit 的[语言适配器](../../fps/FP-0001-workspace-modules.md#term-language-adapter)，
+提供类型化程序、确定性生成、参考求值、源码输出及归约候选。
 
 `int-bool-v1` 使用分开的整数和布尔表达式树、顺序局部绑定及有界深度。
 `generate` 接收显式种子；`Program` 提供 `evaluate`、`valid`、`emit`、`size` 和 `candidates`。

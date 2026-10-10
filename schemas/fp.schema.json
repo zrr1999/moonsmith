@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "FP frontmatter",
   "type": "object",
-  "required": ["fp", "title", "type", "authors", "created", "supersedes"],
+  "required": ["fp", "title", "type", "authors", "created", "defines", "supersedes"],
   "additionalProperties": false,
   "properties": {
     "fp": {
@@ -34,6 +34,14 @@
       "type": "string",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
       "format": "date"
+    },
+    "defines": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?![\\s\\S])"
+      }
     },
     "supersedes": {
       "type": "array",

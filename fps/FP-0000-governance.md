@@ -5,12 +5,16 @@ type: Governance
 authors:
   - "zrr1999"
 created: 2026-10-09
+defines:
+  - feature-proposal
 supersedes: []
 ---
 
 # FP-0000: MoonSmith 提案约定
 
 ## 摘要
+
+<a id="term-feature-proposal"></a>
 
 MoonSmith 使用 Feature Proposal（FP）保存影响重大的功能与治理设计。
 只有现有设计未覆盖且有明确大影响面的新决定才需要 FP，复用 Markdown、Git、PR 和现有 ZenDev 检查。
@@ -49,16 +53,31 @@ MoonSmith 使用 Feature Proposal（FP）保存影响重大的功能与治理设
 已合入的编号不删除或复用。正文使用[模板](../templates/fp.md)，默认中文，保留英文
 技术标识。`Feature` 描述功能设计，`Governance` 描述协作规则。
 
-frontmatter 只包含 `fp`、`title`、`type`、`authors`、`created`、`supersedes`。
+frontmatter 只包含 `fp`、`title`、`type`、`authors`、`created`、`defines`、`supersedes`。
 作者填写对内容负责的人的小写 GitHub 用户名，不带 `@`；schema 只检查离线格式。
 编号、标题与 H1 必须一致。具体操作见[提案入口](README.md)。
 
 候选直接作为带编号文档评审，不维护单独的草稿目录。提案 PR 复用仓库模板；标题用英文，
 采用 `📝 docs(fp): propose/revise/supersede ...` 的约定。需要 FP 的实现 PR 关联对应提案，
-独立说明实现范围与验证。影响重大的新决定应在依赖它的实现合入前完成设计评审。
+独立说明实现范围与必要影响；检查记录按贡献指南保存。影响重大的新决定应在依赖它的实现合入前完成设计评审。
 
 提案合并只表示文本进入版本库，不等于采纳、排期或实现。讨论与决策保留在关联 PR 中；
 未合入的候选保留在关闭的 PR 中。提案不维护 `status`、审批人或实现进度字段。
+
+### 术语定义与引用
+
+跨文档使用且容易混淆的项目概念，由拥有相应决定的 FP 定义。`defines` 列出本提案定义的
+概念标识，没有新定义时填写 `[]`；单纯引用其他提案的概念不加入该列表。
+标识使用小写英文与连字符，匹配 `proposal.toml` 的 `id_pattern`，不依赖中文标题或章节序号。
+
+每个标识在定义正文前对应一个空 HTML 锚点，格式为 `<a id="term-概念标识"></a>`。
+同一概念只保留一个定义位置；引用使用指向该 FP 的普通 Markdown 链接及 `#term-概念标识`。
+定义说明概念含义与责任边界，具体 API、算法、参数和实现进度放在相应实现文档中。
+
+[术语索引](../docs/glossary.md)按主题导航到定义；`fps-index.json` 从元数据生成机器可读的定义归属。
+术语索引只维护名称与链接，架构、调研及模块 README 在相关上下文引用定义，不维护另一套解释。
+增加或调整定义时同步更新导航与引用；修正措辞保留标识。需要迁移定义时，在同一改动中更新
+声明、锚点和所有引用。当前无状态配置要求定义归属唯一，`supersedes` 本身不会转移术语归属。
 
 ### 修订与替代
 
@@ -79,8 +98,9 @@ frontmatter 只包含 `fp`、`title`、`type`、`authors`、`created`、`superse
 
 ## 验证
 
-`proposal.toml` 配置固定版本 ZenDev 的元数据、文件名、模板章节、替代关系和
-确定性索引检查。`just check` 与 CI 共用 `zendev-proposal-check`；更新提案后用
+`proposal.toml` 配置固定版本 ZenDev 的元数据、文件名、模板章节、替代关系、术语定义和
+确定性索引检查。schema 约束 `defines` 的格式与列表内唯一性；ZenDev 检查声明与锚点对应及
+跨提案的定义归属；lychee 检查本地文档链接及目标锚点。`just check` 与 CI 共用这些门禁；更新提案后用
 `zendev proposal check --fix` 生成 `fps-index.json`。
 
 检查通过说明文档结构与索引一致，不能证明设计已被采纳、实现正确或实验完成。
