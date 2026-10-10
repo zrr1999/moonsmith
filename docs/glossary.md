@@ -17,3 +17,17 @@
 | 应用装配层 | application layer | [FP-0001](../fps/FP-0001-workspace-modules.md#term-application-layer) |
 | 宿主环境访问层 | Host | [FP-0001](../fps/FP-0001-workspace-modules.md#term-host) |
 | 共享契约 | shared contracts | [FP-0001](../fps/FP-0001-workspace-modules.md#term-shared-contracts) |
+
+## MoonBit 程序与语义
+
+| 术语 | 英文 | 定义来源 |
+| --- | --- | --- |
+| 语义子集约束 | semantic profile | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-semantic-profile) |
+| MoonBit 程序 | MoonBit program | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-moonbit-program) |
+| 静态合法性 | well-formedness | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-program-well-formedness) |
+| profile 准入 | profile admission | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-profile-admission) |
+| 参考求值 | reference evaluation | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-reference-evaluation) |
+| 观察协议 | observation protocol | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-observation-protocol) |
+| 结构特征 | structural feature | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-structural-feature) |
+| 语义保持变换 | semantics-preserving transformation | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-semantics-preserving-transformation) |
+| 归约候选 | reduction candidate | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-reduction-candidate) |
