@@ -7,6 +7,10 @@ default:
 install:
     uvx prek install --prepare-hooks --hook-type pre-commit --hook-type commit-msg
 
+# Initialize or refresh the MoonBit package registry index
+deps:
+    moon update
+
 # Format sources
 format:
     just --fmt --unstable

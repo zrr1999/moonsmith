@@ -11,6 +11,7 @@
 原型宿主支持 macOS、Linux；当前验证工具链为 MoonBit `0.10.14+7d59c7ec9`。
 
 ```shell
+just deps
 just install
 just check
 just build

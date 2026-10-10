@@ -36,6 +36,8 @@ jobs:
         with:
           version: "0.10.14+7d59c7ec9"
           core-version: "0.10.14+7d59c7ec9"
+      - name: Initialize MoonBit registry
+        run: just deps
       - name: Build workspace modules
         run: just build
       - name: Run tests

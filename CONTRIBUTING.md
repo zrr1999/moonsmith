@@ -3,7 +3,8 @@
 ## 开发准备
 
 先保证本机 `moon` 已在 `PATH` 中，官方安装目录为 `~/.moon/bin`。然后在仓库根目录运行
-`just install`，把 `prek` 的 `pre-commit` 和 `commit-msg` hooks 装进本仓库 `.git/hooks/`。
+`just deps` 初始化 MoonBit 包索引，再运行 `just install`，把 `prek` 的 `pre-commit` 和
+`commit-msg` hooks 装进本仓库 `.git/hooks/`。依赖包会在首次检查或构建时下载。
 检查工具配置见 [prek.toml](prek.toml) 和 [CI 工作流](.github/workflows/ci-static-checks.yml)。
 
 ## 常用命令
@@ -11,6 +12,7 @@
 | 命令 | 作用 |
 | --- | --- |
 | `just` | 列出开发命令 |
+| `just deps` | 初始化或刷新 MoonBit 包索引 |
 | `just install` | 安装 Git hooks |
 | `just format` | 格式化 justfile 和 MoonBit 包 |
 | `just check` | 仓库只读门禁，运行 `prek --all-files` |
