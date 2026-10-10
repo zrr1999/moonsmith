@@ -39,12 +39,12 @@
 | MoonBit、Just | 源码格式、类型、编译器警告及任务文件格式 |
 | alint | 包结构、依赖方向与纯计算边界 |
 | Tombi、yamllint | TOML 格式与 lint，YAML 缩进、重复键及布尔值 |
-| rumdl、typos、lychee | Markdown 结构、拼写及本地链接 |
+| rumdl、typos、lychee | Markdown 结构、拼写及本地链接与锚点 |
 | check-jsonschema | Renovate 配置与 `schemas/` 下的 JSON Schema 定义 |
 | actionlint、zizmor | GitHub Actions 语法、表达式及工作流安全问题 |
 | Gitleaks | 工作区中的凭据和令牌，包括未跟踪文件；日志隐藏匹配值 |
 | prek 文件检查 | 大文件、跨平台文件名、符号链接、脚本权限、意外子模块及文本卫生 |
-| ZenDev | 提案结构与索引，提交及 PR 消息规范 |
+| ZenDev | 提案结构、术语定义与索引，提交及 PR 消息规范 |
 
 新增的格式检查不自动改写文件。Markdown 使用 [.rumdl.toml](.rumdl.toml)，允许中文长段落、
 GitHub 裸链接及 FP 的元数据标题；YAML 规则见 [.yamllint.yml](.yamllint.yml)。Tombi 和
@@ -53,51 +53,21 @@ zizmor 使用离线模式，JSON Schema 检查使用工具内置的 schema。Git
 
 ## 模块与包边界
 
-根目录的 [moon.work](moon.work) 组织四个独立 module；每个 module 有自己的 `moon.mod`、
-版本、依赖、README 和 LICENSE。module 是发布单位，内部 package 由 `moon.pkg` 定义，是编译与
-命名空间单位。采用 [Moon workspace](https://docs.moonbitlang.com/en/stable/toolchain/moon/workspace.html)
-的本地成员解析，不使用旧格式的路径依赖。
-
-| 目录 | Module 名称 | 仓库内模块依赖 |
-| --- | --- | --- |
-| `modules/contracts` | `zrr1999/moonsmith-contracts` | 无 |
-| `modules/core` | `zrr1999/moonsmith-core` | contracts |
-| `modules/moonbit` | `zrr1999/moonsmith-moonbit` | contracts |
-| `modules/cli` | `zrr1999/moonsmith` | contracts、core、moonbit |
+根目录的 [moon.work](moon.work) 组织四个独立模块。模块、包及角色的定义见
+[术语索引](docs/glossary.md#提案与模块边界)，完整成员清单和允许依赖见
+[FP-0001](fps/FP-0001-workspace-modules.md#包的职责与依赖)。变更边界时更新该提案，
+执行流程更新本文的[原型执行契约](#原型执行契约)，具体 API 更新所属模块 README。
 
 四个模块的 `0.0.0` 都是初始占位版本，尚未发布；后续分别管理版本，无需同步升级。
 `moon.mod` 使用带版本的依赖声明，workspace 内按成员名解析到本地源码。成员版本变化后
-运行 `moon work sync` 更新依赖方声明。`moon.pkg` 的 import 声明实际调用的包，模块版本依赖与包导入分别维护。
-
-下表列出全部九个 package。contracts、core 和 moonbit 各自的 `src/moon.pkg` 定义根包，
-包名等于模块名。其余六个包位于 CLI 模块内，完整包名为
-`zrr1999/moonsmith/<相对 src 的路径>`。
-
-| 包 | 所属模块 | 职责 | 允许的仓库内依赖 |
-| --- | --- | --- | --- |
-| `contracts` | `zrr1999/moonsmith-contracts` | 语言无关的配置、观察值、预算和案例记录 | 无 |
-| `core` | `zrr1999/moonsmith-core` | 纯测试编排、判定和归约搜索 | `contracts` |
-| `moonbit` | `zrr1999/moonsmith-moonbit` | MoonBit 程序表示、生成、解释、源码输出和归约候选 | `contracts` |
-| `host` | `zrr1999/moonsmith` | 进程生命周期、文件系统及平台访问 | `contracts` |
-| `toolchains/moon` | `zrr1999/moonsmith` | Moon 工具链探测、命令计划及诊断分类 | `contracts`、`host` |
-| `artifacts` | `zrr1999/moonsmith` | 案例持久化和追加式执行记录 | `contracts`、`host` |
-| `report` | `zrr1999/moonsmith` | 从传入的记录生成报告 | `contracts` |
-| `app` | `zrr1999/moonsmith` | 装配具体适配器，协调执行、存储及报告 | 上述各包 |
-| `cmd/moonsmith` | `zrr1999/moonsmith` | CLI 参数、终端交互和退出码 | `app`、`host` |
-
-Core 和语言包保持纯计算，通过参数与返回值交互。Core 不导入 MoonBit AST、Host 或存储包；
-报告包不自行读写文件。`app`、CLI、Host、工具链及存储包目前限定为 native，纯计算包保留
-其他后端的使用空间。后续 Rust、Swift 适配器与 `moonbit` 并列，由 `app` 选择和装配。
-
-Core 提供独立于语言的结果判定和泛型归约状态机，MoonBit 模块提供类型化程序、生成、
-求值、源码输出及归约候选。各包的行为测试放在相应包内，优先通过公共接口测试。
-模块拆分的理由和兼容性见 [FP-0001](fps/FP-0001-workspace-modules.md)。
+运行 `moon work sync` 更新依赖方声明。`moon.pkg` 的 import 声明实际调用的包，
+模块版本依赖与包导入分别维护。
 
 [.alint.yml](.alint.yml) 检查 workspace 布局、模块与包清单、当前组件之间的依赖方向，并阻止
 纯计算组件直接导入已列出的环境与 I/O 依赖。import 检查覆盖 `moon.mod` 与 `moon.pkg`，
 依赖 `moon fmt` 规范化的格式；新增模块、包或依赖时同步核对规则。
 `just check` 和 CI 都通过 prek 执行 alint，单独运行可用
-`uvx prek run alint --all-files`。
+`uvx prek run alint --all-files`。各包的行为测试放在相应包内，优先通过公共接口测试。
 
 ## 原型执行契约
 
@@ -188,6 +158,8 @@ PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“�
 
 提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
 `fps-index.json`，再运行 `just check`。索引不手工维护；`just check` 和 CI 都检查 FP。
+跨文档概念按 [FP-0000](fps/FP-0000-governance.md#术语定义与引用)登记到所属提案，
+更新[术语索引](docs/glossary.md)并让其他文档链接该定义；不要把具体类型或算法选择写成概念的统一要求。
 
 架构和实现按同一个小切片更新。产品方向改变时，在 [EVOLUTION.md](EVOLUTION.md)
 记录日期、触发、变化和理由。比赛范围与验收目标维护在[申报书](docs/project-proposal.md)中，

@@ -7,6 +7,10 @@ cache = false
 # FP metadata and its visible H1 intentionally carry the same title.
 front-matter-title = ""
 
+[MD033]
+# ZenDev concept definitions use explicit HTML anchors.
+allowed-elements = ["a"]
+
 [per-file-ignores]
 # A PR body is a section template rather than a standalone document.
 ".github/pull_request_template.md" = ["MD041"]
