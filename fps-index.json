@@ -38,6 +38,35 @@
       ],
       "supersedes": [],
       "superseded_by": []
+    },
+    {
+      "fp": 2,
+      "path": "fps/FP-0002-core-execution-contract.md",
+      "title": "Engine 的职责边界与策略扩展",
+      "type": "Feature",
+      "status": "Draft",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-10-10",
+      "defines": [
+        "case",
+        "work-request",
+        "execution-evidence",
+        "oracle",
+        "assessment",
+        "failure-predicate",
+        "fingerprint",
+        "language-operation",
+        "operation-scheduling",
+        "local-search",
+        "reduction-engine",
+        "confirmation",
+        "case-replay",
+        "search-state-recovery"
+      ],
+      "supersedes": [],
+      "superseded_by": []
     }
   ]
 }

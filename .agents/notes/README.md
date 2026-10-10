@@ -3,6 +3,7 @@
 此目录保存内部调研、方案比较和工程决策的依据，供后续设计与实现查阅。
 笔记区分源码观察、备选方案和实测结果；记录日期和来源，不把候选方案写成已实现契约。
 
+- [Engine 协作设计](design/engine-architecture.md)：FP-0002 的协作模型、策略边界与验收场景。
 - [Engine 架构调研](research/engine-research.md)：编排、判定、归约与重放的参考机制和实现候选。
 - [对比项目与基准规划](research/comparison-projects.md)：外部项目清单、比较边界和实验方法。
 

@@ -35,6 +35,7 @@ just run replay runs/case-<id>   # 重放打印出的案例目录
 | --- | --- |
 | [项目申报书](docs/project-proposal.md) | 产品范围与预期验收目标 |
 | [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 当前提案阶段、设计决定、概念定义及引用规则 |
+| [Engine 设计提案](fps/FP-0002-core-execution-contract.md)与[协作设计](.agents/notes/design/engine-architecture.md) | 职责、策略扩展和待验证的保证 |
 | [项目演进](EVOLUTION.md) | 过去的方向变化与原因 |
 | [长期路线图](ROADMAP.md) | MoonSmith 向 SemaForge 渐进提取的目标、依赖与推进门槛 |
 | [工程笔记](.agents/notes/README.md) | 来源证据、备选机制与实验规划 |
