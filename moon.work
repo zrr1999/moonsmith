@@ -1,0 +1,6 @@
+members = [
+  "./modules/cli",
+  "./modules/contracts",
+  "./modules/core",
+  "./modules/moonbit",
+]

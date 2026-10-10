@@ -1,0 +1,16 @@
+import {
+  "moonbitlang/core/encoding/hex",
+  "zrr1999/moonsmith-contracts" @contracts,
+  "moonbitlang/async",
+  "moonbitlang/async/process",
+  "moonbitlang/async/fs",
+  "moonbitlang/core/env",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
+}
+
+supported_targets = "native"
+
+import {
+  "moonbitlang/core/debug",
+} for "wbtest"

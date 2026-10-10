@@ -1,0 +1,4 @@
+import {
+  "zrr1999/moonsmith-contracts" @contracts,
+  "moonbitlang/core/debug",
+}

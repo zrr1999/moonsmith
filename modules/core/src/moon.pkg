@@ -1,0 +1,7 @@
+import {
+  "zrr1999/moonsmith-contracts" @contracts,
+}
+
+import {
+  "moonbitlang/core/debug",
+} for "wbtest"
