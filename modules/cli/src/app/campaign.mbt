@@ -78,15 +78,29 @@ pub async fn run(
   let mut final_attempt = original
   let mut attempts = 0
   if original.verdict is Finding(fingerprint) {
-    let search = @core.Reducer::new(
-      program,
+    let predicate : @contracts.FailurePredicate = {
+      oracle: "reference",
       fingerprint,
-      limit=reduction_limit,
-      size=p => p.size(),
-      valid=p => p.valid(),
-      candidates=p => p.candidates(),
-    )
-    while search.next() is Some(candidate) {
+    }
+    guard @core.Reducer::new(
+        program,
+        @core.reference_assessment(
+          original.expected,
+          @moon.configurations(),
+          original.observations,
+        ),
+        predicate,
+        id=directory,
+        limit=reduction_limit,
+        size=p => p.size(),
+        valid=p => p.valid(),
+        candidates=p => p.candidates(),
+      )
+      is Ok(search) else {
+      fail("initial reduction evidence is invalid")
+    }
+    while search.next() is Some(request) {
+      let candidate = request.program
       guard candidate.evaluate() is Some(value) else {
         fail("invalid reduction candidate")
       }
@@ -99,7 +113,14 @@ pub async fn run(
         "reduction",
         injected,
       )
-      if search.observe(attempt.verdict) {
+      if search.observe(
+          request.id,
+          @core.reference_assessment(
+            attempt.expected,
+            @moon.configurations(),
+            attempt.observations,
+          ),
+        ) {
         final_attempt = attempt
       }
     }
@@ -118,7 +139,15 @@ pub async fn run(
       "confirmation",
       injected,
     )
-    guard confirmation.verdict == original.verdict else {
+    guard @core.match_failure(
+        predicate,
+        @core.reference_assessment(
+          confirmation.expected,
+          @moon.configurations(),
+          confirmation.observations,
+        ),
+      ) ==
+      Preserved else {
       fail("finding did not reproduce during confirmation")
     }
     final_attempt = confirmation

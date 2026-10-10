@@ -1,70 +1,77 @@
 ///|
-/// Language-owned candidates and validation; the search never sees an AST or host.
+/// The prototype's enumeration strategy, using the shared acceptance engine.
 pub struct Reducer[P] {
-  priv mut best : P
-  priv fingerprint : @contracts.Fingerprint
-  priv limit : Int
-  priv mut tried : Int
-  priv mut pending : P?
+  priv session : ReductionSession[P]
   priv mut queue : Array[P]
   priv mut index : Int
-  priv size : (P) -> Int
-  priv valid : (P) -> Bool
   priv candidates : (P) -> Array[P]
 }
 
 ///|
 pub fn[P] Reducer::new(
   initial : P,
-  fingerprint : @contracts.Fingerprint,
+  evidence : @contracts.Assessment,
+  predicate : @contracts.FailurePredicate,
+  id~ : String,
   limit~ : Int,
   size~ : (P) -> Int,
   valid~ : (P) -> Bool,
   candidates~ : (P) -> Array[P],
-) -> Reducer[P] {
-  {
-    best: initial,
-    fingerprint,
-    limit,
-    tried: 0,
-    pending: None,
-    queue: candidates(initial),
-    index: 0,
-    size,
-    valid,
-    candidates,
+) -> Result[Reducer[P], ReductionStartError] {
+  let session = match
+    ReductionSession::new(
+      initial,
+      evidence,
+      id~,
+      limit~,
+      valid~,
+      accepts=(current, candidate) => size(candidate) < size(current),
+      better=(best, candidate) => size(candidate) < size(best),
+      predicate=assessment => match_failure(predicate, assessment),
+    ) {
+    Ok(session) => session
+    Err(error) => return Err(error)
   }
+  Ok({ session, queue: [], index: 0, candidates, })
 }
 
 ///|
-pub fn[P] Reducer::next(self : Reducer[P]) -> P? {
-  if self.pending is Some(_) {
-    return self.pending
+pub fn[P] Reducer::next(self : Reducer[P]) -> ReductionRequest[P]? {
+  if self.session.pending() is Some(request) {
+    return Some(request)
   }
-  while self.tried < self.limit && self.index < self.queue.length() {
+  if self.session.stop_reason() is Some(_) {
+    return None
+  }
+  if self.session.attempts() == 0 && self.index == 0 {
+    self.queue = (self.candidates)(self.session.current()).copy()
+  }
+  while self.index < self.queue.length() {
     let candidate = self.queue[self.index]
     self.index += 1
-    self.tried += 1
-    if (self.size)(candidate) < (self.size)(self.best) &&
-      (self.valid)(candidate) {
-      self.pending = Some(candidate)
-      return self.pending
+    match self.session.offer(candidate) {
+      Evaluate(request) => return Some(request)
+      Declined(_) => ()
+      Pending => return self.session.pending()
+      Stopped(_) => return None
     }
   }
+  ignore(self.session.finish())
   None
 }
 
 ///|
-/// A timeout, a different failure, or a passing candidate cannot replace the best.
 pub fn[P] Reducer::observe(
   self : Reducer[P],
-  verdict : @contracts.Verdict,
+  id : CandidateId,
+  evidence : @contracts.Assessment,
 ) -> Bool {
-  guard self.pending is Some(candidate) else { return false }
-  self.pending = None
-  if verdict == Finding(self.fingerprint) {
-    self.best = candidate
-    self.queue = (self.candidates)(candidate)
+  if self.session.observe(id, evidence) is Some(Accepted) {
+    self.queue = if self.session.stop_reason() is None {
+      (self.candidates)(self.session.current()).copy()
+    } else {
+      []
+    }
     self.index = 0
     true
   } else {
@@ -74,10 +81,15 @@ pub fn[P] Reducer::observe(
 
 ///|
 pub fn[P] Reducer::result(self : Reducer[P]) -> P {
-  self.best
+  self.session.result()
 }
 
 ///|
 pub fn[P] Reducer::attempts(self : Reducer[P]) -> Int {
-  self.tried
+  self.session.attempts()
+}
+
+///|
+pub fn[P] Reducer::stop_reason(self : Reducer[P]) -> ReductionStop? {
+  self.session.stop_reason()
 }
