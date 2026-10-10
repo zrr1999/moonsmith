@@ -5,7 +5,7 @@ default:
 
 # Install Git hooks
 install:
-    uvx prek install --prepare-hooks --hook-type pre-commit --hook-type commit-msg
+    uvx prek install --prepare-hooks
 
 # Initialize or refresh the MoonBit package registry index
 deps:
