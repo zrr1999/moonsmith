@@ -93,7 +93,7 @@ Core 无需引入 LibAFL、Fuzzilli、Perses 或其他运行时；本轮也没�
 
 ## 5 版本与证据边界
 
-上述七个 GitHub 项目的链接固定到本轮读取的提交，已读取关键文件内容；Csmith、EMI 使用作者论文或
+GitHub 源码链接固定到本轮读取的提交，已读取关键文件内容；Csmith、EMI 使用作者论文或
 项目页；Hypothesis 使用当日在线文档。未执行其测试，不能据此确认它们在当前本机可安装或具有某种性能。
 
 本地 MoonBit 核查环境为 macOS arm64，`moon 0.1.20260920 (914d7da)`；安装目录的标准库 manifest
@@ -125,7 +125,7 @@ Core 无需引入 LibAFL、Fuzzilli、Perses 或其他运行时；本轮也没�
 | [Perses 列表接口](https://github.com/uw-pluverse/perses/blob/bb7bc6521bebff54729d54eaac22b5b046bede96/src/org/perses/listminimizer/ListMinimizerArguments.kt) | 列表算法获得元素、性质检查、进展回调及权重等信息 | 局部搜索可以独立于外层程序归约；具体 API 不必照搬 |
 | [ProbDD](https://xiongyingfei.github.io/papers/FSE21a.pdf)、[CDD](https://cs.uwaterloo.ca/~cnsun/public/publication/icse25_cdd/icse25_cdd.pdf) | 利用历史反馈安排删除尝试；CDD 简化概率机制，减少重访也可能失去 1-minimality 保证 | 策略需要自身状态与反馈，停止保证要独立表达，不能由接口统一许诺最小性 |
 | [WDD](https://arxiv.org/html/2411.19410v1)、[实现](https://github.com/uw-pluverse/perses/blob/bb7bc6521bebff54729d54eaac22b5b046bede96/src/org/perses/listminimizer/WeightedDeltaDebugger.kt) | 按元素权重而非仅按数量组织分组 | 度量信息可以按策略需求提供，不应被某一种分组算法固定 |
-| [Fuzzilli 调度](https://github.com/googleprojectzero/fuzzilli/blob/a9d7aff02d8b8d97c8fd8089aea894d24bc11f1e/Sources/Fuzzilli/Minimization/Minimizer.swift)、[Hypothesis 内部说明](https://github.com/HypothesisWorks/hypothesis/blob/master/guides/internals.rst) | 多个 pass 组合运行；前一改写会改变后一操作的机会，调度还可区分成本 | 操作调度与局部搜索是两个独立替换点，候选上下文和反馈不能丢失 |
+| [Fuzzilli 调度](https://github.com/googleprojectzero/fuzzilli/blob/a9d7aff02d8b8d97c8fd8089aea894d24bc11f1e/Sources/Fuzzilli/Minimization/Minimizer.swift)、[Hypothesis 内部说明](https://github.com/HypothesisWorks/hypothesis/blob/1484f6dd4c0a220f68e2698afed29e2a16a3f654/guides/internals.rst) | 多个 pass 组合运行；前一改写会改变后一操作的机会，调度还可区分成本 | 操作调度与局部搜索是两个独立替换点，候选上下文和反馈不能丢失 |
 | [GReduce](https://arxiv.org/html/2402.04623v1) | 缩减生成器执行轨迹，再通过对齐执行构造输入 | 候选表示并不只有 AST；参考机制不意味着本项目需要实现轨迹归约 |
 | [C-Reduce](https://users.cs.utah.edu/~regehr/papers/pldi12-preprint.pdf)、[Vulcan](https://researchmgt.monash.edu/ws/portalfiles/portal/716513714/716367322-oa.pdf) | 一些改写不立即减小程序，却可能开启后续缩减机会 | 搜索状态与最佳结果、搜索方法与接受规则需要区分；非单调探索须有单独的约束 |
 
