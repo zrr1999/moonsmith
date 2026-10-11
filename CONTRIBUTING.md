@@ -18,6 +18,7 @@
 | `just check` | 仓库只读门禁，运行 `prek --all-files` |
 | `just build` | 构建 workspace 全部模块及 native 可执行入口 |
 | `just test` | 运行单元测试及真实 MoonBit 工具链集成测试 |
+| `just test-workspace` | 在临时副本验证架构门禁、成员传播、版本同步和独立打包；已包含在 `just test` 中 |
 | `just run` | 生成一个案例，执行三种编译配置并保存结果 |
 
 新增文件需纳入 Git 索引后才能被 `--all-files` 检查。尚不准备暂存内容时可使用
@@ -68,6 +69,11 @@ zizmor 使用离线模式，JSON Schema 检查使用工具内置的 schema。Git
 依赖 `moon fmt` 规范化的格式；新增模块、包或依赖时同步核对规则。
 `just check` 和 CI 都通过 prek 执行 alint，单独运行可用
 `uvx prek run alint --all-files`。各包的行为测试放在相应包内，优先通过公共接口测试。
+
+`just test-workspace` 使用固定版本 alint 和标准库 Python 脚本创建临时副本，验证缺失整个模块
+或包、反向导入及纯计算 I/O 导入会被拒绝；修改提供方后重新运行消费方测试，验证本地成员
+传播；调整一个成员版本并验证依赖同步，最后检查四个独立压缩包的内容。检查不会改写工作区
+版本、源码或依赖声明。本地和 CI 的 `just test` 都执行这组验证。
 
 ## 原型执行契约
 

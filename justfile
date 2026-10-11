@@ -28,6 +28,10 @@ build:
 run *args="run":
     moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- {{ args }}
 
-# Run tests
-test:
+# Verify workspace isolation, boundaries, version sync and packaging in temporary copies
+test-workspace:
+    uv run --with alint==0.17.0 python scripts/check_workspace.py
+
+# Run architectural and behavior tests
+test: test-workspace
     moon test --target native

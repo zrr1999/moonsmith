@@ -9,3 +9,6 @@
 `host` 封装进程和文件系统，`toolchains/moon` 定义编译矩阵，`artifacts` 维护原案例与
 追加记录，`report` 只渲染传入数据，`app` 协调执行。支持 macOS 与 Linux native 宿主，
 详细预算、退出码及原型边界见根目录贡献指南。
+
+`cmd/moonsmith` 拥有参数解析、帮助信息、终端输出及退出码；`app.run` 与 `app.replay`
+提供不依赖命令行参数的应用入口。CLI 只调用 app 和 Host，具体语言与工具链在 app 装配。
