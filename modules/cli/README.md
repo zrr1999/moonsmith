@@ -12,3 +12,8 @@
 
 `cmd/moonsmith` 拥有参数解析、帮助信息、终端输出及退出码；`app.run` 与 `app.replay`
 提供不依赖命令行参数的应用入口。CLI 只调用 app 和 Host，具体语言与工具链在 app 装配。
+
+`toolchains/moon.observe` 可通过 `build_timeout_ms` 与 `run_timeout_ms` 分别覆盖每次编译和
+执行的超时，默认值为 30000 与 2000 毫秒，允许范围均为 `1..600000`。无效值在执行前拒绝，
+实际值写入各观察的 `Command`；超时保留为 `TimedOut`，不作为差分结果值。
+当前命令行仍使用默认超时，这两个参数的 CLI 接入尚待完成。

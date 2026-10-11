@@ -38,7 +38,15 @@ pub async fn prepare(directory : String, source : String) -> Unit {
 pub async fn observe(
   directory : String,
   inject? : Bool = false,
+  build_timeout_ms? : Int = 30000,
+  run_timeout_ms? : Int = 2000,
 ) -> Array[@contracts.Observation] {
+  guard build_timeout_ms >= 1 && build_timeout_ms <= 600000 else {
+    fail("build timeout must be between 1 and 600000 milliseconds")
+  }
+  guard run_timeout_ms >= 1 && run_timeout_ms <= 600000 else {
+    fail("run timeout must be between 1 and 600000 milliseconds")
+  }
   let observations : Array[@contracts.Observation] = []
   for configuration in configurations() {
     let target = if configuration == "wasm-gc-debug" {
@@ -55,7 +63,7 @@ pub async fn observe(
       "moon",
       ["build", "--target", target, "--\{mode}"],
       directory,
-      30000,
+      build_timeout_ms,
     )
     let output = @host.execute(build)
     observations.push({
@@ -71,9 +79,9 @@ pub async fn observe(
     // The generated root package has a fixed name; each attempt has a fresh build directory.
     let artifact = "\{directory}/_build/\{target}/\{mode}/build/generated"
     let run = if target == "native" {
-      command("\{artifact}.exe", [], directory, 2000)
+      command("\{artifact}.exe", [], directory, run_timeout_ms)
     } else {
-      command("moonrun", ["\{artifact}.wasm"], directory, 2000)
+      command("moonrun", ["\{artifact}.wasm"], directory, run_timeout_ms)
     }
     let output = @host.execute(run)
     let injected_stdout = if inject &&

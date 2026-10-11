@@ -65,7 +65,11 @@ async test "checked structures execute with known results and direct differentia
     let program = template.finish()
     let directory = @host.new_directory("\{base}/case-")
     @moon.prepare(directory, program.emit())
-    let observations = @moon.observe(directory)
+    let observations = @moon.observe(
+      directory,
+      build_timeout_ms=45000,
+      run_timeout_ms=5000,
+    )
     @debug.assert_eq(
       observations.length(),
       6,
@@ -77,6 +81,14 @@ async test "checked structures execute with known results and direct differentia
         @contracts.Exited(0),
         msg=@debug.to_string(observation),
       )
+      @debug.assert_eq(
+        observation.command.timeout_ms,
+        if observation.phase == Build {
+          45000
+        } else {
+          5000
+        },
+      )
       if observation.phase == Execute {
         @debug.assert_eq(observation.output.stdout, expected)
       }
@@ -84,9 +96,41 @@ async test "checked structures execute with known results and direct differentia
     // The hand-derived expectations above check rendering; the oracle gets no reference value.
     @debug.assert_eq(
       @engine.compare(@moon.configurations(), observations, normalize=value => {
-        Some(value)
+        program.result_type().normalize_output(value)
       }),
       @contracts.Consistent,
+    )
+    let injected = observations.copy()
+    injected[3] = {
+      ..injected[3],
+      injected_stdout: Some(
+        if program.result_type() == @moonbit.Ty::Int {
+          "0\n"
+        } else {
+          "true\n"
+        },
+      ),
+    }
+    @debug.assert_eq(
+      @engine.compare(@moon.configurations(), injected, normalize=value => {
+        program.result_type().normalize_output(value)
+      }),
+      @contracts.Difference("native-debug", "native-release"),
+    )
+    @debug.assert_eq(injected[3].output.stdout, expected)
+    // Equal malformed outputs cannot become a successful comparison.
+    let malformed = observations.map(observation => {
+      if observation.phase == Execute {
+        { ..observation, injected_stdout: Some("diagnostic\n"), }
+      } else {
+        observation
+      }
+    })
+    @debug.assert_eq(
+      @engine.compare(@moon.configurations(), malformed, normalize=value => {
+        program.result_type().normalize_output(value)
+      }),
+      @contracts.Incomplete,
     )
   }
 }
@@ -103,6 +147,7 @@ async test "compiler rejection retains diagnostics and is an incomplete differen
   @debug.assert_eq(observations.length(), @moon.configurations().length())
   for observation in observations {
     @debug.assert_eq(observation.phase, @contracts.Build)
+    @debug.assert_eq(observation.command.timeout_ms, 30000)
     assert_true(observation.output.status is Exited(code) && code != 0)
     assert_false(observation.output.stderr.is_empty())
     assert_true(observation.injected_stdout is None)
@@ -113,4 +158,58 @@ async test "compiler rejection retains diagnostics and is an incomplete differen
     }),
     @contracts.Incomplete,
   )
+}
+
+///|
+async test "execution timeout is recorded and cannot become a differential result" {
+  @host.mkdir("runs")
+  let directory = @host.new_directory("runs/execution-timeout-")
+  defer @host.remove_tree(directory)
+  // A deliberately nonterminating fixture tests the runner, outside the generated subset.
+  @moon.prepare(directory, "fn main { while true { () } }\n")
+  let observations = @moon.observe(directory, run_timeout_ms=200)
+  @debug.assert_eq(observations.length(), 6, msg=@debug.to_string(observations))
+  for observation in observations {
+    if observation.phase == Build {
+      @debug.assert_eq(observation.output.status, @contracts.Exited(0))
+      @debug.assert_eq(observation.command.timeout_ms, 30000)
+    } else {
+      @debug.assert_eq(observation.output.status, @contracts.TimedOut)
+      @debug.assert_eq(observation.command.timeout_ms, 200)
+      assert_true(observation.injected_stdout is None)
+    }
+  }
+  @debug.assert_eq(
+    @engine.compare(@moon.configurations(), observations, normalize=value => {
+      Some(value)
+    }),
+    @contracts.Incomplete,
+  )
+}
+
+///|
+async test "invalid execution budgets are rejected before any compiler command" {
+  for invalid in [-1, 0, 600001] {
+    for build in [true, false] {
+      let error = try {
+        ignore(
+          @moon.observe(
+            "moonsmith-directory-that-does-not-exist",
+            build_timeout_ms=if build { invalid } else { 30000 },
+            run_timeout_ms=if build { 2000 } else { invalid },
+          ),
+        )
+        None
+      } catch {
+        error => Some(error.to_string())
+      }
+      let phase = if build { "build" } else { "run" }
+      assert_true(
+        error is Some(message) &&
+        message.contains(
+          "\{phase} timeout must be between 1 and 600000 milliseconds",
+        ),
+      )
+    }
+  }
 }
