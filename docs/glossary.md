@@ -17,3 +17,12 @@
 | 应用装配层 | application layer | [FP-0001](../fps/FP-0001-workspace-modules.md#term-application-layer) |
 | 宿主环境访问层 | Host | [FP-0001](../fps/FP-0001-workspace-modules.md#term-host) |
 | 共享契约 | shared contracts | [FP-0001](../fps/FP-0001-workspace-modules.md#term-shared-contracts) |
+
+## MoonBit 程序与语义
+
+| 术语 | 英文 | 定义来源 |
+| --- | --- | --- |
+| MoonBit 程序 | MoonBit program | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-moonbit-program) |
+| 程序模板 | program template | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-program-template) |
+| 静态合法性 | well-formedness | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-program-well-formedness) |
+| 观察协议 | observation protocol | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-observation-protocol) |
