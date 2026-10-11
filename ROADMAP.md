@@ -19,7 +19,7 @@ MoonSmith 面向 MoonBit 提供程序生成、编译器测试和失败案例处�
 | 已有原型 | 参考结果与多配置执行 | 参考求值，native debug、native release、wasm-gc debug 三配置执行与校验；见[原型执行契约](CONTRIBUTING.md#原型执行契约) |
 | 已有原型 | 基础归约、存储与重放 | 有预算的归约、原始案例保留及追加式执行记录；见 [Engine](modules/engine/README.md) 与 [CLI](modules/cli/README.md) |
 | 设计中 | 模板生成与差分测试最小闭环 | 规则组合模板、受约束补全、独立于参考值的差分比较、CLI 预算与存证；见 [FP-0002](fps/FP-0002-moonbit-semantic-contract.md) |
-| 设计中 | MoonSmith 命令行工作流 | 单独讨论命令组织、预算参数、结果呈现与旧入口迁移；见 [FP-0003](fps/FP-0003-cli-workflows.md) |
+| 设计中 | MoonSmith 命令行工作流 | 已选择完整流程优先，继续讨论任务规模、预算参数、结果呈现与旧入口迁移；见 [FP-0003](fps/FP-0003-cli-workflows.md) |
 | 下一步 | 实现并验证首轮闭环 | 用绑定、分支和函数调用的组合案例取得真实执行证据，验证默认预算与 CLI 覆盖，以及保存后再次执行 |
 
 下面的勾选项表示已有的具体能力，未勾选项表示尚待完成的目标。清单顺序不构成完整排期，
@@ -139,6 +139,10 @@ Rust 在通用产品出现前使用库和实验入口，平台库不反向依赖
 
 双语言闭环、可复现的 Rust benchmark 和实际通用 CLI 需求共同触发产品化。
 MoonSmith 保留 MoonBit 专用体验，两个产品复用同一应用层，避免复制编排、执行与存储流程。
+
+按 [FP-0003](fps/FP-0003-cli-workflows.md#按产品阶段安排工作流)确认的安排，MoonSmith 阶段
+以一次完成测试流程为主要入口，完整 SemaForge 阶段再提供可独立组合的阶段命令。
+第二阶段的公共库提取不提前触发产品工作流切换，阶段交接协议与具体命令在通用产品设计时确定。
 
 - [ ] 共享应用层：将已经验证的应用逻辑迁入 SemaForge 产品模块，连接 Engine、语言适配器和宿主能力。
 - [ ] 通用 CLI：提供 `semaforge`，保留 `moonsmith` 专用入口；不增加 `sema` 别名。
