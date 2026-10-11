@@ -40,7 +40,7 @@ async test "generated differential cases execute without a reference and replay 
       { max_nodes: 40, max_depth: 4, max_attempts: 100, }
     }
     let run = run_differential(
-      seed,
+      seed~,
       base~,
       limits~,
       build_timeout_ms=45000,
@@ -252,7 +252,7 @@ async test "generation exhaustion reports the seed without creating a partial ca
   defer @host.remove_tree(base)
   let message = try {
     ignore(
-      run_differential(123, base~, limits={
+      run_differential(seed=123, base~, limits={
         max_nodes: 1,
         max_depth: 0,
         max_attempts: 1,
@@ -265,4 +265,49 @@ async test "generation exhaustion reports the seed without creating a partial ca
   assert_true(message.contains("seed 123"))
   assert_true(message.contains("AttemptsExhausted"))
   @debug.assert_eq(@fs.readdir(base).length(), 0)
+}
+
+///|
+test "explicit seeds take precedence without consulting automatic entropy" {
+  for seed in [-2147483648, 0, 2147483647] {
+    @debug.assert_eq(
+      choose_seed(Some(seed), () => fail("entropy must not be consulted")),
+      seed,
+    )
+  }
+  let mut selections = 0
+  let seed = choose_seed(None, () => {
+    selections += 1
+    -12345
+  })
+  @debug.assert_eq(seed, -12345)
+  @debug.assert_eq(selections, 1)
+  let rejected = try {
+    ignore(choose_seed(None, () => fail("entropy unavailable")))
+    false
+  } catch {
+    error => error.to_string().contains("entropy unavailable")
+  }
+  assert_true(rejected)
+}
+
+///|
+async test "an automatic seed is saved and explicitly reproduces the generated source" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/automatic-seed-")
+  defer @host.remove_tree(base)
+  let automatic = run_differential(base~)
+  let saved = @artifacts.load_differential(automatic.directory)
+  @debug.assert_eq(saved.generation.seed, automatic.case.generation.seed)
+  @debug.assert_eq(
+    automatic.attempt.comparison,
+    @contracts.Consistent,
+    msg=@debug.to_string(automatic.attempt),
+  )
+  let explicit = run_differential(seed=saved.generation.seed, base~)
+  @debug.assert_eq(explicit.case.source, saved.source)
+  @debug.assert_eq(explicit.case.generation, saved.generation)
+  @debug.assert_eq(explicit.attempt.comparison, @contracts.Consistent)
+  assert_true(explicit.directory != automatic.directory)
+  @debug.assert_eq(@fs.readdir(base).length(), 2)
 }

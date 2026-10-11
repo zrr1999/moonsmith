@@ -6,6 +6,14 @@ pub struct DifferentialRun {
 }
 
 ///|
+fn choose_seed(seed : Int?, automatic : () -> Int raise) -> Int raise {
+  match seed {
+    Some(value) => value
+    None => automatic()
+  }
+}
+
+///|
 async fn execute_differential(
   directory : String,
   case : @contracts.DifferentialCase,
@@ -75,7 +83,7 @@ async fn execute_differential(
 
 ///|
 pub async fn run_differential(
-  seed : Int,
+  seed? : Int,
   base? : String = "runs",
   limits? : @moonbit.GenerationLimits = @moonbit.GenerationLimits::default(),
   build_timeout_ms? : Int = 30000,
@@ -83,6 +91,8 @@ pub async fn run_differential(
   injected? : Bool = false,
 ) -> DifferentialRun {
   @moon.validate_timeouts(build_timeout_ms, run_timeout_ms)
+  limits.validate()
+  let seed = choose_seed(seed, @host.random_seed)
   let generated = @moonbit.synthesize(seed, limits~) catch {
     error =>
       fail("generation failed for seed \{seed} (template-rules-v1): \{error}")
