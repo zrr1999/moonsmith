@@ -57,6 +57,20 @@
       ],
       "supersedes": [],
       "superseded_by": []
+    },
+    {
+      "fp": 3,
+      "path": "fps/FP-0003-cli-workflows.md",
+      "title": "MoonSmith 命令行工作流与兼容约定",
+      "type": "Feature",
+      "status": "Draft",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-10-11",
+      "defines": [],
+      "supersedes": [],
+      "superseded_by": []
     }
   ]
 }
