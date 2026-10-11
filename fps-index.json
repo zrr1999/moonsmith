@@ -42,7 +42,7 @@
     {
       "fp": 2,
       "path": "fps/FP-0002-moonbit-semantic-contract.md",
-      "title": "MoonBit 程序模型与语义契约",
+      "title": "MoonBit 模板生成与差分测试",
       "type": "Feature",
       "status": "Draft",
       "authors": [
@@ -50,15 +50,10 @@
       ],
       "created": "2026-10-10",
       "defines": [
-        "semantic-profile",
         "moonbit-program",
+        "program-template",
         "program-well-formedness",
-        "profile-admission",
-        "reference-evaluation",
-        "observation-protocol",
-        "structural-feature",
-        "semantics-preserving-transformation",
-        "reduction-candidate"
+        "observation-protocol"
       ],
       "supersedes": [],
       "superseded_by": []
