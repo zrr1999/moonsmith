@@ -29,6 +29,11 @@ just run replay runs/case-<id>   # 重放打印出的案例目录
 原型覆盖确定性的整数、布尔和分支子集，比较 native debug、native release、wasm-gc。
 源码、执行记录和报告保存在 `runs/`；`demo` 不代表发现编译器缺陷。
 
+新的 [FP-0002](fps/FP-0002-moonbit-semantic-contract.md) 库路径已支持自动组合绑定、分支和
+函数调用模板、按规则补全、无参考值的差分执行，以及保存材料重执行。具体入口见
+[MoonBit](modules/moonbit/README.md) 与 [CLI 应用层](modules/cli/README.md)；当前命令行仍
+连接上面的参考原型，产品接口切换单独推进。
+
 ## 文档导航
 
 | 文档 | 内容 |

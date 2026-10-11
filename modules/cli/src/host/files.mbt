@@ -42,4 +42,25 @@ pub fn current_directory() -> String {
 }
 
 ///|
+pub fn random_seed() -> Int raise {
+  guard @env.rand(4) is Some(bytes) else { fail("system entropy unavailable") }
+  bytes[0].to_int() |
+  (bytes[1].to_int() << 8) |
+  (bytes[2].to_int() << 16) |
+  (bytes[3].to_int() << 24)
+}
+
+///|
+pub async fn platform() -> @contracts.ProcessEvidence {
+  let command : @contracts.Command = {
+    program: "uname",
+    args: ["-srm"],
+    cwd: current_directory(),
+    timeout_ms: 10000,
+    output_limit: 65536,
+  }
+  { command, output: execute(command), }
+}
+
+///|
 pub extern "c" fn exit(code : Int) = "exit"

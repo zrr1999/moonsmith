@@ -42,7 +42,7 @@ pub(all) struct Template {
 
 ///|
 /// A private snapshot prevents mutable template arrays from invalidating the check.
-/// Structural validity does not certify numeric-profile admission or execution results.
+/// Structural validity does not certify compiler acceptance or execution results.
 pub struct CompleteProgram {
   priv syntax : Template
   priv result_ty : Ty

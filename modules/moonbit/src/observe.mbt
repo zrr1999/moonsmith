@@ -20,3 +20,20 @@ pub fn Ty::normalize_output(self : Ty, stdout : String) -> String? {
     }
   }
 }
+
+///|
+pub fn Ty::result_protocol(self : Ty) -> String {
+  match self {
+    Int => "moonbit-int32-line-v1"
+    Bool => "moonbit-bool-line-v1"
+  }
+}
+
+///|
+pub fn parse_result_protocol(protocol : String) -> Ty? {
+  match protocol {
+    "moonbit-int32-line-v1" => Some(Int)
+    "moonbit-bool-line-v1" => Some(Bool)
+    _ => None
+  }
+}
