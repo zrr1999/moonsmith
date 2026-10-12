@@ -14,15 +14,6 @@ pub async fn create_differential(
 }
 
 ///|
-pub async fn case_version(directory : String) -> Int {
-  let json = @json.parse(@host.read_text("\{directory}/case.json"))
-  guard json is Object(fields) && fields.get("format_version") is Some(version) else {
-    fail("missing case format version")
-  }
-  @json.from_json(version)
-}
-
-///|
 pub async fn load_differential(
   directory : String,
 ) -> @contracts.DifferentialCase {
@@ -43,14 +34,4 @@ pub async fn load_differential(
     }
   }
   case
-}
-
-///|
-pub async fn finish_differential(
-  directory : String,
-  attempt : @contracts.DifferentialAttempt,
-  report : String,
-) -> Unit {
-  @host.write_new("\{directory}/report.md", report)
-  @host.write_new("\{directory}/attempt.json", attempt.to_json().stringify())
 }

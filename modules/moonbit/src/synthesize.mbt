@@ -303,7 +303,6 @@ pub fn synthesize(
   limits.validate()
   let state = Construction::new(seed, limits)
   let template = state.compose_template()
-  ignore(template.check())
   let program = state.complete(template)
   { program, construction_attempts: state.attempts, }
 }

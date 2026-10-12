@@ -73,7 +73,7 @@ async fn execute_differential(
     observations,
     comparison,
   }
-  @artifacts.finish_differential(
+  @artifacts.finish_attempt(
     attempt_directory,
     attempt,
     @report.render_differential(attempt),

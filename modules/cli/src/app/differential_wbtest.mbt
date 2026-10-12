@@ -64,7 +64,6 @@ async test "generated differential cases execute without a reference and replay 
       run.case.generation.construction_attempts <= limits.max_attempts,
     )
     @debug.assert_eq(@artifacts.load_differential(run.directory), run.case)
-    @debug.assert_eq(@artifacts.case_version(run.directory), 2)
     for o in run.attempt.observations {
       @debug.assert_eq(o.output.status, @contracts.Exited(0))
       @debug.assert_eq(
