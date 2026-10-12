@@ -13,7 +13,8 @@ Feature = "templates/fp.md"
 Governance = "templates/fp.md"
 
 [graph]
-fields = ["supersedes"]
+fields = ["requires", "supersedes"]
+requires_field = "requires"
 
 [defines]
 field = "defines"
@@ -32,6 +33,7 @@ fields = [
   "authors",
   "created",
   "defines",
+  "requires",
   "supersedes",
   { name = "superseded_by", source = "inverse", key = "supersedes" },
 ]

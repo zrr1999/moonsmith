@@ -14,6 +14,7 @@
       "defines": [
         "feature-proposal"
       ],
+      "requires": [],
       "supersedes": [],
       "superseded_by": []
     },
@@ -36,6 +37,7 @@
         "host",
         "shared-contracts"
       ],
+      "requires": [],
       "supersedes": [],
       "superseded_by": []
     },
@@ -54,6 +56,28 @@
         "program-template",
         "program-well-formedness",
         "observation-protocol"
+      ],
+      "requires": [
+        0,
+        1
+      ],
+      "supersedes": [],
+      "superseded_by": []
+    },
+    {
+      "fp": 3,
+      "path": "fps/FP-0003-cli-workflows.md",
+      "title": "MoonSmith 命令行工作流与兼容约定",
+      "type": "Feature",
+      "status": "Draft",
+      "authors": [
+        "zrr1999"
+      ],
+      "created": "2026-10-11",
+      "defines": [],
+      "requires": [
+        1,
+        2
       ],
       "supersedes": [],
       "superseded_by": []
