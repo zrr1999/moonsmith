@@ -7,6 +7,7 @@ authors:
   - "zrr1999"
 created: 2026-10-11
 defines: []
+requires: ["FP-0001", "FP-0002"]
 supersedes: []
 ---
 

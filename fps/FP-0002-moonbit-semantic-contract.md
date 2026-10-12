@@ -11,6 +11,7 @@ defines:
   - program-template
   - program-well-formedness
   - observation-protocol
+requires: ["FP-0000", "FP-0001"]
 supersedes: []
 ---
 

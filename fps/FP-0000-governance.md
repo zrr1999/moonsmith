@@ -8,6 +8,7 @@ authors:
 created: 2026-10-09
 defines:
   - feature-proposal
+requires: []
 supersedes: []
 ---
 
@@ -54,7 +55,8 @@ MoonSmith 使用 Feature Proposal（FP）保存影响重大的功能与治理设
 已合入的编号不删除或复用。正文使用[模板](../templates/fp.md)，默认中文，保留英文
 技术标识。`Feature` 描述功能设计，`Governance` 描述协作规则。
 
-frontmatter 只包含 `fp`、`title`、`type`、`status`、`authors`、`created`、`defines`、`supersedes`。
+frontmatter 只包含 `fp`、`title`、`type`、`status`、`authors`、`created`、`defines`、`requires`
+和 `supersedes`。
 作者填写对内容负责的人的小写 GitHub 用户名，不带 `@`；schema 只检查离线格式。
 编号、标题与 H1 必须一致。具体操作见[提案入口](README.md)。
 
@@ -66,6 +68,14 @@ frontmatter 只包含 `fp`、`title`、`type`、`status`、`authors`、`created`
 未合入的候选保留在关闭的 PR 中。提案不维护审批人或实现进度字段。
 
 ### 提案时序与依赖
+
+`requires` 是必填的直接依赖列表，使用规范编号字符串；没有依赖时填写 `[]`。
+依赖对象必须是仓库中已有的 FP，不得重复、指向自身或指向后续编号。
+
+正文引用本仓库其他 FP 前，必须在 `requires` 中显式声明该提案。规则适用于提案链接、
+术语定义链接及正文中的编号引用；传递依赖不自动授予引用权限，引用间接依赖时也要单独列出。
+引用自身和外部项目的参考资料不属于跨 FP 依赖。`supersedes` 只记录替代关系，不能代替
+`requires` 声明；正文引用被替代的提案时也必须列入依赖。
 
 FP 按编号时序建立设计依赖：一份提案只能依赖编号更小的前序提案，不能反向依赖后续提案，
 也不能形成循环。术语定义、设计前提、兼容性和验收条件均遵守此规则；修订已有 FP 时同样适用。
@@ -142,11 +152,16 @@ Draft、Ready 或合并操作自动变化；`Proposed` 也不代表设计已被�
 引入状态字段时，现有 FP 显式补记为 `Draft`，不从已有文本或代码推断评审结果；后续
 按上述规则提交讨论。模板默认 `Draft`，缺少或填写其他状态时检查失败。
 
+引入 `requires` 时，为现有 FP 补齐实际直接依赖，无依赖者显式填写空数组，并重新生成索引。
+新增字段不改变提案状态，也不自动把间接依赖补成直接依赖。
+
 ## 验证
 
-`proposal.toml` 配置固定版本 ZenDev 的元数据、状态取值、文件名、模板章节、替代关系、术语定义和
-确定性索引检查。schema 约束 `defines` 的格式与列表内唯一性；ZenDev 检查声明与锚点对应及
-跨提案的定义归属；lychee 检查本地文档链接及目标锚点。`just check` 与 CI 共用这些门禁；更新提案后用
+`proposal.toml` 配置固定版本 ZenDev 的元数据、状态取值、文件名、模板章节、依赖与替代关系、
+术语定义和确定性索引检查。schema 要求 `requires` 存在并约束编号格式与唯一性；ZenDev
+拒绝缺失依赖目标、自依赖和依赖循环，检查术语声明与锚点对应及跨提案的定义归属。
+正文引用与直接依赖声明的一致性、依赖编号时序目前由编写和评审核对，现用检查器尚未覆盖。
+lychee 检查本地文档链接及目标锚点。`just check` 与 CI 共用这些门禁；更新提案后用
 `zendev proposal check --fix` 生成 `fps-index.json`。
 
 检查通过说明文档结构与索引一致，不能证明设计已被采纳、实现正确或实验完成。

@@ -14,11 +14,12 @@ FP 保存 MoonSmith 影响重大的功能与治理设计。先读 [FP-0000](FP-0
 2. 同步填写文件名、整数 `fp`、不带编号的 `title` 和 `# FP-NNNN: 标题`。
    `type` 为 `Feature` 或 `Governance`；`status` 初始为 `Draft`；
    `authors` 为实际作者的小写 GitHub 用户名；
-   `created` 为创建日期。替代旧提案时填写 `supersedes: ["FP-NNNN"]`，否则保留空数组。
+   `created` 为创建日期。`requires` 列出直接依赖，例如 `["FP-0000"]`，无依赖时填写 `[]`。
+   替代旧提案时填写 `supersedes: ["FP-NNNN"]`，否则保留空数组；替代关系不代替依赖声明。
 3. 写清摘要、动机、设计、兼容性和验证。先查[术语索引](../docs/glossary.md)，复用已有定义；
    新概念在 `defines` 中登记，并按[定义规则](FP-0000-governance.md#术语定义与引用)添加锚点、更新导航。
-   按[时序规则](FP-0000-governance.md#提案时序与依赖)只依赖前序 FP；后续设计由后续提案回引，
-   不向早期提案添加对后续提案的依赖。
+   按[依赖规则](FP-0000-governance.md#提案时序与依赖)先在 `requires` 声明，才可引用前序 FP；
+   正文引用间接依赖时也须单独声明。不向早期提案添加对后续提案的依赖。
    没有新定义时保留 `defines: []`。准备好提交讨论时将 `status` 改为 `Proposed`；
    草稿和状态变更都需要更新索引并检查改动：
 
@@ -45,7 +46,7 @@ FP 保存 MoonSmith 影响重大的功能与治理设计。先读 [FP-0000](FP-0
 合并提案只保存设计文本，不表示已经采纳、排期或实现；讨论和决策由 Git 与关联 PR 保留。
 
 [fps-index.json](../fps-index.json)由 frontmatter 确定性生成，包含两种状态的所有 FP、
-`status`、替代关系和 `defines`，不手工维护。
+`status`、直接依赖 `requires`、替代关系和 `defines`，不手工维护。
 `just check` 和 CI 通过同一个 ZenDev hook 检查元数据、文件名、章节、关系、定义归属与索引，
 通过 lychee 检查文档链接及目标锚点。
 `status` 表示提案当前阶段；[EVOLUTION.md](../EVOLUTION.md)记录过去的方向变化，

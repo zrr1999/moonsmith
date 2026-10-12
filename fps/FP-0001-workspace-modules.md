@@ -14,6 +14,7 @@ defines:
   - application-layer
   - host
   - shared-contracts
+requires: []
 supersedes: []
 ---
 

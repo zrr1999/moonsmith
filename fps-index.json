@@ -14,6 +14,7 @@
       "defines": [
         "feature-proposal"
       ],
+      "requires": [],
       "supersedes": [],
       "superseded_by": []
     },
@@ -36,6 +37,7 @@
         "host",
         "shared-contracts"
       ],
+      "requires": [],
       "supersedes": [],
       "superseded_by": []
     },
@@ -55,6 +57,10 @@
         "program-well-formedness",
         "observation-protocol"
       ],
+      "requires": [
+        0,
+        1
+      ],
       "supersedes": [],
       "superseded_by": []
     },
@@ -69,6 +75,10 @@
       ],
       "created": "2026-10-11",
       "defines": [],
+      "requires": [
+        1,
+        2
+      ],
       "supersedes": [],
       "superseded_by": []
     }
