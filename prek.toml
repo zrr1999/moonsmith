@@ -100,20 +100,32 @@ hooks = [
 
 [[repos]]
 repo = "local"
-hooks = [
-  {
-    id = "zendev-proposal-check",
-    name = "ZenDev proposal check",
-    entry = "zendev-proposal check",
-    language = "python",
-    pass_filenames = false,
-    always_run = true,
-    stages = ["pre-commit"],
-    additional_dependencies = [
-      "zendev-proposal @ git+https://github.com/zendev-lab/zendev@2476bb9953ac71835ec3b27e602ef8d275596c86#subdirectory=packages/zendev-proposal",
-      "zendev-core @ git+https://github.com/zendev-lab/zendev@2476bb9953ac71835ec3b27e602ef8d275596c86#subdirectory=packages/zendev-core",
-    ],
-  },
-  { id = "moon-fmt", name = "MoonBit format", entry = "moon fmt --check", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
-  { id = "moon-check", name = "MoonBit type check", entry = "moon check --target native --deny-warn", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
+
+[[repos.hooks]]
+id = "zendev-proposal-check"
+name = "ZenDev proposal check"
+entry = "zendev-proposal check"
+language = "python"
+pass_filenames = false
+always_run = true
+stages = ["pre-commit"]
+additional_dependencies = [
+  "zendev-proposal @ git+https://github.com/zendev-lab/zendev@2476bb9953ac71835ec3b27e602ef8d275596c86#subdirectory=packages/zendev-proposal",
+  "zendev-core @ git+https://github.com/zendev-lab/zendev@2476bb9953ac71835ec3b27e602ef8d275596c86#subdirectory=packages/zendev-core",
 ]
+
+[[repos.hooks]]
+id = "moon-fmt"
+name = "MoonBit format"
+entry = "moon fmt --check"
+language = "system"
+files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)"
+pass_filenames = false
+
+[[repos.hooks]]
+id = "moon-check"
+name = "MoonBit type check"
+entry = "moon check --target native --deny-warn"
+language = "system"
+files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)"
+pass_filenames = false
