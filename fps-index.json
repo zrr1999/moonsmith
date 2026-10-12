@@ -42,7 +42,7 @@
     {
       "fp": 2,
       "path": "fps/FP-0002-moonbit-semantic-contract.md",
-      "title": "MoonBit 模板生成与差分测试",
+      "title": "MoonBit 生成与差分测试的包边界",
       "type": "Feature",
       "status": "Draft",
       "authors": [
