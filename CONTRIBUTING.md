@@ -16,7 +16,6 @@
 | `just install` | 安装 Git hooks |
 | `just format` | 格式化 justfile 和 MoonBit 包 |
 | `just check` | 仓库只读门禁，运行 `prek --all-files` |
-| `just proposal` | 检查 FP 元数据、直接引用、依赖顺序及索引；追加 `--fix` 更新索引 |
 | `just build` | 构建 workspace 全部模块及 native 可执行入口 |
 | `just test` | 运行单元测试及真实 MoonBit 工具链集成测试 |
 | `just run` | 生成一个案例，执行三种编译配置并保存结果 |
@@ -45,12 +44,7 @@
 | actionlint、zizmor | GitHub Actions 语法、表达式及工作流安全问题 |
 | Gitleaks | 工作区中的凭据和令牌，包括未跟踪文件；日志隐藏匹配值 |
 | prek 文件检查 | 大文件、跨平台文件名、符号链接、脚本权限、意外子模块及文本卫生 |
-| ZenDev | 提案结构、直接引用与依赖顺序、术语定义与索引，提交及 PR 消息规范 |
-
-提案策略由 [zendev.toml](zendev.toml) 配置。提案检查使用固定 Git 提交的
-`zendev-proposal` 与同版本 `zendev-core`，`just proposal` 与 prek 保持相同来源；
-本地与 CI 均从该提交安装，无需等待包发布。消息校验仍固定为 `zendev==0.4.0`。
-升级提案检查器时同步更新 [justfile](justfile) 和 [prek.toml](prek.toml) 中的两个包来源。
+| ZenDev | 提案结构、术语定义与索引，提交及 PR 消息规范 |
 
 新增的格式检查不自动改写文件。Markdown 使用 [.rumdl.toml](.rumdl.toml)，允许中文长段落、
 GitHub 裸链接及 FP 的元数据标题；YAML 规则见 [.yamllint.yml](.yamllint.yml)。Tombi 和
@@ -163,7 +157,7 @@ PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“�
 依赖和推进条件。架构维护整体设计，实现 PR 关联对应文档并说明最终行为及必要影响。
 内部调研、方案比较与决策依据归入[工程笔记](.agents/notes/README.md)，公开契约仍在对应文档维护。
 
-提案变更运行 `just proposal --fix` 更新
+提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
 `fps-index.json`，再运行 `just check`。索引不手工维护；`just check` 和 CI 都检查 FP。
 跨文档概念按 [FP-0000](fps/FP-0000-governance.md#术语定义与引用)登记到所属提案，
 更新[术语索引](docs/glossary.md)并让其他文档链接该定义；不要把具体类型或算法选择写成概念的统一要求。

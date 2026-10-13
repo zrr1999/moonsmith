@@ -5,29 +5,24 @@ prefix = "FP"
 number_field = "fp"
 documents_dir = "fps"
 schema = "schemas/fp.schema.json"
+index = "fps-index.json"
 metadata_title = "plain"
 
-[proposal.templates]
+[templates]
 Feature = "templates/fp.md"
 Governance = "templates/fp.md"
 
-[proposal.graph]
+[graph]
 fields = ["requires", "supersedes"]
 requires_field = "requires"
-require_declared_references = true
-requires_earlier = true
 
-[proposal.defines]
+[defines]
 field = "defines"
 anchor_prefix = "term-"
 id_pattern = "[a-z][a-z0-9]*(?:-[a-z0-9]+)*"
 
-[proposal.links]
-heading_ids = "github"
-
-[proposal.index]
+[index]
 version = 2
-path = "fps-index.json"
 entries_key = "fps"
 fields = [
   "fp",
