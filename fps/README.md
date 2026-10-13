@@ -24,8 +24,8 @@ FP 保存 MoonSmith 影响重大的功能与治理设计。先读 [FP-0000](FP-0
    草稿和状态变更都需要更新索引并检查改动：
 
    ```shell
-   uvx --from zendev==0.4.0 zendev proposal check --fix
-   uvx --from zendev==0.4.0 zendev proposal check
+   uvx --from zendev==0.5.0 zendev proposal check --fix
+   uvx --from zendev==0.5.0 zendev proposal check
    ```
 
 4. 按[贡献指南](../CONTRIBUTING.md)检查所有改动。提案 PR 复用仓库模板，标题使用英文：
@@ -47,7 +47,8 @@ FP 保存 MoonSmith 影响重大的功能与治理设计。先读 [FP-0000](FP-0
 
 [fps-index.json](../fps-index.json)由 frontmatter 确定性生成，包含两种状态的所有 FP、
 `status`、直接依赖 `requires`、替代关系和 `defines`，不手工维护。
-`just check` 和 CI 通过同一个 ZenDev hook 检查元数据、文件名、章节、关系、定义归属与索引，
+`just check` 和 CI 通过同一个 ZenDev hook 读取 [zendev.toml](../zendev.toml)，检查元数据、
+文件名、章节、关系、定义归属与索引，并拒绝未声明的正文引用和对后续编号的依赖；
 通过 lychee 检查文档链接及目标锚点。
 `status` 表示提案当前阶段；[EVOLUTION.md](../EVOLUTION.md)记录过去的方向变化，
 [ROADMAP.md](../ROADMAP.md)维护未来目标与推进条件。完整分工见

@@ -15,41 +15,28 @@
 | `just deps` | 初始化或刷新 MoonBit 包索引 |
 | `just install` | 安装 Git hooks |
 | `just format` | 格式化 justfile 和 MoonBit 包 |
-| `just check` | 仓库只读门禁，运行 `prek --all-files` |
+| `uvx prek run --all-files` | 统一运行仓库静态检查 |
 | `just build` | 构建 workspace 全部模块及 native 可执行入口 |
 | `just test` | 运行单元测试及真实 MoonBit 工具链集成测试 |
 | `just run` | 生成一个案例，执行三种编译配置并保存结果 |
 
 新增文件需纳入 Git 索引后才能被 `--all-files` 检查。尚不准备暂存内容时可使用
 `git add --intent-to-add <文件>`；单独检查未跟踪文件也可运行
-`uvx --from prek==0.3.10 prek run --files <文件>`。
+`uvx prek run --files <文件>`。
 
-文档变更运行 `just check` 和 `git diff --check`。实现变更运行 `just check`、`just build` 与
-`just test`，并增加或运行相关行为测试。入口变更还需运行 `just run`。进程生命周期、判定和
+文档变更运行 `uvx prek run --all-files`。实现变更还需运行 `just build` 与 `just test`，
+并增加或运行相关行为测试。入口变更还需运行 `just run`。进程生命周期、判定和
 归约必须覆盖其实际失败边界，不能只断言内部调用。
 未来的编译器测试矩阵与 MoonSmith 自身的构建检查分别记录；当前 CI 的 native 检查不代表
 四后端、五配置验证已经完成。
 
 ## 质量检查
 
-第三方 hooks 的版本固定在 `prek.toml`，本地 `just check` 与 CI 使用同一入口。
+检查规则、工具版本与适用文件统一维护在 [prek.toml](prek.toml)。prek 执行源码格式与类型、
+模块依赖、配置与文档、链接、工作流、凭据及提案校验。按检查结果修正问题后，重新运行同一入口。
 
-| 工具 | 检查范围 |
-| --- | --- |
-| MoonBit、Just | 源码格式、类型、编译器警告及任务文件格式 |
-| alint | 包结构、依赖方向与纯计算边界 |
-| Tombi、yamllint | TOML 格式与 lint，YAML 缩进、重复键及布尔值 |
-| rumdl、typos、lychee | Markdown 结构、拼写及本地链接与锚点 |
-| check-jsonschema | Renovate 配置与 `schemas/` 下的 JSON Schema 定义 |
-| actionlint、zizmor | GitHub Actions 语法、表达式及工作流安全问题 |
-| Gitleaks | 工作区中的凭据和令牌，包括未跟踪文件；日志隐藏匹配值 |
-| prek 文件检查 | 大文件、跨平台文件名、符号链接、脚本权限、意外子模块及文本卫生 |
-| ZenDev | 提案结构、术语定义与索引，提交及 PR 消息规范 |
-
-新增的格式检查不自动改写文件。Markdown 使用 [.rumdl.toml](.rumdl.toml)，允许中文长段落、
-GitHub 裸链接及 FP 的元数据标题；YAML 规则见 [.yamllint.yml](.yamllint.yml)。Tombi 和
-zizmor 使用离线模式，JSON Schema 检查使用工具内置的 schema。Gitleaks 检查当前工作区，
-通过 [.gitleaks.toml](.gitleaks.toml) 排除构建缓存、依赖下载、托管 worktree 和实验产物。
+`just check` 是 `uvx prek run --all-files` 的快捷入口，CI 也通过它执行相同门禁。
+提交消息由已安装的 `commit-msg` hook 检查；PR 标题与正文由 CI 检查。
 
 ## 模块与包边界
 
@@ -66,8 +53,7 @@ zizmor 使用离线模式，JSON Schema 检查使用工具内置的 schema。Git
 [.alint.yml](.alint.yml) 检查 workspace 布局、模块与包清单、当前组件之间的依赖方向，并阻止
 纯计算组件直接导入已列出的环境与 I/O 依赖。import 检查覆盖 `moon.mod` 与 `moon.pkg`，
 依赖 `moon fmt` 规范化的格式；新增模块、包或依赖时同步核对规则。
-`just check` 和 CI 都通过 prek 执行 alint，单独运行可用
-`uvx prek run alint --all-files`。各包的行为测试放在相应包内，优先通过公共接口测试。
+这些规则纳入统一的 prek 门禁。各包的行为测试放在相应包内，优先通过公共接口测试。
 
 变更工作区布局、模块依赖或打包规则时，在临时副本中按 [FP-0001](fps/FP-0001-workspace-modules.md)
 进行专项验收：验证违规结构和导入会被 alint 拒绝，提供方变更能传播到消费方，
@@ -162,12 +148,6 @@ CLI 退出码：`0` 为一致，`2` 为异常候选（包括演示注入），`3
 🐛 fix(reducer): preserve the failure predicate
 ```
 
-本地检查示例：
-
-```shell
-uvx --from zendev==0.4.0 zendev message check --title --profile zendev --text "📝 docs: clarify the execution matrix"
-```
-
 PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“动机”和“解决方案”。
 正文面向不了解会话背景的评审者，聚焦本 PR 相对 base 的改动：解决的问题、最终设计或
 行为及必要影响。省略操作流水、协作过程、其他 PR 的工作总结和与本次改动无关的能力说明。
@@ -187,8 +167,9 @@ PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“�
 依赖和推进条件。架构维护整体设计，实现 PR 关联对应文档并说明最终行为及必要影响。
 内部调研、方案比较与决策依据归入[工程笔记](.agents/notes/README.md)，公开契约仍在对应文档维护。
 
-提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
-`fps-index.json`，再运行 `just check`。索引不手工维护；`just check` 和 CI 都检查 FP。
+提案规则配置在 [zendev.toml](zendev.toml)，正文引用必须直接声明依赖，且只能依赖编号更早的 FP。
+提案变更按[维护说明](fps/README.md#新建提案)更新生成的 `fps-index.json`，再运行统一的
+prek 门禁。索引不手工维护，FP 校验已纳入本地与 CI 的相同配置。
 跨文档概念按 [FP-0000](fps/FP-0000-governance.md#术语定义与引用)登记到所属提案，
 更新[术语索引](docs/glossary.md)并让其他文档链接该定义；不要把具体类型或算法选择写成概念的统一要求。
 
