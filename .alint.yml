@@ -3,6 +3,57 @@
 version: 1
 
 rules:
+  # file_exists treats multiple paths as alternatives, so each component has its own rule.
+  - id: required-contracts-module
+    kind: file_exists
+    paths: modules/contracts/moon.mod
+    level: error
+
+  - id: required-engine-module
+    kind: file_exists
+    paths: modules/engine/moon.mod
+    level: error
+
+  - id: required-moonbit-module
+    kind: file_exists
+    paths: modules/moonbit/moon.mod
+    level: error
+
+  - id: required-cli-module
+    kind: file_exists
+    paths: modules/cli/moon.mod
+    level: error
+
+  - id: required-host-package
+    kind: file_exists
+    paths: modules/cli/src/host/moon.pkg
+    level: error
+
+  - id: required-toolchain-package
+    kind: file_exists
+    paths: modules/cli/src/toolchains/moon/moon.pkg
+    level: error
+
+  - id: required-artifacts-package
+    kind: file_exists
+    paths: modules/cli/src/artifacts/moon.pkg
+    level: error
+
+  - id: required-report-package
+    kind: file_exists
+    paths: modules/cli/src/report/moon.pkg
+    level: error
+
+  - id: required-app-package
+    kind: file_exists
+    paths: modules/cli/src/app/moon.pkg
+    level: error
+
+  - id: required-cli-package
+    kind: file_exists
+    paths: modules/cli/src/cmd/moonsmith/moon.pkg
+    level: error
+
   - id: root-workspace
     kind: file_exists
     paths: moon.work

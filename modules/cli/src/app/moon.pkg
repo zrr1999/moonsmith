@@ -6,8 +6,6 @@ import {
   "zrr1999/moonsmith/toolchains/moon",
   "zrr1999/moonsmith/artifacts",
   "zrr1999/moonsmith/report",
-  "moonbitlang/core/debug",
-  "moonbitlang/core/string",
 }
 
 supported_targets = "native"
@@ -15,4 +13,5 @@ supported_targets = "native"
 import {
   "moonbitlang/async",
   "moonbitlang/async/fs",
+  "moonbitlang/core/debug",
 } for "wbtest"
