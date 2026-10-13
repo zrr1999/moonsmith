@@ -1,4 +1,6 @@
 import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/string",
   "moonbitlang/async",
   "zrr1999/moonsmith/app",
   "zrr1999/moonsmith/host",

@@ -1,5 +1,8 @@
 # 仓库协作约定
 
+本仓库是正式维护的规范化工程仓库。已确立的依赖管理、配置格式、检查入口和发布流程
+都是必须遵守的工程约定，不因开发阶段、交付压力或外部依赖暂未就绪而失效。
+
 - 先读 [README](README.md) 和[项目申报书](docs/project-proposal.md)，核实当前实现状态。
 - 文档统一使用 Markdown，架构图使用 Mermaid。更新原文，不维护并行的 Typst 或 PDF 源稿。
 - 内部调研、方案比较与工程决策依据放入 [.agents/notes](.agents/notes/README.md)；产品说明、贡献指南和 FP 保留各自的公开入口。
@@ -13,13 +16,23 @@
 - PR 正文聚焦问题、改动和必要影响，不写本地测试情况、命令、路径、CI 状态或操作流水；“影响与边界”仅按需补充兼容性、迁移要求、已知限制或关键取舍。
 - 交付到用户指定的终点。远端创建、推送、PR 和发布以当前任务明确授权的范围为准。
 
+## 外部依赖与规范变更
+
+- 外部依赖使用已发布的正式版本；固定提交时必须对应正式 release，不能用开发分支或
+  未发布提交代替发布。需要新增上游能力时，按上游实现与评审、正式发布、本仓库升级适配的顺序推进。
+- 外部依赖的能力、版本或发布状态不满足需求时，核实并报告具体缺口，继续可独立完成的工作。
+  不得擅自引入临时替代实现、私有补丁或旁路脚本来绕过依赖条件。
+- 不得为临时解决问题而降低或跳过检查、改写正式配置方式，或替换已标准化的命令、工具与流程。
+- 确需调整既有规范或采用例外方案时，先说明原因、影响和替代方案，取得用户明确同意后再按
+  正常变更流程实施；不得先做后报，也不得把临时方案伪装成既有规范。
+
 ## 仓库 Skills
 
 按任务加载对应 skill；只有任务跨越职责边界时才组合使用，不要求每次执行全部流程。
 
 | 任务 | Skill |
 | --- | --- |
-| 功能设计、FP 起草与实质修订、跨包修改或重构规划 | [moonsmith-change-planning](.agents/skills/moonsmith-change-planning/SKILL.md) |
+| 功能设计、FP 起草、实质修订与审阅、跨包修改或重构规划 | [moonsmith-change-planning](.agents/skills/moonsmith-change-planning/SKILL.md) |
 | 评审工作区改动、提交或 PR | [moonsmith-code-review](.agents/skills/moonsmith-code-review/SKILL.md) |
 | 新增或修复行为测试、回归测试 | [moonsmith-test-behavior](.agents/skills/moonsmith-test-behavior/SKILL.md) |
 | 本地交付或已授权提交前检查 | [moonsmith-pre-submit-checks](.agents/skills/moonsmith-pre-submit-checks/SKILL.md) |

@@ -107,7 +107,7 @@ Draft、Ready 或合并操作自动变化；`Proposed` 也不代表设计已被�
 
 跨文档使用且容易混淆的项目概念，由拥有相应决定的 FP 定义。`defines` 列出本提案定义的
 概念标识，没有新定义时填写 `[]`；单纯引用其他提案的概念不加入该列表。
-标识使用小写英文与连字符，匹配 `proposal.toml` 的 `id_pattern`，不依赖中文标题或章节序号。
+标识使用小写英文与连字符，匹配 `zendev.toml` 的 `id_pattern`，不依赖中文标题或章节序号。
 
 每个标识在定义正文前对应一个空 HTML 锚点，格式为 `<a id="term-概念标识"></a>`。
 同一概念只保留一个定义位置；引用使用指向该 FP 的普通 Markdown 链接及 `#term-概念标识`。
@@ -157,10 +157,11 @@ Draft、Ready 或合并操作自动变化；`Proposed` 也不代表设计已被�
 
 ## 验证
 
-`proposal.toml` 配置固定版本 ZenDev 的元数据、状态取值、文件名、模板章节、依赖与替代关系、
+`zendev.toml` 配置固定版本 ZenDev 的元数据、状态取值、文件名、模板章节、依赖与替代关系、
 术语定义和确定性索引检查。schema 要求 `requires` 存在并约束编号格式与唯一性；ZenDev
 拒绝缺失依赖目标、自依赖和依赖循环，检查术语声明与锚点对应及跨提案的定义归属。
-正文引用与直接依赖声明的一致性、依赖编号时序目前由编写和评审核对，现用检查器尚未覆盖。
+`proposal.graph.require_declared_references` 和 `proposal.graph.requires_earlier` 均启用，
+分别检查正文引用已直接声明依赖，以及依赖编号严格早于当前提案。
 lychee 检查本地文档链接及目标锚点。`just check` 与 CI 共用这些门禁；更新提案后用
 `zendev proposal check --fix` 生成 `fps-index.json`。
 

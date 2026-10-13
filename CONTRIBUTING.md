@@ -44,7 +44,7 @@
 | actionlint、zizmor | GitHub Actions 语法、表达式及工作流安全问题 |
 | Gitleaks | 工作区中的凭据和令牌，包括未跟踪文件；日志隐藏匹配值 |
 | prek 文件检查 | 大文件、跨平台文件名、符号链接、脚本权限、意外子模块及文本卫生 |
-| ZenDev | 提案结构、术语定义与索引，提交及 PR 消息规范 |
+| ZenDev | 提案结构、显式依赖与时序、术语定义与索引，提交及 PR 消息规范 |
 
 新增的格式检查不自动改写文件。Markdown 使用 [.rumdl.toml](.rumdl.toml)，允许中文长段落、
 GitHub 裸链接及 FP 的元数据标题；YAML 规则见 [.yamllint.yml](.yamllint.yml)。Tombi 和
@@ -68,6 +68,36 @@ zizmor 使用离线模式，JSON Schema 检查使用工具内置的 schema。Git
 依赖 `moon fmt` 规范化的格式；新增模块、包或依赖时同步核对规则。
 `just check` 和 CI 都通过 prek 执行 alint，单独运行可用
 `uvx prek run alint --all-files`。各包的行为测试放在相应包内，优先通过公共接口测试。
+
+变更工作区布局、模块依赖或打包规则时，在临时副本中按 [FP-0001](fps/FP-0001-workspace-modules.md)
+进行专项验收：验证违规结构和导入会被 alint 拒绝，提供方变更能传播到消费方，
+`moon work sync` 更新依赖声明而不联动提升消费方版本，以及各模块能独立打包且包含所需文件。
+这组验收按变更范围执行并保留证据，不纳入日常 `just test`。
+
+## 差分测试库路径
+
+[FP-0002](fps/FP-0002-moonbit-semantic-contract.md) 的新路径由 `app.run_differential` 装配：
+选择种子 → 自动组合模板 → 按规则补全并检查 → 三配置执行 → Engine 差分比较 → 版本 2 存证。
+应用层默认从系统熵选择种子，也接受手动指定；生成算法始终取得显式种子。
+不需要参考求值器；当前覆盖绑定与引用、分支、无环函数定义与调用，以及支撑它们的 Int/Bool
+表达式。Int 加减按 MoonBit 的 32 位环绕语义运行，源码自带输入，程序不读取参数或外部状态。
+
+模板与补全共享节点、深度和构造次数预算，默认值及范围由 [MoonBit 模块](modules/moonbit/README.md)
+维护。生成预算和执行超时可在库 API 中覆盖，记录实际值；非法预算在执行前拒绝，构造次数
+耗尽报告种子及生成器版本。编译默认 30 秒、执行默认 2 秒，每个输出流上限 64 KiB。
+
+计划配置固定为 native debug、native release、wasm-gc debug。所有计划配置正常执行且满足
+同一单值行协议、输出相同时为 `Consistent`；两个有效结果不同即为 `Difference`，其他配置
+失败不能掩盖该差异；其余情况为 `Incomplete`。原始错误、超时、输出超限及非规范输出
+均保留，不能作为正常数值参与比较。一致不证明编译器正确，差异不自动定位错误配置。
+
+版本 2 案例保存生成记录、源码、构建文件、观察协议和计划配置。`app.replay_differential`
+将保存材料复制到新的执行目录，无需当时的生成器。当前工具链和平台探测、每个命令与原始
+输出、差分结论保存在新尝试中；旧文件不覆盖，`attempt.json` 仍是最后写入的完成标记。
+旧版本 1 案例及其参考结论保留原意，完整归档与跨版本迁移框架不在本轮范围。
+
+生成确定性、预算、结构关系、真实三配置执行和追加存证有行为测试。新路径尚未替换当前
+CLI，CLI 预算公开范围和入口兼容按独立提案推进。后续章节描述继续保留的参考原型。
 
 ## 原型执行契约
 
@@ -135,7 +165,7 @@ CLI 退出码：`0` 为一致，`2` 为异常候选（包括演示注入），`3
 本地检查示例：
 
 ```shell
-uvx --from zendev==0.4.0 zendev message check --title --profile zendev --text "📝 docs: clarify the execution matrix"
+uvx --from zendev==0.5.0 zendev message check --title --profile zendev --text "📝 docs: clarify the execution matrix"
 ```
 
 PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“动机”和“解决方案”。
@@ -157,7 +187,8 @@ PR 正文使用[模板](.github/pull_request_template.md)，必填章节为“�
 依赖和推进条件。架构维护整体设计，实现 PR 关联对应文档并说明最终行为及必要影响。
 内部调研、方案比较与决策依据归入[工程笔记](.agents/notes/README.md)，公开契约仍在对应文档维护。
 
-提案变更运行 `uvx --from zendev==0.4.0 zendev proposal check --fix` 更新
+提案规则配置在 [zendev.toml](zendev.toml)，正文引用必须直接声明依赖，且只能依赖编号更早的 FP。
+提案变更运行 `uvx --from zendev==0.5.0 zendev proposal check --fix` 更新
 `fps-index.json`，再运行 `just check`。索引不手工维护；`just check` 和 CI 都检查 FP。
 跨文档概念按 [FP-0000](fps/FP-0000-governance.md#术语定义与引用)登记到所属提案，
 更新[术语索引](docs/glossary.md)并让其他文档链接该定义；不要把具体类型或算法选择写成概念的统一要求。

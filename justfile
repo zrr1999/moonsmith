@@ -28,6 +28,6 @@ build:
 run *args="run":
     moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- {{ args }}
 
-# Run tests
+# Run behavior tests
 test:
     moon test --target native

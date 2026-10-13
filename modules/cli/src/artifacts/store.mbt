@@ -27,9 +27,9 @@ pub async fn begin_attempt(directory : String) -> String {
 
 ///|
 /// attempt.json is the completion marker; unfinished attempts retain their workspace.
-pub async fn finish_attempt(
+pub async fn[T : ToJson] finish_attempt(
   directory : String,
-  attempt : @contracts.Attempt,
+  attempt : T,
   report : String,
 ) -> Unit {
   @host.write_new("\{directory}/report.md", report)
