@@ -6,14 +6,35 @@ pub fn compare(
   observations : Array[@contracts.Observation],
   normalize~ : (String) -> String?,
 ) -> @contracts.Comparison {
-  guard configurations.length() >= 2 else { return Incomplete }
-  for i, configuration in configurations {
-    for j = 0; j < i; j = j + 1 {
-      guard configurations[j] != configuration else { return Incomplete }
+  let values = comparable_results(configurations, observations, normalize~)
+  guard !values.is_empty() else { return Incomplete }
+  let (other, previous) = values[0]
+  for (configuration, value) in values {
+    if value != previous {
+      return Difference(other, configuration)
     }
   }
-  let mut first : (String, String)? = None
-  let mut complete = true
+  if values.length() == configurations.length() {
+    Consistent
+  } else {
+    Incomplete
+  }
+}
+
+///|
+/// Returns every valid normalized result, including those after the first difference.
+pub fn comparable_results(
+  configurations : Array[String],
+  observations : Array[@contracts.Observation],
+  normalize~ : (String) -> String?,
+) -> Array[(String, String)] {
+  guard configurations.length() >= 2 else { return [] }
+  for i, configuration in configurations {
+    for j = 0; j < i; j = j + 1 {
+      guard configurations[j] != configuration else { return [] }
+    }
+  }
+  let values = []
   for configuration in configurations {
     let builds = observations.filter(o => {
       o.configuration == configuration && o.phase == Build
@@ -22,31 +43,18 @@ pub fn compare(
       o.configuration == configuration && o.phase == Execute
     })
     if builds.length() != 1 || runs.length() != 1 {
-      complete = false
       continue
     }
     if builds[0].output.status != Exited(0) ||
       runs[0].output.status != Exited(0) {
-      complete = false
       continue
     }
     let run = runs[0]
     guard normalize(run.injected_stdout.unwrap_or(run.output.stdout))
       is Some(value) else {
-      complete = false
       continue
     }
-    match first {
-      None => first = Some((configuration, value))
-      Some((other, previous)) =>
-        if value != previous {
-          return Difference(other, configuration)
-        }
-    }
+    values.push((configuration, value))
   }
-  if complete {
-    Consistent
-  } else {
-    Incomplete
-  }
+  values
 }

@@ -27,6 +27,16 @@ pub async fn read_text(path : String) -> String {
 }
 
 ///|
+pub async fn list_directory(path : String) -> Array[String] {
+  @fs.readdir(path, sort=true)
+}
+
+///|
+pub async fn exists(path : String) -> Bool {
+  @fs.exists(path)
+}
+
+///|
 pub async fn remove_tree(path : String) -> Unit {
   @fs.rmdir(path, recursive=true)
 }
