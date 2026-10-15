@@ -5,7 +5,7 @@ MoonBit 适配器、宿主执行、案例存储和报告，提供单案例差分
 
 在仓库根目录使用 `just run` 启动一次测试，`just run run --seed 42` 指定种子，
 `just run replay <案例目录>` 追加一次重执行。帮助见 `just run --help`；可执行程序无参数时
-只显示帮助。命令行只接受当前差分工作流，不保留旧参数、`demo` 或旧案例格式兼容路径。
+只显示帮助。
 
 `cmd/moonsmith` 拥有参数解析、帮助、终端输出与退出码，只依赖 app 与 Host。
 `app` 装配生成、执行、比较与保存；`toolchains/moon` 定义执行矩阵；`host` 封装进程和文件系统；

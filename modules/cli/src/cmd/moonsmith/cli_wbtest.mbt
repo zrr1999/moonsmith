@@ -1,5 +1,5 @@
 ///|
-test "commands expose only the differential workflow and explicit seeds" {
+test "commands parse the differential workflow and reject invalid arguments" {
   for args in [[], ["--help"], ["run", "--help"], ["replay", "--help"]] {
     @debug.assert_eq(parse(args), Help)
   }
@@ -15,10 +15,8 @@ test "commands expose only the differential workflow and explicit seeds" {
   @debug.assert_eq(parse(["replay", "saved case"]), Replay("saved case"))
   for
     args in [
-      ["demo"],
       ["unknown"],
-      ["run", "--depth", "2"],
-      ["run", "--budget", "16"],
+      ["run", "--unknown", "value"],
       ["run", "--seed"],
       ["run", "--seed", "invalid"],
       ["run", "--seed", "2147483648"],
@@ -45,7 +43,7 @@ async test "help succeeds and input errors identify the invalid input" {
   assert_true(help.join("\n").contains("replay CASE_DIR"))
   for
     (args, diagnostic) in [
-      (["demo"], "unknown command: demo"),
+      (["unknown"], "unknown command: unknown"),
       (["run", "--seed", "bad"], "--seed"),
       (["run", "--seed"], "usage:"),
     ] {
@@ -78,7 +76,7 @@ async test "replay exit codes and summaries follow saved differential evidence" 
         "comparison incomplete",
       ),
       (
-        { ..original.case, format_version: 1, },
+        { ..original.case, format_version: 999, },
         1,
         "unsupported differential case format",
       ),
