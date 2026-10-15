@@ -42,5 +42,5 @@ jobs:
         run: just build
       - name: Run tests
         run: just test
-      - name: Run compiler validation prototype
+      - name: Run differential compiler testing
         run: just run

@@ -132,3 +132,21 @@ test "test injection remains separate from original stdout" {
   )
   @debug.assert_eq(values[3].output.stdout, "42\n")
 }
+
+///|
+test "comparable results retain later configurations and exclude invalid evidence" {
+  let observations = evidence("a", "41\n") +
+    evidence("b", "42\n") +
+    evidence("c", "43\n") +
+    evidence("invalid", "diagnostic")
+  let values = comparable_results(
+    ["a", "b", "c", "invalid", "missing"],
+    observations,
+    normalize=text => if text == "diagnostic" { None } else { Some(text) },
+  )
+  @debug.assert_eq(values, [("a", "41\n"), ("b", "42\n"), ("c", "43\n")])
+  @debug.assert_eq(
+    comparable_results(["a", "a"], observations, normalize=text => Some(text)),
+    [],
+  )
+}

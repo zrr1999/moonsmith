@@ -88,7 +88,7 @@ async test "generated differential cases execute without a reference and replay 
         )
       }
     }
-    let replayed = replay_differential(run.directory)
+    let replayed = replay_differential(run.directory).attempt
     @debug.assert_eq(replayed.purpose, "replay")
     @debug.assert_eq(replayed.comparison, @contracts.Consistent)
     @debug.assert_eq(replayed.source, run.case.source)
@@ -107,7 +107,7 @@ async test "replay uses saved source and project files even without a matching g
   let source = "fn main { println(2147483647 + 1) }\n"
   let case = saved_fixture(source)
   let directory = @artifacts.create_differential(base, case)
-  let replayed = replay_differential(directory)
+  let replayed = replay_differential(directory).attempt
   @debug.assert_eq(
     replayed.comparison,
     @contracts.Consistent,
@@ -149,7 +149,7 @@ async test "differential injection changes valid scalar results and preserves ra
       injected=true,
     )
     let directory = @artifacts.create_differential(base, case)
-    let attempt = replay_differential(directory)
+    let attempt = replay_differential(directory).attempt
     @debug.assert_eq(
       attempt.comparison,
       @contracts.Difference("native-debug", "native-release"),
@@ -177,7 +177,7 @@ async test "a rejected saved program retains raw compiler errors as incomplete e
   defer @host.remove_tree(base)
   let case = saved_fixture("fn main { let x : Int = true; println(x) }\n")
   let directory = @artifacts.create_differential(base, case)
-  let attempt = replay_differential(directory)
+  let attempt = replay_differential(directory).attempt
   @debug.assert_eq(attempt.comparison, @contracts.Incomplete)
   @debug.assert_eq(attempt.observations.length(), 3)
   for o in attempt.observations {
@@ -309,4 +309,167 @@ async test "an automatic seed is saved and explicitly reproduces the generated s
   @debug.assert_eq(explicit.attempt.comparison, @contracts.Consistent)
   assert_true(explicit.directory != automatic.directory)
   @debug.assert_eq(@fs.readdir(base).length(), 2)
+}
+
+///|
+async test "storage failures retain the difference and identify incomplete evidence" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/save-failure-")
+  defer @host.remove_tree(base)
+  let run = run_differential(seed=42, base~, injected=true)
+  assert_true(run.save_error is None)
+  for blocked in ["report.md", "attempt.json"] {
+    let directory = @artifacts.begin_attempt(run.directory)
+    @host.mkdir("\{directory}/\{blocked}")
+    let failed = finish_differential(
+      run.directory,
+      run.case,
+      directory,
+      run.attempt,
+      None,
+    )
+    assert_true(failed.save_error is Some(_))
+    @debug.assert_eq(failed.attempt.comparison, run.attempt.comparison)
+    @debug.assert_eq(failed.attempt.observations.length(), 6)
+    let summary = describe_differential(failed)
+    assert_true(summary.contains("difference observed"))
+    assert_true(summary.contains("saving failed"))
+    assert_true(summary.contains("Seed: 42"))
+    assert_true(summary.contains(directory))
+    assert_false(summary.contains("Evidence: saved"))
+    if blocked == "report.md" {
+      assert_false(@host.exists("\{directory}/attempt.json"))
+    } else {
+      assert_true(@host.exists("\{directory}/report.md"))
+      @debug.assert_eq(@fs.kind("\{directory}/attempt.json"), @fs.Directory)
+    }
+  }
+}
+
+///|
+async test "replay reports a changed toolchain and preserves the prior record" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/toolchain-change-")
+  defer @host.remove_tree(base)
+  let run = run_differential(seed=42, base~)
+  // Model a case produced by a different toolchain, then preserve that fixture verbatim.
+  let original = {
+    ..run.attempt,
+    toolchain: {
+      ..run.attempt.toolchain,
+      output: {
+        ..run.attempt.toolchain.output,
+        stdout: "fixture-old-toolchain\n",
+      },
+    },
+  }
+  let original_record = original.to_json().stringify()
+  @fs.write_file("\{run.attempt_directory}/attempt.json", original_record)
+  let replay = replay_differential(run.directory)
+  assert_true(replay.save_error is None)
+  @debug.assert_eq(replay.attempt.comparison, @contracts.Consistent)
+  let summary = describe_differential(replay)
+  assert_true(summary.contains("Toolchain changed"))
+  assert_true(summary.contains("fixture-old-toolchain"))
+  @debug.assert_eq(
+    @host.read_text("\{run.attempt_directory}/attempt.json"),
+    original_record,
+  )
+  @debug.assert_eq(
+    @host.list_directory("\{run.directory}/attempts").length(),
+    2,
+  )
+}
+
+///|
+async test "saved configurations are announced during replay" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/plan-notice-")
+  defer @host.remove_tree(base)
+  let case = saved_fixture("fn main { println(0) }\n")
+  let directory = @artifacts.create_differential(base, case)
+  let mut announced : Array[String] = []
+  let result = replay_differential(directory, on_plan=plan => announced = plan)
+  @debug.assert_eq(announced, case.configurations)
+  @debug.assert_eq(result.attempt.comparison, @contracts.Consistent)
+  assert_true(result.save_error is None)
+}
+
+///|
+test "summaries preserve differences alongside failures and unknown toolchain probes" {
+  let case = saved_fixture("fn main { println(0) }\n")
+  let command : @contracts.Command = {
+    program: "fixture",
+    args: [],
+    cwd: "/fixture",
+    timeout_ms: 1,
+    output_limit: 1024,
+  }
+  let observations : Array[@contracts.Observation] = []
+  for
+    (configuration, value) in [
+      ("native-debug", "0\n"),
+      ("native-release", "1\n"),
+    ] {
+    for phase in [@contracts.Build, @contracts.Execute] {
+      observations.push({
+        configuration,
+        phase,
+        command,
+        output: {
+          status: Exited(0),
+          stdout: if phase == Execute {
+            value
+          } else {
+            ""
+          },
+          stderr: "",
+        },
+        injected_stdout: None,
+      })
+    }
+  }
+  observations.push({
+    configuration: "wasm-gc-debug",
+    phase: Build,
+    command,
+    output: { status: TimedOut, stdout: "", stderr: "fixture timeout\n", },
+    injected_stdout: None,
+  })
+  let probe : @contracts.ProcessEvidence = {
+    command,
+    output: { status: Exited(1), stdout: "unknown", stderr: "probe failed\n", },
+  }
+  let attempt : @contracts.DifferentialAttempt = {
+    format_version: 2,
+    purpose: "replay",
+    source: case.source,
+    configurations: case.configurations,
+    result_protocol: case.result_protocol,
+    toolchain: probe,
+    platform: probe,
+    injected: false,
+    observations,
+    comparison: @engine.compare(case.configurations, observations, normalize=value => {
+      @moonbit.Ty::Int.normalize_output(value)
+    }),
+  }
+  let run : DifferentialRun = {
+    directory: "/fixture/case",
+    case,
+    attempt,
+    attempt_directory: "/fixture/attempt",
+    original_toolchain: Some(probe),
+    save_error: None,
+  }
+  let text = describe_differential(run)
+  assert_true(text.contains("difference observed"))
+  assert_true(text.contains("Valid results: 2/3"))
+  assert_true(text.contains("native-debug: 0"))
+  assert_true(text.contains("native-release: 1"))
+  assert_true(text.contains("wasm-gc-debug: build: timed out"))
+  assert_true(text.contains("Toolchain: unknown"))
+  assert_true(text.contains("probe failed"))
+  assert_true(text.contains("version comparison is unavailable"))
+  assert_false(text.contains("Toolchain changed"))
 }
