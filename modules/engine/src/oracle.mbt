@@ -1,27 +1,153 @@
 ///|
-/// Every requested configuration must finish both phases before a match is reported.
+/// A primary verdict for the prototype's report; use reference_assessment for all results.
 pub fn judge(
   expected : String,
   configurations : Array[String],
   observations : Array[@contracts.Observation],
 ) -> @contracts.Verdict {
+  summarize(reference_assessment(expected, configurations, observations))
+}
+
+///|
+pub fn reference_assessment(
+  expected : String,
+  configurations : Array[String],
+  observations : Array[@contracts.Observation],
+) -> @contracts.Assessment {
+  let results : Array[@contracts.OracleResult] = []
   if configurations.is_empty() {
-    return Inconclusive({
+    results.push({
+      oracle: "reference",
       configuration: "matrix",
       phase: Execute,
-      kind: MissingObservation,
+      outcome: Insufficient(MissingObservation),
     })
   }
-  let mut uncertain : @contracts.Verdict = Match
   for configuration in configurations {
+    if configurations.filter(c => c == configuration).length() != 1 {
+      for phase in [@contracts.Build, @contracts.Execute] {
+        results.push({
+          oracle: "reference",
+          configuration,
+          phase,
+          outcome: Insufficient(MissingObservation),
+        })
+      }
+      continue
+    }
     let verdict = judge_configuration(expected, configuration, observations)
-    match verdict {
-      Finding(_) => return verdict
-      Inconclusive(_) => if uncertain == Match { uncertain = verdict }
-      Match => ()
+    let (phase, outcome) = match verdict {
+      Match => (@contracts.Execute, @contracts.Satisfied)
+      Finding(f) => (f.phase, @contracts.Violated(f.kind))
+      Inconclusive(f) => (f.phase, @contracts.Insufficient(f.kind))
+    }
+    // Keep each check's identity stable when a build failure disappears.
+    results.push({
+      oracle: "reference",
+      configuration,
+      phase: Build,
+      outcome: if phase == Build {
+        outcome
+      } else {
+        Satisfied
+      },
+    })
+    results.push({
+      oracle: "reference",
+      configuration,
+      phase: Execute,
+      outcome: if phase == Execute {
+        outcome
+      } else if outcome is Violated(_) {
+        NotApplicable
+      } else {
+        Insufficient(MissingObservation)
+      },
+    })
+  }
+  @contracts.Assessment::new(results)
+}
+
+///|
+pub fn summarize(assessment : @contracts.Assessment) -> @contracts.Verdict {
+  let mut uncertain : @contracts.Verdict = Inconclusive({
+    configuration: "matrix",
+    phase: Execute,
+    kind: MissingObservation,
+  })
+  let mut have_result = false
+  let mut missing = false
+  for result in assessment.results() {
+    let fingerprint : @contracts.Fingerprint = {
+      configuration: result.configuration,
+      phase: result.phase,
+      kind: MissingObservation,
+    }
+    match result.outcome {
+      Violated(kind) => return Finding({ ..fingerprint, kind, })
+      Insufficient(kind) => {
+        if !missing {
+          uncertain = Inconclusive({ ..fingerprint, kind, })
+        }
+        missing = true
+      }
+      Satisfied => have_result = true
+      NotApplicable => ()
     }
   }
-  uncertain
+  if have_result && assessment.is_complete() {
+    Match
+  } else {
+    uncertain
+  }
+}
+
+///|
+pub fn findings(
+  assessment : @contracts.Assessment,
+) -> Array[@contracts.FailurePredicate] {
+  let failures : Array[@contracts.FailurePredicate] = []
+  for result in assessment.results() {
+    if result.outcome is Violated(kind) {
+      failures.push({
+        oracle: result.oracle,
+        fingerprint: {
+          configuration: result.configuration,
+          phase: result.phase,
+          kind,
+        },
+      })
+    }
+  }
+  failures
+}
+
+///|
+pub fn match_failure(
+  predicate : @contracts.FailurePredicate,
+  assessment : @contracts.Assessment,
+) -> @contracts.PredicateStatus {
+  let matching = assessment
+    .results()
+    .filter(result => {
+      result.oracle == predicate.oracle &&
+      result.configuration == predicate.fingerprint.configuration &&
+      result.phase == predicate.fingerprint.phase
+    })
+  if matching.length() != 1 {
+    return Undetermined
+  }
+  match matching[0].outcome {
+    Satisfied => NotPreserved
+    Violated(kind) =>
+      if kind == predicate.fingerprint.kind {
+        Preserved
+      } else {
+        NotPreserved
+      }
+    NotApplicable => Inapplicable
+    Insufficient(_) => Undetermined
+  }
 }
 
 ///|
