@@ -45,6 +45,7 @@ wasm-gc debug 的正常输出，无需参考求值器。发现分歧后继续执
 | --- | --- |
 | [项目申报书](docs/project-proposal.md) | 产品范围与预期验收目标 |
 | [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 当前提案阶段、设计决定、概念定义及引用规则 |
+| [Engine 设计提案](fps/FP-0004-engine-execution-contract.md) | 职责、协作模型、策略扩展和验收条件 |
 | [项目演进](EVOLUTION.md) | 过去的方向变化与原因 |
 | [长期路线图](ROADMAP.md) | MoonSmith 向 SemaForge 渐进提取的目标、依赖与推进门槛 |
 | [工程笔记](.agents/notes/README.md) | 来源证据、备选机制与实验规划 |
