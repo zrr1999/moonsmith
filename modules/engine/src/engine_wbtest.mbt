@@ -71,31 +71,73 @@ test "oracle separates a compiler exit, timeout, output cap, and host failure" {
 }
 
 ///|
-test "reducer is independent of MoonBit and preserves the original fingerprint" {
+fn sample_evidence(verdict : @contracts.Verdict) -> @contracts.Assessment {
+  let (fingerprint, outcome) = match verdict {
+    Finding(f) => (f, @contracts.Violated(f.kind))
+    Inconclusive(f) => (f, @contracts.Insufficient(f.kind))
+    Match =>
+      (
+        {
+          configuration: "toy",
+          phase: @contracts.Execute,
+          kind: @contracts.Mismatch,
+        },
+        @contracts.Satisfied,
+      )
+  }
+  @contracts.Assessment::new([
+    {
+      oracle: "reference",
+      configuration: fingerprint.configuration,
+      phase: fingerprint.phase,
+      outcome,
+    },
+  ])
+}
+
+///|
+test "reducer is independent of MoonBit and preserves the selected failure" {
   let fingerprint : @contracts.Fingerprint = {
     configuration: "toy",
     phase: Execute,
     kind: Mismatch,
   }
-  let reducer = Reducer::new(
-    10,
-    fingerprint,
-    limit=8,
-    size=n => n,
-    valid=n => n >= 0,
-    candidates=n => if n == 10 { [12, -1, 8, 7, 6] } else { [] },
-  )
-  @debug.assert_eq(reducer.next(), Some(8))
-  @debug.assert_eq(reducer.next(), Some(8))
-  assert_false(reducer.observe(Inconclusive({ ..fingerprint, kind: Timeout, })))
-  @debug.assert_eq(reducer.next(), Some(7))
+  guard Reducer::new(
+      10,
+      sample_evidence(Finding(fingerprint)),
+      { oracle: "reference", fingerprint, },
+      id="enumeration",
+      limit=8,
+      size=n => n,
+      valid=n => n >= 0,
+      candidates=n => if n == 10 { [12, -1, 8, 7, 6] } else { [] },
+    )
+    is Ok(reducer) else {
+    fail("invalid initial evidence")
+  }
+  guard reducer.next() is Some(first) else { fail("missing candidate") }
+  @debug.assert_eq(first.program, 8)
+  @debug.assert_eq(reducer.next().map(r => r.id), Some(first.id))
   assert_false(
-    reducer.observe(Finding({ ..fingerprint, configuration: "other", })),
+    reducer.observe(
+      first.id,
+      sample_evidence(Inconclusive({ ..fingerprint, kind: Timeout, })),
+    ),
   )
-  @debug.assert_eq(reducer.next(), Some(6))
-  assert_true(reducer.observe(Finding(fingerprint)))
+  guard reducer.next() is Some(second) else { fail("missing candidate") }
+  @debug.assert_eq(second.program, 7)
+  assert_false(
+    reducer.observe(
+      second.id,
+      sample_evidence(Finding({ ..fingerprint, configuration: "other", })),
+    ),
+  )
+  guard reducer.next() is Some(third) else { fail("missing candidate") }
+  @debug.assert_eq(third.program, 6)
+  assert_true(reducer.observe(third.id, sample_evidence(Finding(fingerprint))))
   @debug.assert_eq(reducer.result(), 6)
-  @debug.assert_eq(reducer.next(), None)
+  assert_true(reducer.next() is None)
+  @debug.assert_eq(reducer.stop_reason(), Some(SearchComplete))
 }
 
 ///|
@@ -105,17 +147,23 @@ test "invalid candidates consume the reduction budget" {
     phase: Execute,
     kind: Mismatch,
   }
-  let reducer = Reducer::new(
-    10,
-    fingerprint,
-    limit=2,
-    size=n => n,
-    valid=_ => false,
-    candidates=_ => [9, 8, 7],
-  )
-  @debug.assert_eq(reducer.next(), None)
+  guard Reducer::new(
+      10,
+      sample_evidence(Finding(fingerprint)),
+      { oracle: "reference", fingerprint, },
+      id="invalid",
+      limit=2,
+      size=n => n,
+      valid=n => n == 10,
+      candidates=_ => [9, 8, 7],
+    )
+    is Ok(reducer) else {
+    fail("invalid initial evidence")
+  }
+  assert_true(reducer.next() is None)
   @debug.assert_eq(reducer.attempts(), 2)
   @debug.assert_eq(reducer.result(), 10)
+  @debug.assert_eq(reducer.stop_reason(), Some(BudgetExhausted))
 }
 
 ///|

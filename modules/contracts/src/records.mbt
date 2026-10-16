@@ -2,7 +2,7 @@
 pub(all) enum Phase {
   Build
   Execute
-} derive(Eq, @debug.Debug, ToJson, @json.FromJson)
+} derive(Eq, Hash, @debug.Debug, ToJson, @json.FromJson)
 
 ///|
 pub(all) enum ProcessStatus {
@@ -86,6 +86,9 @@ pub(all) struct Attempt {
 
 ///|
 pub extend Phase with Eq::{equal, not_equal}
+
+///|
+pub extend Phase with Hash::{hash, hash_combine}
 
 ///|
 pub extend Phase with ToJson::{to_json}

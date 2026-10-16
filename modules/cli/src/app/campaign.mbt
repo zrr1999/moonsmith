@@ -78,15 +78,29 @@ pub async fn run(
   let mut final_attempt = original
   let mut attempts = 0
   if original.verdict is Finding(fingerprint) {
-    let search = @engine.Reducer::new(
-      program,
+    let predicate : @contracts.FailurePredicate = {
+      oracle: "reference",
       fingerprint,
-      limit=reduction_limit,
-      size=p => p.size(),
-      valid=p => p.valid(),
-      candidates=p => p.candidates(),
-    )
-    while search.next() is Some(candidate) {
+    }
+    guard @engine.Reducer::new(
+        program,
+        @engine.reference_assessment(
+          original.expected,
+          @moon.configurations(),
+          original.observations,
+        ),
+        predicate,
+        id=directory,
+        limit=reduction_limit,
+        size=p => p.size(),
+        valid=p => p.valid(),
+        candidates=p => p.candidates(),
+      )
+      is Ok(search) else {
+      fail("initial reduction evidence is invalid")
+    }
+    while search.next() is Some(request) {
+      let candidate = request.program
       guard candidate.evaluate() is Some(value) else {
         fail("invalid reduction candidate")
       }
@@ -99,9 +113,16 @@ pub async fn run(
         "reduction",
         injected,
       )
-      if search.observe(attempt.verdict) {
-        final_attempt = attempt
-      }
+      ignore(
+        search.observe(
+          request.id,
+          @engine.reference_assessment(
+            attempt.expected,
+            @moon.configurations(),
+            attempt.observations,
+          ),
+        ),
+      )
     }
     attempts = search.attempts()
     // Recheck the selected case in a fresh compiler workspace before reporting reduction.
@@ -118,7 +139,15 @@ pub async fn run(
       "confirmation",
       injected,
     )
-    guard confirmation.verdict == original.verdict else {
+    guard @engine.match_failure(
+        predicate,
+        @engine.reference_assessment(
+          confirmation.expected,
+          @moon.configurations(),
+          confirmation.observations,
+        ),
+      ) ==
+      Preserved else {
       fail("finding did not reproduce during confirmation")
     }
     final_attempt = confirmation
