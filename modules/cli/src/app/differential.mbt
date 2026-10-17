@@ -6,6 +6,7 @@ pub struct DifferentialRun {
   attempt_directory : String
   original_toolchain : @contracts.ProcessEvidence?
   save_error : String?
+  reduction : @contracts.DifferentialReduction?
 }
 
 ///|
@@ -26,9 +27,11 @@ async fn execute_differential(
   directory : String,
   case : @contracts.DifferentialCase,
   purpose : String,
+  source? : String,
   original_toolchain? : @contracts.ProcessEvidence,
   on_plan? : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
+  let source = source.unwrap_or(case.source)
   guard @moonbit.parse_result_protocol(case.result_protocol) is Some(ty) else {
     fail("unsupported result protocol: \{case.result_protocol}")
   }
@@ -38,7 +41,7 @@ async fn execute_differential(
   let attempt_directory = @artifacts.begin_attempt(directory)
   @moon.prepare_saved(
     attempt_directory,
-    case.source,
+    source,
     case.module_source,
     case.package_source,
   )
@@ -75,7 +78,7 @@ async fn execute_differential(
   let attempt : @contracts.DifferentialAttempt = {
     format_version: 2,
     purpose,
-    source: case.source,
+    source,
     configurations: case.configurations.copy(),
     result_protocol: case.result_protocol,
     toolchain,
@@ -114,6 +117,7 @@ async fn finish_differential(
     attempt_directory,
     original_toolchain,
     save_error,
+    reduction: None,
   }
 }
 
@@ -125,10 +129,14 @@ pub async fn run_differential(
   build_timeout_ms? : Int = 30000,
   run_timeout_ms? : Int = 2000,
   injected? : Bool = false,
+  reduction_limit? : Int = 16,
   on_plan? : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
   @moon.validate_timeouts(build_timeout_ms, run_timeout_ms)
   limits.validate()
+  guard reduction_limit >= 0 && reduction_limit <= 64 else {
+    fail("reduction limit must be between 0 and 64")
+  }
   let seed = choose_seed(seed, @host.random_seed)
   let generated = @moonbit.synthesize(seed, limits~) catch {
     error =>
@@ -159,9 +167,10 @@ pub async fn run_differential(
   let directory = @artifacts.create_differential(base, case) catch {
     error => fail("case storage failed for seed \{seed}: \{error}")
   }
-  execute_differential(directory, case, "original", on_plan~) catch {
+  let run = execute_differential(directory, case, "original", on_plan~) catch {
     error => fail("execution failed for seed \{seed} at \{directory}: \{error}")
   }
+  reduce_differential(run, program, reduction_limit)
 }
 
 ///|
@@ -169,20 +178,28 @@ pub async fn replay_differential(
   directory : String,
   on_plan? : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
-  let directory = @host.canonical(directory)
-  let case = @artifacts.load_differential(directory) catch {
-    error => fail("loading case at \{directory} failed: \{error}")
-  }
-  try {
-    let original_toolchain = @artifacts.original_toolchain(directory)
-    execute_differential(
-      directory,
-      case,
-      "replay",
-      original_toolchain?,
-      on_plan~,
-    )
+  let input = @host.canonical(directory)
+  let (directory, case, source, original_toolchain) = try {
+    if @host.exists("\{input}/case.json") {
+      let case = @artifacts.load_differential(input)
+      (input, case, case.source, @artifacts.original_toolchain(input))
+    } else {
+      let directory = @host.canonical("\{input}/../..")
+      let case = @artifacts.load_differential(directory)
+      let saved = @artifacts.load_differential_attempt(input, case)
+      (directory, case, saved.source, Some(saved.toolchain))
+    }
   } catch {
+    error => fail("loading saved material at \{input} failed: \{error}")
+  }
+  execute_differential(
+    directory,
+    case,
+    "replay",
+    source~,
+    original_toolchain?,
+    on_plan~,
+  ) catch {
     error =>
       fail(
         "replay failed for seed \{case.generation.seed} at \{directory}: \{error}",
@@ -203,7 +220,7 @@ pub fn describe_differential(run : DifferentialRun) -> String {
       }
     },
   )
-  @report.summarize_differential(
+  let summary = @report.summarize_differential(
     run.case,
     run.attempt,
     values,
@@ -212,4 +229,8 @@ pub fn describe_differential(run : DifferentialRun) -> String {
     original_toolchain=run.original_toolchain,
     save_error=run.save_error,
   )
+  match run.reduction {
+    None => summary
+    Some(reduction) => summary + "\n" + @report.summarize_reduction(reduction)
+  }
 }

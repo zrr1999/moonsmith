@@ -65,3 +65,40 @@ pub async fn original_toolchain(
   }
   original
 }
+
+///|
+pub async fn load_differential_attempt(
+  directory : String,
+  case : @contracts.DifferentialCase,
+) -> @contracts.DifferentialAttempt {
+  let attempt : @contracts.DifferentialAttempt = @json.from_json(
+    @json.parse(@host.read_text("\{directory}/attempt.json")),
+  )
+  guard attempt.format_version == 2 else {
+    fail("unsupported differential attempt format")
+  }
+  guard attempt.configurations == case.configurations &&
+    attempt.result_protocol == case.result_protocol &&
+    attempt.injected == case.injected else {
+    fail("saved attempt does not match its case")
+  }
+  for
+    (name, expected) in [
+      ("main.mbt", attempt.source),
+      ("moon.mod", case.module_source),
+      ("moon.pkg", case.package_source),
+    ] {
+    guard @host.read_text("\{directory}/\{name}") == expected else {
+      fail("\{name} does not match saved execution material")
+    }
+  }
+  attempt
+}
+
+///|
+pub async fn save_reduction(
+  directory : String,
+  record : @contracts.DifferentialReduction,
+) -> Unit {
+  @host.write_new("\{directory}/reduction.json", record.to_json().stringify())
+}

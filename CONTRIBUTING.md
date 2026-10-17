@@ -3,7 +3,7 @@
 ## 开发准备
 
 先保证本机 `moon` 已在 `PATH` 中，官方安装目录为 `~/.moon/bin`。然后在仓库根目录运行
-`just deps` 初始化 MoonBit 包索引，再运行 `just install`，把 `prek` 的 `pre-commit` 和
+`just install` 初始化 MoonBit 包索引，并把 `prek` 的 `pre-commit` 和
 `commit-msg` hooks 装进本仓库 `.git/hooks/`。依赖包会在首次检查或构建时下载。
 检查工具配置见 [prek.toml](prek.toml) 和 [CI 工作流](.github/workflows/ci-static-checks.yml)。
 
@@ -12,20 +12,19 @@
 | 命令 | 作用 |
 | --- | --- |
 | `just` | 列出开发命令 |
-| `just deps` | 初始化或刷新 MoonBit 包索引 |
-| `just install` | 安装 Git hooks |
+| `just install` | 初始化或刷新 MoonBit 包索引并安装 Git hooks |
 | `just format` | 格式化 justfile 和 MoonBit 包 |
 | `uvx prek run --all-files` | 统一运行仓库静态检查 |
 | `just build` | 构建 workspace 全部模块及 native 可执行入口 |
 | `just test` | 运行单元测试及真实 MoonBit 工具链集成测试 |
-| `just run` | 生成一个案例，执行三种编译配置并保存结果 |
+| `moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run` | 生成一个案例，执行三种编译配置并保存结果 |
 
 新增文件需纳入 Git 索引后才能被 `--all-files` 检查。尚不准备暂存内容时可使用
 `git add --intent-to-add <文件>`；单独检查未跟踪文件也可运行
 `uvx prek run --files <文件>`。
 
 文档变更运行 `uvx prek run --all-files`。实现变更还需运行 `just build` 与 `just test`，
-并增加或运行相关行为测试。入口变更还需运行 `just run`。进程生命周期、判定和
+并增加或运行相关行为测试。入口变更还需通过表中的 `moon run` 命令验证实际入口。进程生命周期、判定和
 归约必须覆盖其实际失败边界，不能只断言内部调用。
 未来的编译器测试矩阵与 MoonSmith 自身的构建检查分别记录；当前 CI 的 native 检查不代表
 四后端、五配置验证已经完成。
@@ -70,10 +69,11 @@
 ```mermaid
 flowchart LR
     CLI[CLI] --> App[app]
-    App --> Language[MoonBit 模板与规则构造]
+    App --> Language[MoonBit 模板、规则构造与归约候选]
     App --> Compiler[toolchains/moon]
     Compiler --> Host[Host 进程与文件系统]
     App --> Engine[Engine 差分比较]
+    App --> Reduction[Engine 归约会话]
     App --> Store[artifacts]
     Store --> Host
     App --> Report[report]
@@ -115,8 +115,23 @@ stdout/stderr 按 UTF-8 文本记录，无效编码使用替换字符。
 作为完成标记，缺少它表示未完成。无效命令、参数或不支持的记录格式在执行前报错。
 故障注入用于内部验证，保留原始输出并明确标识。
 
-原有参考求值与有预算归约仍是独立库能力，未接入当前差分 CLI。它们的 API 与限制见
-[MoonBit](modules/moonbit/README.md) 和 [Engine](modules/engine/README.md)。
+`run` 保存原始分歧后自动归约。语言适配器产生完整检查通过、结果类型不变且节点更少的候选，
+Engine 固定首次分歧的配置对；候选自己的两个有效输出仍不同时才接受。另一对配置出现分歧、
+编译失败、崩溃、超时或非规范输出不能代替原判据。其余配置仍全部执行并保存。
+候选预算默认为 16，库 API 的 `reduction_limit` 允许 `0..64`，CLI 使用默认值；原始执行和
+结束后的一次独立确认不计入候选数。零预算仍确认原例，不声称有缩减进展。
+
+原始 `attempt.json` 先保存，候选和确认分别追加尝试。原始尝试目录的 `reduction.json`
+记录配置对、预算、尝试与接受数、最佳结果、停止原因及确认状态；未写成时不声明归约完整交付。
+只有独立确认仍保持原配置对分歧时才展示已确认产物；不保持或证据不足均明确标为未确认。
+归约操作或保存失败返回 `1`，保留并展示原始比较结论；确认不保持时仍保留原始分歧的 `2`。
+归约搜索结束不保证局部或全局最小，单次确认也不代表统计稳定性。
+
+`replay` 同时接受案例目录和该案例下的已完成尝试目录。后者检查 `attempt.json` 与
+`main.mbt`、构建文件和案例协议是否一致，重跑保存的候选源码；仍向原案例追加记录，不恢复搜索。
+因此归约结果不依赖重新生成 AST 或保存时的生成器。原始版本 2 案例及尝试格式不变。
+参考求值仍是独立库能力。API 与限制见 [MoonBit](modules/moonbit/README.md) 和
+[Engine](modules/engine/README.md)。
 差分闭环测试覆盖生成与预算、判定、实际工具链执行、保存失败、重放追加和 CLI 结果；
 不将故障注入当作编译器缺陷，也不将当前两个后端、三配置验收等同于完整比赛矩阵。
 

@@ -36,11 +36,11 @@ jobs:
         with:
           version: "0.10.14+7d59c7ec9"
           core-version: "0.10.14+7d59c7ec9"
-      - name: Initialize MoonBit registry
-        run: just deps
+      - name: Prepare development environment
+        run: just install
       - name: Build workspace modules
         run: just build
       - name: Run tests
         run: just test
       - name: Run differential compiler testing
-        run: just run
+        run: moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run

@@ -52,6 +52,7 @@ async test "generated differential cases execute without a reference and replay 
       msg=@debug.to_string(run.attempt),
     )
     @debug.assert_eq(run.attempt.observations.length(), 6)
+    @debug.assert_eq(run.reduction, None)
     @debug.assert_eq(run.attempt.toolchain.output.status, @contracts.Exited(0))
     @debug.assert_eq(run.attempt.platform.output.status, @contracts.Exited(0))
     @debug.assert_eq(run.case.generation.seed, seed)
@@ -461,6 +462,7 @@ test "summaries preserve differences alongside failures and unknown toolchain pr
     attempt_directory: "/fixture/attempt",
     original_toolchain: Some(probe),
     save_error: None,
+    reduction: None,
   }
   let text = describe_differential(run)
   assert_true(text.contains("difference observed"))
