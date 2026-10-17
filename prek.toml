@@ -73,6 +73,7 @@ hooks = [
 repo = "https://github.com/lycheeverse/lychee"
 rev = "lychee-v0.24.2"
 hooks = [
+  # Remove LYCHEE_VERSION after upgrading to a release containing https://github.com/lycheeverse/lychee/pull/2293.
   { id = "lychee", files = "\\.md$", args = ["LYCHEE_VERSION=0.24.2", "--offline", "--scheme", "file", "--include-fragments", "--no-progress"] },
 ]
 
