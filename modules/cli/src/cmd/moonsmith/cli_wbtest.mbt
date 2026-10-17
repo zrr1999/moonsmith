@@ -41,6 +41,7 @@ async test "help succeeds and input errors identify the invalid input" {
   @debug.assert_eq(cli([], output=line => help.push(line)), 0)
   assert_true(help.join("\n").contains("run [--seed SEED]"))
   assert_true(help.join("\n").contains("replay CASE_DIR"))
+  assert_true(help.join("\n").contains("bounded reduction"))
   for
     (args, diagnostic) in [
       (["unknown"], "unknown command: unknown"),
@@ -54,6 +55,34 @@ async test "help succeeds and input errors identify the invalid input" {
     assert_false(text.contains("Planned configurations:"))
     assert_false(text.contains("Evidence: saved"))
   }
+}
+
+///|
+async test "CLI presents automatic reduction and replays its confirmed source" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/cli-reduction-")
+  defer @host.remove_tree(base)
+  let run = @app.run_differential(
+    seed=7,
+    base~,
+    injected=true,
+    reduction_limit=1,
+  )
+  let output = []
+  @debug.assert_eq(present(run, line => output.push(line)), 2)
+  let summary = output.join("\n")
+  assert_true(summary.contains("Reduction: confirmed"))
+  assert_true(summary.contains("fault injection"))
+  guard run.reduction is Some(reduction) &&
+    reduction.confirmation_attempt is Some(directory) else {
+    fail("missing confirmed replay material")
+  }
+  let replay_output = []
+  @debug.assert_eq(
+    cli(["replay", directory], output=line => replay_output.push(line)),
+    2,
+  )
+  assert_false(replay_output.join("\n").contains("Reduction:"))
 }
 
 ///|

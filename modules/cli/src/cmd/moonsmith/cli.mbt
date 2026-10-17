@@ -40,6 +40,9 @@ fn present(run : @app.DifferentialRun, output : (String) -> Unit) -> Int {
   if run.save_error is Some(_) {
     return 1
   }
+  if run.reduction is Some(reduction) && reduction.error is Some(_) {
+    return 1
+  }
   match run.attempt.comparison {
     Consistent => 0
     Difference(_, _) => 2
@@ -60,12 +63,14 @@ async fn cli(
             "MoonSmith — single-case differential compiler testing",
             "",
             "moonsmith run [--seed SEED]",
-            "moonsmith replay CASE_DIR",
+            "moonsmith replay CASE_DIR_OR_ATTEMPT_DIR",
             "",
             "SEED is a signed 32-bit integer; omitted seeds are selected automatically and recorded.",
             "Configurations: \{@app.differential_configurations().join(", ")}",
             "Runs continue through all configurations and save their evidence.",
+            "A difference triggers bounded reduction and one fresh confirmation.",
             "Replay uses saved material with the current toolchain and appends a new record.",
+            "Pass a saved attempt directory to replay a reduced program without restarting reduction.",
             "Exit codes: 0 consistent, 2 difference, 3 incomplete comparison, 1 operation error.",
           ].join("\n"),
         )

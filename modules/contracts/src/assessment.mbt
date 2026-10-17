@@ -56,7 +56,7 @@ pub(all) enum PredicateStatus {
   NotPreserved
   Undetermined
   Inapplicable
-} derive(Eq, @debug.Debug)
+} derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
 ///|
 pub extend CheckOutcome with Eq::{equal, not_equal}
@@ -87,3 +87,9 @@ pub extend FailurePredicate with @debug.Debug::{to_repr}
 
 ///|
 pub extend PredicateStatus with @debug.Debug::{to_repr}
+
+///|
+pub extend PredicateStatus with ToJson::{to_json}
+
+///|
+pub extend PredicateStatus with @json.FromJson::{from_json}

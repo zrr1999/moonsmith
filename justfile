@@ -3,13 +3,10 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 default:
     @just --list
 
-# Install Git hooks
+# Initialize the MoonBit registry and install Git hooks
 install:
-    uvx prek install --prepare-hooks
-
-# Initialize or refresh the MoonBit package registry index
-deps:
     moon update
+    uvx prek install --prepare-hooks
 
 # Format sources
 format:
@@ -23,10 +20,6 @@ check:
 # Build all workspace modules and the native executable
 build:
     moon build --target native --deny-warn
-
-# Run differential testing (pass run, replay, or --help as arguments)
-run *args="run":
-    moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- {{ args }}
 
 # Run behavior tests
 test:
