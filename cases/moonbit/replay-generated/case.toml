@@ -1,0 +1,7 @@
+kind = "replay"
+source_case = "cases/moonbit/reduce-root-call"
+expected = "saved-source-reexecuted-with-new-attempt"
+preserve_original = true
+preserve_previous_attempts = true
+new_attempts = 1
+regenerate = false

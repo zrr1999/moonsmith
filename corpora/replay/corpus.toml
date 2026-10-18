@@ -1,0 +1,7 @@
+id = "replay"
+claim = "重执行保存材料，保留原始输入与旧记录并追加新证据"
+
+[[cases]]
+path = "cases/moonbit/replay-generated"
+runner = "pending"
+evidence = "real-toolchain"

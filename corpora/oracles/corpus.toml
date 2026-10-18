@@ -1,0 +1,27 @@
+id = "oracles"
+claim = "明确预期和正反观察正确区分正常、分歧与证据不足"
+
+[[cases]]
+path = "cases/moonbit/moonbit-docs-1006"
+runner = "reference-output"
+evidence = "real-toolchain"
+
+[[cases]]
+path = "cases/moonbit/moonbit-docs-1070"
+runner = "reference-output"
+evidence = "real-toolchain"
+
+[[cases]]
+path = "cases/moonbit/moonbit-docs-1266"
+runner = "reference-output"
+evidence = "real-toolchain"
+
+[[cases]]
+path = "cases/engine/missing-observation"
+runner = "differential-observations"
+evidence = "model"
+
+[[cases]]
+path = "cases/engine/invalid-output"
+runner = "differential-observations"
+evidence = "model"

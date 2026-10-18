@@ -1,0 +1,7 @@
+id = "generation"
+claim = "生成结果结构合法、确定且遵守构造预算"
+
+[[cases]]
+path = "cases/moonbit/generation-boundaries"
+runner = "generation-properties"
+evidence = "model"

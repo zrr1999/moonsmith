@@ -1,0 +1,8 @@
+kind = "generation"
+generator = "template-rules-v1"
+seed_start = -8
+seed_count = 16
+max_nodes = 512
+max_depth = 10
+max_attempts = 1024
+expected = "valid-deterministic-and-within-budgets"

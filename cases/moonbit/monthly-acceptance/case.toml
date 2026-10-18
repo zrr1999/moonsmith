@@ -1,0 +1,11 @@
+kind = "campaign"
+generator = "template-rules-v1"
+seed_start = 0
+sample_count = 10000
+matrix_sample_count = 1000
+minimum_check_ratio = 0.99
+max_nodes = 128
+max_depth = 6
+max_attempts = 256
+configurations = ["native-debug", "native-release", "wasm-debug", "wasm-gc-debug", "js-debug"]
+expected = "report-full-denominators-statuses-and-execution-cost"

@@ -1,0 +1,7 @@
+id = "runtime"
+claim = "执行超时按阶段记录并正确回收直接子进程，不冒充输出分歧"
+
+[[cases]]
+path = "cases/moonbit/execution-timeout"
+runner = "pending"
+evidence = "real-toolchain"

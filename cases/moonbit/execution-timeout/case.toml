@@ -1,0 +1,8 @@
+kind = "runtime"
+input = "main.mbt"
+configurations = ["native-debug", "native-release"]
+build_timeout_ms = 30000
+run_timeout_ms = 200
+expected_phase = "execute"
+expected_status = "timed-out"
+expected_comparison = "incomplete"
