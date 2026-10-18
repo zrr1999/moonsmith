@@ -41,17 +41,8 @@ fn Expr::erase_function(self : Expr, removed : Int, returns : Ty) -> Expr {
 }
 
 ///|
-fn Expr::reductions(self : Expr) -> Array[Expr] {
-  let result : Array[Expr] = match self {
-    Hole(_) | IntLiteral(_) | BoolLiteral(_) | Ref(_) => []
-    Let(binder, value, body) =>
-      [IntLiteral(0), BoolLiteral(false), value, body.erase_binding(binder)]
-    Add(a, b) | Subtract(a, b) | Less(a, b) =>
-      [IntLiteral(0), BoolLiteral(false), a, b]
-    Not(e) => [BoolLiteral(false), e]
-    If(_, yes, no) => [IntLiteral(0), BoolLiteral(false), yes, no]
-    Call(_, _) => [IntLiteral(0), BoolLiteral(false)]
-  }
+fn Expr::rewrites(self : Expr, rewrite : (Expr) -> Array[Expr]) -> Array[Expr] {
+  let result = rewrite(self)
   let children : Array[Expr] = []
   ignore(
     self.map_children(child => {
@@ -60,7 +51,7 @@ fn Expr::reductions(self : Expr) -> Array[Expr] {
     }),
   )
   for index, child in children {
-    for smaller in child.reductions() {
+    for smaller in child.rewrites(rewrite) {
       let mut position = 0
       result.push(
         self.map_children(original => {
@@ -75,10 +66,54 @@ fn Expr::reductions(self : Expr) -> Array[Expr] {
 }
 
 ///|
-/// Stable, strictly smaller candidates; every rewrite passes the complete checker.
-pub fn CompleteProgram::candidates(
+fn Expr::reductions(self : Expr) -> Array[Expr] {
+  self.rewrites(expr => {
+    match expr {
+      Hole(_) | IntLiteral(_) | BoolLiteral(_) | Ref(_) => []
+      Let(binder, value, body) =>
+        [IntLiteral(0), BoolLiteral(false), value, body.erase_binding(binder)]
+      Add(a, b) | Subtract(a, b) | Less(a, b) =>
+        [IntLiteral(0), BoolLiteral(false), a, b]
+      Not(e) => [BoolLiteral(false), e]
+      If(_, yes, no) => [IntLiteral(0), BoolLiteral(false), yes, no]
+      Call(_, _) => [IntLiteral(0), BoolLiteral(false)]
+    }
+  })
+}
+
+///|
+fn Expr::integer_reductions(self : Expr) -> Array[Expr] {
+  self.rewrites(expr => {
+    match expr {
+      IntLiteral(n) if n != 0 => [IntLiteral(0)]
+      _ => []
+    }
+  })
+}
+
+///|
+fn Template::rewrite_expressions(
+  self : Template,
+  rewrite : (Expr) -> Array[Expr],
+) -> Array[Template] {
+  let candidates : Array[Template] = []
+  for result in rewrite(self.result) {
+    candidates.push({ ..self, result, })
+  }
+  for id, function in self.functions {
+    for body in rewrite(function.body) {
+      let functions = self.functions.copy()
+      functions[id] = { ..function, body, }
+      candidates.push({ ..self, functions, })
+    }
+  }
+  candidates
+}
+
+///|
+fn CompleteProgram::structural_templates(
   self : CompleteProgram,
-) -> Array[CompleteProgram] {
+) -> Array[Template] {
   let syntax = self.syntax
   let candidates : Array[Template] = []
   for removed, function in syntax.functions {
@@ -96,24 +131,24 @@ pub fn CompleteProgram::candidates(
       result: syntax.result.erase_function(removed, function.returns),
     })
   }
-  for result in syntax.result.reductions() {
-    candidates.push({ ..syntax, result, })
+  for candidate in syntax.rewrite_expressions(expr => expr.reductions()) {
+    candidates.push(candidate)
   }
-  for id, function in syntax.functions {
-    for body in function.body.reductions() {
-      let functions = syntax.functions.copy()
-      functions[id] = { ..function, body, }
-      candidates.push({ ..syntax, functions, })
-    }
-  }
+  candidates
+}
+
+///|
+fn CompleteProgram::checked_candidates(
+  self : CompleteProgram,
+  candidates : Array[Template],
+) -> Array[CompleteProgram] {
   let seen : Map[String, Unit] = Map([])
   let result : Array[CompleteProgram] = []
   for candidate in candidates {
-    if candidate.size() >= self.size() {
-      continue
-    }
     let complete = Some(candidate.finish()) catch { _ => None }
-    if complete is Some(program) && program.result_type() == self.result_type() {
+    if complete is Some(program) &&
+      program.result_type() == self.result_type() &&
+      program.is_smaller_than(self) {
       let source = program.emit()
       if !seen.contains(source) {
         seen[source] = ()
@@ -122,4 +157,35 @@ pub fn CompleteProgram::candidates(
     }
   }
   result
+}
+
+///|
+pub fn CompleteProgram::structural_candidates(
+  self : CompleteProgram,
+) -> Array[CompleteProgram] {
+  self.checked_candidates(self.structural_templates())
+}
+
+///|
+pub fn CompleteProgram::integer_candidates(
+  self : CompleteProgram,
+) -> Array[CompleteProgram] {
+  self.checked_candidates(
+    self.syntax.rewrite_expressions(expr => expr.integer_reductions()),
+  )
+}
+
+///|
+/// Stable, cost-decreasing candidates; every rewrite passes the complete checker.
+pub fn CompleteProgram::candidates(
+  self : CompleteProgram,
+) -> Array[CompleteProgram] {
+  let candidates = self.structural_templates()
+  for
+    candidate in self.syntax.rewrite_expressions(expr => {
+      expr.integer_reductions()
+    }) {
+    candidates.push(candidate)
+  }
+  self.checked_candidates(candidates)
 }

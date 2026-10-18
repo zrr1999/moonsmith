@@ -25,15 +25,16 @@ async fn reduce_differential(
   let predicate = @engine.difference_predicate(first, second)
   let mut result = original
   let mut record : @contracts.DifferentialReduction = {
-    format_version: 1,
+    format_version: 2,
     first_configuration: first,
     second_configuration: second,
     original_attempt: original.attempt_directory,
-    original_nodes: program.size(),
+    cost_model: @moonbit.reduction_cost_model(),
+    original_cost: program.cost(),
     candidate_limit: limit,
     candidates: 0,
     accepted: 0,
-    best_nodes: program.size(),
+    best_cost: program.cost(),
     best_attempt: original.attempt_directory,
     stop_reason: "not started",
     confirmation_attempt: None,
@@ -47,9 +48,9 @@ async fn reduce_differential(
         predicate,
         id=original.attempt_directory,
         limit~,
-        size=p => p.size(),
+        better=(candidate, incumbent) => candidate.is_smaller_than(incumbent),
         valid=p => p.result_type() == program.result_type(),
-        candidates=p => p.candidates(),
+        operations=[p => p.structural_candidates(), p => p.integer_candidates()],
       )
       is Ok(search) else {
       fail("initial differential reduction evidence is invalid")
@@ -70,7 +71,7 @@ async fn reduce_differential(
         record = {
           ..record,
           accepted: record.accepted + 1,
-          best_nodes: search.result().size(),
+          best_cost: search.result().cost(),
           best_attempt: candidate.attempt_directory,
         }
       }

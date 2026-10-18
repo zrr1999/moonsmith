@@ -44,8 +44,12 @@
 | 术语 | 英文 | 定义来源 |
 | --- | --- | --- |
 | 语言操作 | language operation | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-language-operation) |
+| 搜索范围 | search scope | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-search-scope) |
+| 范围遍历 | scope traversal | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-scope-traversal) |
 | 操作调度 | operation scheduling | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-operation-scheduling) |
 | 局部搜索 | local search | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-local-search) |
+| 归约目标度量 | reduction objective | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-reduction-objective) |
+| 归约接受规则 | reduction acceptance | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-reduction-acceptance) |
 | 公共归约引擎（公共引擎） | reduction engine | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-reduction-engine) |
 | 确认 | confirmation | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-confirmation) |
 | 案例重放 | case replay | [FP-0004](../fps/FP-0004-engine-execution-contract.md#term-case-replay) |

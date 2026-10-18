@@ -14,7 +14,7 @@ test "structural reduction preserves result type scope and deterministic order" 
         candidate.syntax.finish().result_type(),
         program.result_type(),
       )
-      assert_true(candidate.size() < program.size())
+      assert_true(candidate.is_smaller_than(program))
       assert_false(seen.contains(candidate.emit()))
       seen[candidate.emit()] = ()
     }

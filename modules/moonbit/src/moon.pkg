@@ -1,5 +1,7 @@
 import {
+  "zrr1999/moonsmith-contracts" @contracts,
   "moonbitlang/core/debug",
+  "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/random",
   "moonbitlang/core/string",
 }
