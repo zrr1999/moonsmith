@@ -15,4 +15,5 @@ import {
   "moonbitlang/async/fs",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
+  "moonbit-community/toml",
 } for "wbtest"

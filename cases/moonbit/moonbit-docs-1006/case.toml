@@ -1,0 +1,4 @@
+source = "https://github.com/moonbitlang/moonbit-docs/issues/1006"
+reported_compiler = "v0.6.28+d96d14d39"
+configurations = ["native-debug", "native-release", "wasm-gc-debug"]
+expected_stdout = "n\n"
