@@ -9,7 +9,9 @@ async test "automatic differential reduction preserves the original and replays 
     fail("missing automatic reduction")
   }
   assert_true(reduction.error is None)
-  assert_true(reduction.best_nodes < reduction.original_nodes)
+  assert_true(reduction.best_cost.nodes < reduction.original_cost.nodes)
+  @debug.assert_eq(reduction.format_version, 2)
+  @debug.assert_eq(reduction.cost_model, @moonbit.reduction_cost_model())
   assert_true(reduction.accepted > 0)
   assert_true(reduction.candidates <= reduction.candidate_limit)
   @debug.assert_eq(reduction.confirmation, Some(@contracts.Preserved))
@@ -95,7 +97,8 @@ async test "reduction budgets bound candidates and confirmation is an additional
       limit + 2,
     )
     if limit == 0 {
-      @debug.assert_eq(reduction.best_nodes, reduction.original_nodes)
+      @debug.assert_eq(reduction.best_cost, reduction.original_cost)
+      assert_true(describe_differential(run).contains("no cost improvement"))
     }
   }
   let before = @host.list_directory(base)
@@ -109,6 +112,66 @@ async test "reduction budgets bound candidates and confirmation is an additional
     assert_true(rejected)
   }
   @debug.assert_eq(@host.list_directory(base), before)
+}
+
+///|
+async test "same-node integer reduction saves costs confirms fresh evidence and replays" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/integer-reduction-")
+  defer @host.remove_tree(base)
+  let program = @moonbit.Template::{
+    functions: [],
+    result: IntLiteral(-2147483648),
+  }.finish()
+  let case = saved_fixture(program.emit(), injected=true)
+  let directory = @artifacts.create_differential(base, case)
+  let original = execute_differential(directory, case, "original")
+  let run = reduce_differential(original, program, 16)
+  assert_true(run.save_error is None)
+  guard run.reduction is Some(reduction) else { fail("missing reduction") }
+  assert_true(reduction.error is None)
+  @debug.assert_eq(reduction.format_version, 2)
+  @debug.assert_eq(reduction.original_cost.nodes, 1)
+  @debug.assert_eq(reduction.best_cost.nodes, 1)
+  @debug.assert_eq(reduction.original_cost.integer_magnitude, 2147483648L)
+  @debug.assert_eq(reduction.best_cost.integer_magnitude, 0L)
+  @debug.assert_eq(reduction.best_cost.source_bytes, 25)
+  @debug.assert_eq(reduction.candidates, 1)
+  @debug.assert_eq(reduction.accepted, 1)
+  @debug.assert_eq(reduction.stop_reason, "candidate search finished")
+  @debug.assert_eq(reduction.confirmation, Some(@contracts.Preserved))
+  let summary = describe_differential(run)
+  assert_true(summary.contains("Reduction nodes: 1 -> 1"))
+  assert_true(summary.contains("2147483648 -> 0 integer magnitude"))
+  assert_false(summary.contains("no cost improvement"))
+  let saved : @contracts.DifferentialReduction = @json.from_json(
+    @json.parse(@host.read_text("\{original.attempt_directory}/reduction.json")),
+  )
+  @debug.assert_eq(saved, reduction)
+  guard reduction.confirmation_attempt is Some(confirmed) else {
+    fail("missing independent confirmation")
+  }
+  assert_true(confirmed != reduction.best_attempt)
+  let confirmation = @artifacts.load_differential_attempt(confirmed, case)
+  @debug.assert_eq(confirmation.source, "fn main {\n  println(0)\n}\n")
+  @debug.assert_eq(confirmation.purpose, "confirmation")
+  for observation in confirmation.observations {
+    @debug.assert_eq(observation.output.status, @contracts.Exited(0))
+    if observation.phase == Execute {
+      @debug.assert_eq(observation.output.stdout, "0\n")
+    }
+  }
+  @debug.assert_eq(@host.list_directory("\{directory}/attempts").length(), 3)
+  let replay = replay_differential(confirmed)
+  @debug.assert_eq(replay.attempt.source, confirmation.source)
+  @debug.assert_eq(replay.attempt.comparison, run.attempt.comparison)
+  @debug.assert_eq(@host.list_directory("\{directory}/attempts").length(), 4)
+  @debug.assert_eq(@artifacts.load_differential(directory), case)
+  @debug.assert_eq(@host.read_text("\{directory}/original.mbt"), program.emit())
+  @debug.assert_eq(
+    @artifacts.load_differential_attempt(original.attempt_directory, case),
+    original.attempt,
+  )
 }
 
 ///|

@@ -260,12 +260,14 @@ test "enumeration does not construct more candidates after exhausting its budget
     toy_predicate(),
     id="enumerator",
     limit=1,
-    size=n => n,
+    better=(candidate, incumbent) => candidate < incumbent,
     valid=n => n >= 0,
-    candidates=n => {
-      generated += 1
-      [n - 1]
-    },
+    operations=[
+      n => {
+        generated += 1
+        [n - 1]
+      },
+    ],
   ).unwrap()
   guard reducer.next() is Some(request) else { fail("missing request") }
   assert_true(reducer.observe(request.id, toy_evidence(request.program)))

@@ -108,9 +108,9 @@ test "reducer is independent of MoonBit and preserves the selected failure" {
       { oracle: "reference", fingerprint, },
       id="enumeration",
       limit=8,
-      size=n => n,
+      better=(candidate, incumbent) => candidate < incumbent,
       valid=n => n >= 0,
-      candidates=n => if n == 10 { [12, -1, 8, 7, 6] } else { [] },
+      operations=[n => if n == 10 { [12, -1, 8, 7, 6] } else { [] }],
     )
     is Ok(reducer) else {
     fail("invalid initial evidence")
@@ -153,9 +153,9 @@ test "invalid candidates consume the reduction budget" {
       { oracle: "reference", fingerprint, },
       id="invalid",
       limit=2,
-      size=n => n,
+      better=(candidate, incumbent) => candidate < incumbent,
       valid=n => n == 10,
-      candidates=_ => [9, 8, 7],
+      operations=[_ => [9, 8, 7]],
     )
     is Ok(reducer) else {
     fail("invalid initial evidence")

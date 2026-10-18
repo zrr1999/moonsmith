@@ -92,9 +92,9 @@ pub async fn run(
         predicate,
         id=directory,
         limit=reduction_limit,
-        size=p => p.size(),
+        better=(candidate, incumbent) => candidate.size() < incumbent.size(),
         valid=p => p.valid(),
-        candidates=p => p.candidates(),
+        operations=[p => p.candidates()],
       )
       is Ok(search) else {
       fail("initial reduction evidence is invalid")
