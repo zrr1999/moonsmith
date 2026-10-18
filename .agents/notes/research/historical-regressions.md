@@ -31,9 +31,10 @@ moonrun 0.1.20260920 (914d7da 2026-09-20)
 的构建和执行，共 9 次构建、9 次执行。三个判定均为 `Match`，分别匹配完整输出
 `"n\n"`、`"0\n"` 与空字符串，保留原始案例。
 
-代表性原始记录在本任务工作区 `runs/historical-39361da5f1abcf6cbbed2ba623c1f404/`，
-后续重跑创建独立目录，不覆盖该记录。工具链版本、平台、全部命令和 stdout/stderr
-在各例的 `attempt.json` 中；这些日常运行产物不纳入 Git。
+完整原始 JSON 仅保存在本地忽略的运行目录，未纳入版本控制，仓库读者不能通过此仓库
+取得这些文件。当时的代表性本地记录位于 `runs/historical-39361da5f1abcf6cbbed2ba623c1f404/`；
+后续重跑创建独立目录，不覆盖该记录。各例的 `attempt.json` 保存工具链、平台、
+全部命令和 stdout/stderr，本笔记保留用于核对的环境、步骤和结果。
 
 另做一次明确的负向检查：临时将 #1006 的预期改为错误字符串，执行后恢复原始元数据。
 测试非零退出，#1006 被判为 `Mismatch`，其余两例仍执行并保存 `Match` 记录；
@@ -94,8 +95,9 @@ node --stack-size=4096 "$HIST_TOOLCHAIN/moonc.js" compile "$HIST_RUN/control.mbt
   -target wasm-gc -w -unused_constructor -o "$HIST_RUN/control.wasm"
 ```
 
-对照编译退出码为 **0**，stdout、stderr 均为空。原始 JSON、复制的输入和对照源码保留在
-本任务工作区 `runs/historical-1266-old-762fcd57de344e1786be986d8c8d1b36/`。
+对照编译退出码为 **0**，stdout、stderr 均为空。原始 JSON、复制的输入和对照源码仅保留在
+本地忽略的 `runs/historical-1266-old-762fcd57de344e1786be986d8c8d1b36/`，未纳入版本控制。
+本笔记长期保存版本、环境、重现命令、退出码和关键原始输出；需要完整 JSON 时另行归档。
 该结果支持 #1266 所述触发模式在此正式编译器中的真实复现；当前版本的三配置通过
 另外记录，不据此推断精确修复版本或其他平台行为。
 

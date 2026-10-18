@@ -45,7 +45,8 @@
 不再遍历全部 MoonBit case 后一律按参考输出执行。
 
 当前配置为 native debug、native release、wasm-gc debug 中至少两个。工具链使用当前
-`PATH`；每次执行新建 `runs/historical-<id>/`，保留复制的输入、实际工具链、平台、
+`PATH`；每次执行新建 `runs/historical-<随机后缀>/cases/moonbit/<case-id>/`，
+保留复制的输入、实际工具链、平台、
 命令、原始输出、`attempt.json` 和 `report.md`。某例预期不满足时继续其余案例并汇总失败。
 旧版复现见[验收记录](../.agents/notes/research/historical-regressions.md)，与当前检查分别报告。
 

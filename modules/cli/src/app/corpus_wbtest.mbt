@@ -97,7 +97,7 @@ async fn load_corpus(root : String, name : String) -> Array[CorpusCase] {
 async test "eight corpus definitions resolve case inputs without claiming pending execution" {
   let root = regression_root()
   let names = @host.list_directory("\{root}/corpora").filter(name => {
-    name != "README.md"
+    name != "README.md" && !name.has_prefix(".")
   })
   @debug.assert_eq(names.length(), 8)
   for name in names {
