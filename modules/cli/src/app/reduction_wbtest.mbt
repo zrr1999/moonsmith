@@ -1,79 +1,106 @@
 ///|
-async test "automatic differential reduction preserves the original and replays the confirmed candidate" {
-  @host.mkdir("runs")
-  let base = @host.new_directory("runs/reduction-")
-  defer @host.remove_tree(base)
-  let run = run_differential(seed=7, base~, injected=true)
-  assert_true(run.save_error is None)
-  guard run.reduction is Some(reduction) else {
-    fail("missing automatic reduction")
-  }
-  assert_true(reduction.error is None)
-  assert_true(reduction.best_cost.nodes < reduction.original_cost.nodes)
-  @debug.assert_eq(reduction.format_version, 2)
-  @debug.assert_eq(reduction.cost_model, @moonbit.reduction_cost_model())
-  assert_true(reduction.accepted > 0)
-  assert_true(reduction.candidates <= reduction.candidate_limit)
-  @debug.assert_eq(reduction.confirmation, Some(@contracts.Preserved))
-  @debug.assert_eq(run.attempt.purpose, "original")
-  @debug.assert_eq(run.attempt.source, run.case.source)
-  @debug.assert_eq(@artifacts.load_differential(run.directory), run.case)
-  let saved : @contracts.DifferentialReduction = @json.from_json(
-    @json.parse(@host.read_text("\{run.attempt_directory}/reduction.json")),
-  )
-  @debug.assert_eq(saved, reduction)
-  guard reduction.confirmation_attempt is Some(confirmed) else {
-    fail("missing confirmation")
-  }
-  assert_true(confirmed != reduction.best_attempt)
-  let best = @artifacts.load_differential_attempt(
-    reduction.best_attempt,
-    run.case,
-  )
-  let confirmation = @artifacts.load_differential_attempt(confirmed, run.case)
-  @debug.assert_eq(confirmation.source, best.source)
-  assert_true(confirmation.source != run.case.source)
-  @debug.assert_eq(confirmation.purpose, "confirmation")
-  let before : Map[String, String] = Map([])
-  for name in @host.list_directory("\{run.directory}/attempts") {
-    let directory = "\{run.directory}/attempts/\{name}"
-    for file in ["main.mbt", "attempt.json", "report.md"] {
-      before["\{directory}/\{file}"] = @host.read_text("\{directory}/\{file}")
+async test "stored generated inputs reduce with fresh confirmation and replay without changing the original" {
+  let root = case_root()
+  for fixture in fixed_cases_for(root, "reduction") {
+    guard @toml.parse(fixture.metadata) is TomlTable(fields) else {
+      fail("reduction case metadata must be a table")
     }
+    @debug.assert_eq(case_string(fields, "generator"), "template-rules-v1")
+    let seed = case_int(fields, "seed")
+    let limits : @moonbit.GenerationLimits = {
+      max_nodes: case_int(fields, "max_nodes"),
+      max_depth: case_int(fields, "max_depth"),
+      max_attempts: case_int(fields, "max_attempts"),
+    }
+    let generated = @moonbit.synthesize(seed, limits~)
+    @debug.assert_eq(
+      generated.program.emit().trim_end().to_owned() + "\n",
+      fixture.source,
+    )
+    @host.mkdir("runs")
+    let base = @host.new_directory("runs/reduction-")
+    defer @host.remove_tree(base)
+    let run = run_differential(seed~, limits~, base~, injected=true)
+    @debug.assert_eq(run.case.source, generated.program.emit())
+    assert_true(run.save_error is None)
+    guard run.reduction is Some(reduction) else {
+      fail("missing automatic reduction")
+    }
+    assert_true(reduction.error is None)
+    assert_true(reduction.best_cost.nodes < reduction.original_cost.nodes)
+    @debug.assert_eq(reduction.format_version, 2)
+    @debug.assert_eq(reduction.cost_model, @moonbit.reduction_cost_model())
+    assert_true(reduction.accepted > 0)
+    assert_true(reduction.candidates <= reduction.candidate_limit)
+    @debug.assert_eq(reduction.confirmation, Some(@contracts.Preserved))
+    @debug.assert_eq(run.attempt.purpose, "original")
+    @debug.assert_eq(run.attempt.source, run.case.source)
+    @debug.assert_eq(@artifacts.load_differential(run.directory), run.case)
+    let saved : @contracts.DifferentialReduction = @json.from_json(
+      @json.parse(@host.read_text("\{run.attempt_directory}/reduction.json")),
+    )
+    @debug.assert_eq(saved, reduction)
+    guard reduction.confirmation_attempt is Some(confirmed) else {
+      fail("missing confirmation")
+    }
+    assert_true(confirmed != reduction.best_attempt)
+    let best = @artifacts.load_differential_attempt(
+      reduction.best_attempt,
+      run.case,
+    )
+    let confirmation = @artifacts.load_differential_attempt(confirmed, run.case)
+    @debug.assert_eq(confirmation.source, best.source)
+    assert_true(confirmation.source != run.case.source)
+    @debug.assert_eq(confirmation.purpose, "confirmation")
+    let before : Map[String, String] = Map([])
+    for name in @host.list_directory("\{run.directory}/attempts") {
+      let directory = "\{run.directory}/attempts/\{name}"
+      for file in ["main.mbt", "attempt.json", "report.md"] {
+        before["\{directory}/\{file}"] = @host.read_text("\{directory}/\{file}")
+      }
+    }
+    let count = @host.list_directory("\{run.directory}/attempts").length()
+    @debug.assert_eq(count, reduction.candidates + 2)
+    let replay = replay_differential(confirmed)
+    @debug.assert_eq(replay.attempt.source, confirmation.source)
+    @debug.assert_eq(
+      replay.attempt.comparison,
+      @contracts.Difference("native-debug", "native-release"),
+    )
+    @debug.assert_eq(replay.reduction, None)
+    @debug.assert_eq(
+      @host.list_directory("\{run.directory}/attempts").length(),
+      count + 1,
+    )
+    for path, content in before {
+      @debug.assert_eq(@host.read_text(path), content)
+    }
+    @debug.assert_eq(
+      @host.read_text("\{run.directory}/original.mbt"),
+      run.case.source,
+    )
+    // A saved attempt must be intact before replay can append anything.
+    @fs.write_file("\{confirmed}/main.mbt", "fn main { println(999) }\n")
+    let rejected = try {
+      ignore(replay_differential(confirmed))
+      false
+    } catch {
+      _ => true
+    }
+    assert_true(rejected)
+    @debug.assert_eq(
+      @host.list_directory("\{run.directory}/attempts").length(),
+      count + 1,
+    )
+    @debug.assert_eq(
+      @host.read_text("\{root}/\{fixture.path}/main.mbt"),
+      fixture.source,
+    )
+    @debug.assert_eq(
+      @host.read_text("\{root}/\{fixture.path}/case.toml"),
+      fixture.metadata,
+    )
   }
-  let count = @host.list_directory("\{run.directory}/attempts").length()
-  @debug.assert_eq(count, reduction.candidates + 2)
-  let replay = replay_differential(confirmed)
-  @debug.assert_eq(replay.attempt.source, confirmation.source)
-  @debug.assert_eq(
-    replay.attempt.comparison,
-    @contracts.Difference("native-debug", "native-release"),
-  )
-  @debug.assert_eq(replay.reduction, None)
-  @debug.assert_eq(
-    @host.list_directory("\{run.directory}/attempts").length(),
-    count + 1,
-  )
-  for path, content in before {
-    @debug.assert_eq(@host.read_text(path), content)
-  }
-  @debug.assert_eq(
-    @host.read_text("\{run.directory}/original.mbt"),
-    run.case.source,
-  )
-  // A saved attempt must be intact before replay can append anything.
-  @fs.write_file("\{confirmed}/main.mbt", "fn main { println(999) }\n")
-  let rejected = try {
-    ignore(replay_differential(confirmed))
-    false
-  } catch {
-    _ => true
-  }
-  assert_true(rejected)
-  @debug.assert_eq(
-    @host.list_directory("\{run.directory}/attempts").length(),
-    count + 1,
-  )
 }
 
 ///|

@@ -4,11 +4,14 @@ fn regression_spec(text : String) -> (Array[String], String) raise {
     fail("regression metadata must be a table")
   }
   for key, _ in fields {
-    guard ["source", "reported_compiler", "configurations", "expected_stdout"].contains(
-      key,
-    ) else {
+    guard [
+      "kind", "source", "reported_compiler", "configurations", "expected_stdout",
+    ].contains(key) else {
       fail("unknown regression field: \{key}")
     }
+  }
+  guard case_string(fields, "kind") == "reference-output" else {
+    fail("reference checks require a reference-output case")
   }
   guard fields.get("source") is Some(TomlString(source)) && !source.is_empty() else {
     fail("regression source must identify the upstream issue")
@@ -35,19 +38,6 @@ fn regression_spec(text : String) -> (Array[String], String) raise {
 }
 
 ///|
-async fn regression_root() -> String {
-  let mut directory = @host.canonical(@host.current_directory())
-  while !@host.exists("\{directory}/moon.work") {
-    let parent = @host.canonical("\{directory}/..")
-    guard parent != directory else {
-      fail("historical regression tests require the MoonSmith checkout")
-    }
-    directory = parent
-  }
-  directory
-}
-
-///|
 priv struct RegressionAttempt {
   case_id : String
   metadata : String
@@ -59,8 +49,8 @@ priv struct RegressionAttempt {
 
 ///|
 async test "historical MoonBit regressions match explicit expectations on the real toolchain" {
-  let root = regression_root()
-  let cases = cases_for_runner(root, "reference-output")
+  let root = case_root()
+  let cases = fixed_cases_for(root, "reference-output")
   @host.mkdir("\{root}/runs")
   let run = @host.new_directory("\{root}/runs/historical-")
   let toolchain = @moon.identify()
@@ -69,8 +59,8 @@ async test "historical MoonBit regressions match explicit expectations on the re
   for entry in cases {
     let id = entry.path
     let input = "\{root}/\{entry.path}"
-    let metadata = @host.read_text("\{input}/case.toml")
-    let source = @host.read_text("\{input}/main.mbt")
+    let metadata = entry.metadata
+    let source = entry.source
     let (planned, expected) = regression_spec(metadata)
     let directory = "\{run}/\{id}"
     @host.mkdir(directory)
@@ -105,6 +95,7 @@ async test "historical MoonBit regressions match explicit expectations on the re
 ///|
 test "regression metadata rejects missing or ambiguous expectations before execution" {
   let valid =
+    #|kind = "reference-output"
     #|source = "https://github.com/moonbitlang/moonbit-docs/issues/1266"
     #|configurations = ["native-debug", "native-release"]
     #|expected_stdout = ""
@@ -113,6 +104,7 @@ test "regression metadata rejects missing or ambiguous expectations before execu
   @debug.assert_eq(expected, "")
   for
     invalid in [
+      valid.replace(old="reference-output", new="differential"),
       valid.replace(old="expected_stdout", new="expected_stderr"),
       valid.replace(old="expected_stdout = \"\"", new="expected_stdout = 0"),
       valid.replace(old="native-release", new="unsupported"),

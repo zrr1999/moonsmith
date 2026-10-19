@@ -1,7 +1,0 @@
-id = "differential"
-claim = "固定已知输入在受影响工具链上由差分比较自动暴露真实配置分歧"
-
-[[cases]]
-path = "cases/moonbit/moonbit-docs-1326"
-runner = "pending"
-evidence = "real-toolchain"

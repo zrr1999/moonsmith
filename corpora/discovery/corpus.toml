@@ -1,7 +1,0 @@
-id = "discovery"
-claim = "生成器在记录的种子范围与预算内重新发现真实历史问题"
-
-[[cases]]
-path = "cases/moonbit/rediscover-uint-option"
-runner = "pending"
-evidence = "real-toolchain"

@@ -1,5 +1,4 @@
 kind = "differential"
-input = "main.mbt"
 source = "https://github.com/moonbitlang/moonbit-docs/issues/1326"
 reported_compiler = "v0.10.15+943464bfa"
 configurations = ["native-debug", "native-release"]

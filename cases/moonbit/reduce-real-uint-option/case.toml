@@ -1,8 +1,0 @@
-kind = "reduction"
-source_case = "cases/moonbit/moonbit-docs-1326"
-required_features = ["UInt", "Option", "pattern-match", "shift"]
-required_compiler = "v0.10.15+943464bfa"
-configurations = ["native-debug", "native-release"]
-candidate_limit = 64
-expected = "strict-cost-decrease-and-same-configuration-pair-difference"
-confirmation_runs = 1

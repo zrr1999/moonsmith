@@ -1,4 +1,61 @@
 ///|
+test "the MoonBit protocol rejects equal malformed outputs and a missing execution in model evidence" {
+  let configurations = ["native-debug", "native-release"]
+  let observations : Array[@contracts.Observation] = []
+  for configuration in configurations {
+    for phase in [@contracts.Build, @contracts.Execute] {
+      observations.push({
+        configuration,
+        phase,
+        command: {
+          program: "model-observation",
+          args: [],
+          cwd: ".",
+          timeout_ms: 1000,
+          output_limit: 4096,
+        },
+        output: {
+          status: Exited(0),
+          stdout: if phase == Execute {
+            "42\n"
+          } else {
+            ""
+          },
+          stderr: "",
+        },
+        injected_stdout: None,
+      })
+    }
+  }
+  let compare = values => {
+    @engine.compare(configurations, values, normalize=value => {
+      @moonbit.Ty::Int.normalize_output(value)
+    })
+  }
+  @debug.assert_eq(compare(observations), @contracts.Consistent)
+  @debug.assert_eq(
+    compare(
+      observations.filter(observation => {
+        observation.configuration != "native-release" ||
+        observation.phase != Execute
+      }),
+    ),
+    @contracts.Incomplete,
+  )
+  let malformed = observations.map(observation => {
+    if observation.phase == Execute {
+      {
+        ..observation,
+        output: { ..observation.output, stdout: "not-an-int\n", },
+      }
+    } else {
+      observation
+    }
+  })
+  @debug.assert_eq(compare(malformed), @contracts.Incomplete)
+}
+
+///|
 fn assert_planned_observations(
   observations : Array[@contracts.Observation],
   configurations : Array[String],

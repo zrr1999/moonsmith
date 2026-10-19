@@ -1,5 +1,0 @@
-kind = "oracle"
-observations = "observations.json"
-configurations = ["native-debug", "native-release"]
-result_protocol = "moonbit-int32-line-v1"
-expected_comparison = "incomplete"

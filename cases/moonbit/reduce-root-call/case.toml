@@ -1,15 +1,7 @@
 kind = "reduction"
-input = "main.mbt"
 generator = "template-rules-v1"
 generator_revision = "c1ee060b5488e98d04ce859d15128f8211418ead"
 seed = 7
 max_nodes = 128
 max_depth = 6
 max_attempts = 256
-original_nodes = 128
-snapshot_normalization = "single-trailing-newline"
-controlled_condition = "root-expression-is-function-call"
-candidate_limit = 64
-cost_model = "moonbit-nodes-int-magnitude-utf8-v1"
-expected = "strict-cost-decrease-and-condition-preserved"
-confirmation_runs = 1

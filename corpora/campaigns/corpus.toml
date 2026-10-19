@@ -1,7 +1,0 @@
-id = "campaigns"
-claim = "按明确的样本分母和工具链矩阵完成批量验收并报告成本"
-
-[[cases]]
-path = "cases/moonbit/monthly-acceptance"
-runner = "pending"
-evidence = "real-toolchain"
