@@ -1,6 +1,6 @@
 # 验证 Case
 
-此目录保存唯一的输入与必要预期，由八类 [corpus](../corpora/README.md) 引用。
+此目录保存唯一的输入与必要预期，由 [corpus 清单](../corpora/README.md)引用。
 程序按语言、模型数据按组件组织；case ID 保持稳定，执行状态和验证用途不放进路径名。
 同一输入可以支持多项检查，分别取得证据。
 
@@ -41,8 +41,9 @@
 这三个案例的参考入口继续使用 `source`、可选的 `reported_compiler`、
 `configurations` 和 `expected_stdout`，其中完整 stdout 包含换行，无输出写空字符串。
 字段缺失、重复配置及未知字段在该例编译前报错。
-它们由 [oracles](../corpora/oracles/corpus.toml) 的 `reference-output` 条目明确选入，
-不再遍历全部 MoonBit case 后一律按参考输出执行。
+它们当前由 [oracles](../corpora/oracles/corpus.toml) 的 `reference-output` 条目明确选入。
+执行入口从所有清单按 `runner` 选择，不依赖此分类名称，也不把所有 MoonBit case
+一律按参考输出执行。
 
 当前配置为 native debug、native release、wasm-gc debug 中至少两个。工具链使用当前
 `PATH`；每次执行新建 `runs/historical-<随机后缀>/cases/moonbit/<case-id>/`，

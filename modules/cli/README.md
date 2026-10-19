@@ -10,8 +10,9 @@ MoonBit 适配器、宿主执行、案例存储和报告，提供单案例差分
 `app` 装配生成、执行、比较与保存；`toolchains/moon` 定义执行矩阵；`host` 封装进程和文件系统；
 `artifacts` 维护原案例与追加记录；`report` 只渲染传入数据。支持 macOS 与 Linux native 宿主。
 
-仓库内的[八类 corpus](../../corpora/README.md)引用[共享 case](../../cases/README.md)。
-app 包的行为测试按清单读取已连接的入口；历史参考案例复制源码后复用现有工具链执行和
+仓库内的[corpus 清单](../../corpora/README.md)引用[共享 case](../../cases/README.md)。
+app 包的行为测试遍历清单，按 `runner` 选择案例，不依赖分类名称或数量；同一案例与入口
+跨清单重复引用时只执行一次，入口没有案例时明确报错。历史参考案例复制源码后复用工具链执行和
 Engine 的明确预期判定，在 `runs/` 保存独立记录。生成性质与模型观察另行检查，
 尚未接入的数据只检查结构与引用，不声明其目标能力已验收。
 

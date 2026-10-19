@@ -1,8 +1,8 @@
 # 验证 Corpus
 
-按要支持的结论组织八类验证。每类只有一个 `corpus.toml`，引用共享的
+按要支持的结论组织验证清单。每份 `corpus.toml` 引用共享的
 [`cases/`](../cases/README.md)，不复制输入。目录和清单存在仅表示材料已组织，
-实际结果以对应执行记录为准。
+实际结果以对应执行记录为准。分类名称和数量不属于测试契约。
 
 ## 分类与当前材料
 
@@ -39,13 +39,27 @@
 | `differential-observations` | 明确标为模型的观察数据，经过真实观察协议与 Engine 比较 |
 | `pending` | 仅检查材料可读和引用存在，不运行任务，不计作产品验收通过 |
 
+测试遍历当前清单，按 `runner` 选择案例；添加、合并或重命名分类不需要修改执行入口。
+遍历顺序由 Host 的排序目录读取保持稳定，同一 case 与 runner 的跨清单引用只执行一次。
+已接入的入口必须至少有一个 case，否则报错，避免缺失材料变成零项检查通过。
+
 这些是仓库测试入口标识，不是封闭的算法清单或公共 CLI 参数。
 已有模块行为测试与某份数据是否接入分别记录；`pending` 不表示该模块整体尚未实现。
+
+## 发现判定与历史归因
+
+随机发现比较同一程序在不同配置下的有效结果，不要求生成源码或输出与历史 case 一致。
+分歧只支持异常候选；发现结果的原始观察必须独立保存。归约检查候选自己的有效结果是否
+仍保持原配置对的分歧，具体数值可以变化。保持同一观察条件不证明根因相同，见
+[失败判据](../fps/FP-0004-engine-execution-contract.md#term-failure-predicate)。
+
+`target_case` 声明再发现要核对的历史目标，目前不包含自动匹配或根因归类实现。
+仅有相同配置对、执行阶段或异常种类，不能据此把随机发现计为该历史问题的再发现。
 
 ## Case 形式
 
 ```text
-corpora/<type>/corpus.toml
+corpora/<name>/corpus.toml
 cases/<language-or-component>/<case-id>/
   case.toml
   main.mbt              # 仅源码输入需要
@@ -67,7 +81,7 @@ case 定义只放必要材料。生成、再发现、重放场景和批次可以
 moon test modules/cli/src/app/corpus_wbtest.mbt modules/cli/src/app/regression_wbtest.mbt --target native
 ```
 
-`just test` 同样包含这些检查。目录校验会检查八类清单、引用和输入文件，
+`just test` 同样包含这些检查。目录校验会遍历现有清单，检查引用和输入文件，
 并拒绝越界路径、重复条目、未知入口及错误的证据标记。结构检查通过只支持材料完整性，
 不能代替差分发现、真实缺陷归约或批量验收的执行结果。
 

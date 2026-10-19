@@ -51,7 +51,11 @@ async test "generated differential cases execute without a reference and replay 
       @contracts.Consistent,
       msg=@debug.to_string(run.attempt),
     )
-    @debug.assert_eq(run.attempt.observations.length(), 6)
+    assert_planned_observations(
+      run.attempt.observations,
+      run.case.configurations,
+      [Build, Execute],
+    )
     @debug.assert_eq(run.reduction, None)
     @debug.assert_eq(run.attempt.toolchain.output.status, @contracts.Exited(0))
     @debug.assert_eq(run.attempt.platform.output.status, @contracts.Exited(0))
@@ -180,7 +184,7 @@ async test "a rejected saved program retains raw compiler errors as incomplete e
   let directory = @artifacts.create_differential(base, case)
   let attempt = replay_differential(directory).attempt
   @debug.assert_eq(attempt.comparison, @contracts.Incomplete)
-  @debug.assert_eq(attempt.observations.length(), 3)
+  assert_planned_observations(attempt.observations, case.configurations, [Build])
   for o in attempt.observations {
     @debug.assert_eq(o.phase, @contracts.Build)
     assert_true(o.output.status is Exited(code) && code != 0)
@@ -331,7 +335,7 @@ async test "storage failures retain the difference and identify incomplete evide
     )
     assert_true(failed.save_error is Some(_))
     @debug.assert_eq(failed.attempt.comparison, run.attempt.comparison)
-    @debug.assert_eq(failed.attempt.observations.length(), 6)
+    @debug.assert_eq(failed.attempt.observations, run.attempt.observations)
     let summary = describe_differential(failed)
     assert_true(summary.contains("difference observed"))
     assert_true(summary.contains("saving failed"))
@@ -383,15 +387,29 @@ async test "replay reports a changed toolchain and preserves the prior record" {
 }
 
 ///|
-async test "saved configurations are announced during replay" {
+async test "replay uses and announces the saved configuration subset and order" {
   @host.mkdir("runs")
   let base = @host.new_directory("runs/plan-notice-")
   defer @host.remove_tree(base)
-  let case = saved_fixture("fn main { println(0) }\n")
+  let case = {
+    ..saved_fixture("fn main { println(0) }\n"),
+    configurations: ["native-release", "native-debug"],
+  }
   let directory = @artifacts.create_differential(base, case)
   let mut announced : Array[String] = []
   let result = replay_differential(directory, on_plan=plan => announced = plan)
   @debug.assert_eq(announced, case.configurations)
+  assert_planned_observations(
+    result.attempt.observations,
+    case.configurations,
+    [Build, Execute],
+  )
+  @debug.assert_eq(
+    result.attempt.observations
+    .filter(observation => observation.phase == Execute)
+    .map(observation => observation.configuration),
+    case.configurations,
+  )
   @debug.assert_eq(result.attempt.comparison, @contracts.Consistent)
   assert_true(result.save_error is None)
 }

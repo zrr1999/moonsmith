@@ -60,10 +60,7 @@ priv struct RegressionAttempt {
 ///|
 async test "historical MoonBit regressions match explicit expectations on the real toolchain" {
   let root = regression_root()
-  let cases = load_corpus(root, "oracles").filter(entry => {
-    entry.runner == "reference-output"
-  })
-  guard !cases.is_empty() else { fail("historical reference corpus is empty") }
+  let cases = cases_for_runner(root, "reference-output")
   @host.mkdir("\{root}/runs")
   let run = @host.new_directory("\{root}/runs/historical-")
   let toolchain = @moon.identify()

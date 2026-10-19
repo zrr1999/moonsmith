@@ -85,51 +85,143 @@ fn corpus_spec(text : String) -> (String, Array[CorpusCase]) raise {
 }
 
 ///|
-async fn load_corpus(root : String, name : String) -> Array[CorpusCase] {
-  let (id, entries) = corpus_spec(
-    @host.read_text("\{root}/corpora/\{name}/corpus.toml"),
-  )
-  guard id == name else { fail("corpus id does not match its directory") }
+async fn load_corpora(root : String) -> Array[CorpusCase] {
+  let entries : Array[CorpusCase] = []
+  for name in @host.list_directory("\{root}/corpora") {
+    if name == "README.md" || name.has_prefix(".") {
+      continue
+    }
+    let (id, cases) = corpus_spec(
+      @host.read_text("\{root}/corpora/\{name}/corpus.toml"),
+    )
+    guard id == name else { fail("corpus id does not match its directory") }
+    for entry in cases {
+      if !entries.any(previous => {
+          previous.path == entry.path && previous.runner == entry.runner
+        }) {
+        entries.push(entry)
+      }
+    }
+  }
+  guard !entries.is_empty() else { fail("corpus definitions must name cases") }
   entries
 }
 
 ///|
-async test "eight corpus definitions resolve case inputs without claiming pending execution" {
+async fn cases_for_runner(root : String, runner : String) -> Array[CorpusCase] {
+  let cases = load_corpora(root).filter(entry => entry.runner == runner)
+  guard !cases.is_empty() else {
+    fail("no cases connected to runner: \{runner}")
+  }
+  cases
+}
+
+///|
+async test "corpus definitions resolve case inputs without claiming pending execution" {
   let root = regression_root()
-  let names = @host.list_directory("\{root}/corpora").filter(name => {
-    name != "README.md" && !name.has_prefix(".")
-  })
-  @debug.assert_eq(names.length(), 8)
-  for name in names {
-    for entry in load_corpus(root, name) {
-      guard @toml.parse(@host.read_text("\{root}/\{entry.path}/case.toml"))
-        is TomlTable(fields) else {
-        fail("case metadata must be a table: \{entry.path}")
-      }
-      for key in ["input", "observations"] {
-        if fields.get(key) is Some(_) {
-          let file = corpus_string(fields, key)
-          guard !file.contains("/") && !file.contains("\\") && file != ".." else {
-            fail("case input must be a file in its case directory")
-          }
-          ignore(@host.read_text("\{root}/\{entry.path}/\{file}"))
+  for entry in load_corpora(root) {
+    guard @toml.parse(@host.read_text("\{root}/\{entry.path}/case.toml"))
+      is TomlTable(fields) else {
+      fail("case metadata must be a table: \{entry.path}")
+    }
+    for key in ["input", "observations"] {
+      if fields.get(key) is Some(_) {
+        let file = corpus_string(fields, key)
+        guard !file.contains("/") && !file.contains("\\") && file != ".." else {
+          fail("case input must be a file in its case directory")
         }
+        ignore(@host.read_text("\{root}/\{entry.path}/\{file}"))
       }
-      if entry.runner == "reference-output" {
-        ignore(@host.read_text("\{root}/\{entry.path}/main.mbt"))
-        ignore(
-          regression_spec(@host.read_text("\{root}/\{entry.path}/case.toml")),
-        )
-      }
-      for key in ["target_case", "source_case"] {
-        if fields.get(key) is Some(_) {
-          let target = corpus_string(fields, key)
-          validate_case_path(target)
-          ignore(@host.read_text("\{root}/\{target}/case.toml"))
-        }
+    }
+    if entry.runner == "reference-output" {
+      ignore(@host.read_text("\{root}/\{entry.path}/main.mbt"))
+      ignore(
+        regression_spec(@host.read_text("\{root}/\{entry.path}/case.toml")),
+      )
+    }
+    for key in ["target_case", "source_case"] {
+      if fields.get(key) is Some(_) {
+        let target = corpus_string(fields, key)
+        validate_case_path(target)
+        ignore(@host.read_text("\{root}/\{target}/case.toml"))
       }
     }
   }
+}
+
+///|
+async test "corpus discovery follows manifest contents across grouping changes" {
+  @host.mkdir("runs")
+  let root = @host.new_directory("runs/corpus-discovery-")
+  defer @host.remove_tree(root)
+  let reference =
+    #|id = "zeta"
+    #|claim = "reference output checks"
+    #|[[cases]]
+    #|path = "cases/moonbit/example"
+    #|runner = "reference-output"
+    #|evidence = "real-toolchain"
+  @host.mkdir("\{root}/corpora/zeta")
+  @host.write_new("\{root}/corpora/zeta/corpus.toml", reference)
+  @host.write_new("\{root}/corpora/README.md", "corpus documentation")
+  @host.write_new("\{root}/corpora/.DS_Store", "local metadata")
+  @debug.assert_eq(load_corpora(root).length(), 1)
+  let mixed =
+    #|id = "alpha"
+    #|claim = "shared reference and observation checks"
+    #|[[cases]]
+    #|path = "cases/moonbit/example"
+    #|runner = "reference-output"
+    #|evidence = "real-toolchain"
+    #|[[cases]]
+    #|path = "cases/engine/example"
+    #|runner = "differential-observations"
+    #|evidence = "model"
+  @host.mkdir("\{root}/corpora/alpha")
+  @host.write_new("\{root}/corpora/alpha/corpus.toml", mixed)
+  @debug.assert_eq(load_corpora(root).length(), 2)
+  @debug.assert_eq(
+    cases_for_runner(root, "reference-output").map(entry => entry.path),
+    ["cases/moonbit/example"],
+  )
+  @debug.assert_eq(
+    cases_for_runner(root, "differential-observations").map(entry => entry.path),
+    ["cases/engine/example"],
+  )
+  let generation =
+    #|id = "extension"
+    #|claim = "generation checks"
+    #|[[cases]]
+    #|path = "cases/moonbit/generation-example"
+    #|runner = "generation-properties"
+    #|evidence = "model"
+    #|[[cases]]
+    #|path = "cases/moonbit/example"
+    #|runner = "pending"
+    #|evidence = "controlled"
+  @host.mkdir("\{root}/corpora/extension")
+  @host.write_new("\{root}/corpora/extension/corpus.toml", generation)
+  @debug.assert_eq(load_corpora(root).length(), 4)
+  @debug.assert_eq(
+    cases_for_runner(root, "generation-properties").map(entry => entry.path),
+    ["cases/moonbit/generation-example"],
+  )
+  @debug.assert_eq(cases_for_runner(root, "pending").map(entry => entry.path), [
+    "cases/moonbit/example",
+  ])
+  @host.remove_tree("\{root}/corpora/zeta")
+  @debug.assert_eq(
+    cases_for_runner(root, "reference-output").map(entry => entry.path),
+    ["cases/moonbit/example"],
+  )
+  @host.remove_tree("\{root}/corpora/alpha")
+  let rejected = try {
+    ignore(cases_for_runner(root, "reference-output"))
+    false
+  } catch {
+    error => error.to_string().contains("no cases connected to runner")
+  }
+  assert_true(rejected)
 }
 
 ///|
@@ -171,10 +263,7 @@ test "corpus definitions reject escaping paths duplicates and false evidence lab
 ///|
 async test "generation corpus checks deterministic output and declared construction budgets" {
   let root = regression_root()
-  for entry in load_corpus(root, "generation") {
-    guard entry.runner == "generation-properties" else {
-      fail("generation case is not connected to this runner")
-    }
+  for entry in cases_for_runner(root, "generation-properties") {
     guard @toml.parse(@host.read_text("\{root}/\{entry.path}/case.toml"))
       is TomlTable(fields) else {
       fail("generation case must be a table")
@@ -211,10 +300,7 @@ async test "generation corpus checks deterministic output and declared construct
 ///|
 async test "oracle corpus classifies model observations using the declared output protocol" {
   let root = regression_root()
-  for entry in load_corpus(root, "oracles") {
-    if entry.runner != "differential-observations" {
-      continue
-    }
+  for entry in cases_for_runner(root, "differential-observations") {
     guard @toml.parse(@host.read_text("\{root}/\{entry.path}/case.toml"))
       is TomlTable(fields) else {
       fail("oracle case must be a table")
