@@ -130,8 +130,10 @@ pub async fn run_differential(
   run_timeout_ms? : Int = 2000,
   injected? : Bool = false,
   reduction_limit? : Int = 16,
+  planned? : Array[String] = @moon.configurations(),
   on_plan? : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
+  @moon.validate_plan(planned)
   @moon.validate_timeouts(build_timeout_ms, run_timeout_ms)
   limits.validate()
   guard reduction_limit >= 0 && reduction_limit <= 64 else {
@@ -159,7 +161,7 @@ pub async fn run_differential(
     module_source: @moon.module_source(),
     package_source: @moon.package_source(),
     result_protocol: program.result_type().result_protocol(),
-    configurations: @moon.configurations(),
+    configurations: planned.copy(),
     build_timeout_ms,
     run_timeout_ms,
     injected,
