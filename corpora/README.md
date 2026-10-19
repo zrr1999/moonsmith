@@ -34,7 +34,7 @@
 
 | runner | 输入与检查 |
 | --- | --- |
-| `reference-output` | `main.mbt` 与明确预期，在真实三配置上执行并独立存证 |
+| `reference-output` | `main.mbt` 与明确预期，按 case 的配置计划执行并独立存证 |
 | `generation-properties` | 生成参数与种子范围，检查当前生成器的确定性及预算约束 |
 | `differential-observations` | 明确标为模型的观察数据，经过真实观察协议与 Engine 比较 |
 | `pending` | 仅检查材料可读和引用存在，不运行任务，不计作产品验收通过 |
