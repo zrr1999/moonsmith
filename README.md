@@ -49,6 +49,7 @@ wasm-gc debug 的正常输出，无需参考求值器。发现分歧后继续执
 | --- | --- |
 | [项目申报书](docs/project-proposal.md) | 产品范围与预期验收目标 |
 | [固定验证案例](cases/README.md) | 可复用输入、预言机、执行入口与待验收边界 |
+| [批跑配置示例](acceptance.toml)与[应用层入口](modules/cli/README.md#toml-批跑) | 有限种子任务、预算、逐样本存证和汇总；命令行接入尚待完成 |
 | [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 当前提案阶段、设计决定、概念定义及引用规则 |
 | [Engine 设计提案](fps/FP-0004-engine-execution-contract.md) | 职责、协作模型、策略扩展和验收条件 |
 | [项目演进](EVOLUTION.md) | 过去的方向变化与原因 |
