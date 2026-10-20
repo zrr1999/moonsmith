@@ -29,21 +29,47 @@ fn record_task_result(
 
 ///|
 pub async fn run_task(
-  filename : String,
+  filename? : String,
+  settings? : Array[String] = [],
   on_progress? : (Int, Int) -> Unit = (_, _) => (),
+  on_plan? : (Array[String]) -> Unit = _ => (),
+  on_sample? : (@contracts.TaskSample, DifferentialRun?) -> Unit = (_, _) => (),
 ) -> TaskRun {
-  let input = @host.canonical(filename)
-  let source = @host.read_text(input)
-  let task = parse_task(source)
-  let base = if task.output_directory.has_prefix("/") {
-    task.output_directory
-  } else {
-    guard input.rev_find("/") is Some(index) else {
-      fail("task file must have an absolute path")
+  let directory = @host.current_directory()
+  let (source, config_directory) = match filename {
+    Some(filename) => {
+      let input = @host.canonical(filename)
+      guard input.rev_find("/") is Some(index) else {
+        fail("task file must have an absolute path")
+      }
+      (
+        Some(@host.read_text(input)),
+        if index == 0 {
+          "/"
+        } else {
+          input[:index].to_owned()
+        },
+      )
     }
-    "\{input[:index + 1]}\{task.output_directory}"
+    None => (None, directory)
   }
-  let directory = @artifacts.create_task(base, source)
+  let task = parse_task(
+    source.unwrap_or(""),
+    settings~,
+    directory~,
+    config_directory~,
+  )
+  on_plan(task.configurations.copy())
+  let directory = @artifacts.create_task(
+    task.output_directory,
+    task.document().to_string(),
+    source?,
+  ) catch {
+    error =>
+      fail(
+        "task storage failed for seed range \{task.seed_start}..\{task.seed_start + task.sample_count - 1}: \{error}",
+      )
+  }
   let mut summary : @contracts.TaskSummary = {
     format_version: 1,
     name: task.name,
@@ -58,6 +84,7 @@ pub async fn run_task(
   try {
     for index in 0..<task.sample_count {
       let seed = task.seed_start + index
+      let mut result = None
       let outcome : @contracts.TaskOutcome = try {
         let run = run_differential(
           seed~,
@@ -69,6 +96,7 @@ pub async fn run_task(
           reduction_limit=task.candidate_limit,
         )
         let errors : Array[String] = []
+        result = Some(run)
         if run.save_error is Some(error) {
           errors.push(error)
         }
@@ -91,6 +119,7 @@ pub async fn run_task(
       let sample : @contracts.TaskSample = { seed, outcome, }
       @artifacts.save_task_sample(directory, index, sample)
       summary = record_task_result(summary, sample)
+      on_sample(sample, result)
       on_progress(summary.attempted, task.sample_count)
     }
     @artifacts.finish_task(

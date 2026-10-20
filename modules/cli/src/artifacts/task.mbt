@@ -1,11 +1,18 @@
 ///|
-pub async fn create_task(base : String, source : String) -> String {
+pub async fn create_task(
+  base : String,
+  effective : String,
+  source? : String,
+) -> String {
   @host.mkdir(base)
   let directory = @host.new_directory("\{base}/task-")
   try {
     @host.mkdir("\{directory}/cases")
     @host.mkdir("\{directory}/samples")
-    @host.write_new("\{directory}/task.toml", source)
+    @host.write_new("\{directory}/effective.toml", effective)
+    if source is Some(source) {
+      @host.write_new("\{directory}/task.toml", source)
+    }
   } catch {
     error => fail("task storage failed at \{directory}: \{error}")
   }

@@ -14,6 +14,7 @@ pub fn render_task(
     "Operation errors may overlap with observed comparisons; consult each sample record.",
     "",
     "Task material: \{directory}",
+    "Effective configuration: \{directory}/effective.toml",
     "Sample records: \{directory}/samples/",
     "Each observed sample links its original case and attempt; replay those saved materials.",
   ].join("\n") +

@@ -65,7 +65,7 @@ cases/
 
 纯算法使用显式种子和预算。再发现目标、批跑安排及尚缺能力维护在
 [工程笔记](../.agents/notes/research/corpus-layout.md)。批跑参数使用根目录的
-[任务配置](../acceptance.toml)，执行与材料说明见 [CLI 模块](../modules/cli/README.md#toml-批跑)，
+[任务配置](../acceptance.toml)，执行与材料说明见 [CLI 模块](../modules/cli/README.md#任务配置)，
 不为每个随机样本在此建立固定案例。
 算法孵化、对比与可视化归 Spore Lab 仓库，本仓库保留产品回归和真实工具链验收。
 

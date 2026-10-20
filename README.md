@@ -23,11 +23,13 @@
 just install   # 准备包索引并安装 Git hooks
 moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- --help
 moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run
-moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run --seed 42
-moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay runs/case-<id>
+moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run --set seed_start=42
+moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay runs/task-<id>/cases/case-<id>
 ```
 
-可执行程序无参数时只显示帮助，`run` 启动一次测试；省略种子时自动选择并记录。
+可执行程序无参数时只显示帮助，`run` 执行有限测试任务，默认一个样本。
+`run --config acceptance.toml --set sample_count=10` 可读取任务文件并覆盖字段；
+键名与 TOML 一致，默认值、文件和命令行依次覆盖。省略起始种子时自动选择并记录完整范围。
 首版组合局部绑定与引用、条件分支、无环函数定义与调用，比较 native debug、native release、
 wasm-gc debug 的正常输出，无需参考求值器。发现分歧后继续执行剩余配置。
 原始证据保存成功后自动归约，保持同一对配置的输出分歧，并独立执行一次确认。
@@ -49,7 +51,7 @@ wasm-gc debug 的正常输出，无需参考求值器。发现分歧后继续执
 | --- | --- |
 | [项目申报书](docs/project-proposal.md) | 产品范围与预期验收目标 |
 | [固定验证案例](cases/README.md) | 可复用输入、预言机、执行入口与待验收边界 |
-| [批跑配置示例](acceptance.toml)与[应用层入口](modules/cli/README.md#toml-批跑) | 有限种子任务、预算、逐样本存证和汇总；命令行接入尚待完成 |
+| [任务配置示例](acceptance.toml)与[命令行配置](modules/cli/README.md#任务配置) | 有限种子任务、统一覆盖、逐样本存证和汇总 |
 | [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 当前提案阶段、设计决定、概念定义及引用规则 |
 | [Engine 设计提案](fps/FP-0004-engine-execution-contract.md) | 职责、协作模型、策略扩展和验收条件 |
 | [项目演进](EVOLUTION.md) | 过去的方向变化与原因 |
