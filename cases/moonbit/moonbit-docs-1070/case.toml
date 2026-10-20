@@ -1,0 +1,5 @@
+kind = "reference-output"
+source = "https://github.com/moonbitlang/moonbit-docs/issues/1070"
+# The upstream report did not identify a compiler version.
+configurations = ["native-debug", "native-release", "wasm-gc-debug"]
+expected_stdout = "0\n"

@@ -1,0 +1,7 @@
+kind = "reduction"
+generator = "template-rules-v1"
+generator_revision = "c1ee060b5488e98d04ce859d15128f8211418ead"
+seed = 7
+max_nodes = 128
+max_depth = 6
+max_attempts = 256

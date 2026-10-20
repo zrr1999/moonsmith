@@ -6,7 +6,11 @@ async test "real compiler matrix agrees with the reference and replay preserves 
   for seed in [7, 42] {
     let result = run(seed~, base~)
     @debug.assert_eq(result.original.verdict, @contracts.Match)
-    @debug.assert_eq(result.original.observations.length(), 6)
+    assert_planned_observations(
+      result.original.observations,
+      @moon.configurations(),
+      [Build, Execute],
+    )
     for o in result.original.observations {
       @debug.assert_eq(o.output.status, @contracts.Exited(0))
       assert_true(o.injected_stdout is None)

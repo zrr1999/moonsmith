@@ -1,4 +1,88 @@
 ///|
+test "the MoonBit protocol rejects equal malformed outputs and a missing execution in model evidence" {
+  let configurations = ["native-debug", "native-release"]
+  let observations : Array[@contracts.Observation] = []
+  for configuration in configurations {
+    for phase in [@contracts.Build, @contracts.Execute] {
+      observations.push({
+        configuration,
+        phase,
+        command: {
+          program: "model-observation",
+          args: [],
+          cwd: ".",
+          timeout_ms: 1000,
+          output_limit: 4096,
+        },
+        output: {
+          status: Exited(0),
+          stdout: if phase == Execute {
+            "42\n"
+          } else {
+            ""
+          },
+          stderr: "",
+        },
+        injected_stdout: None,
+      })
+    }
+  }
+  let compare = values => {
+    @engine.compare(configurations, values, normalize=value => {
+      @moonbit.Ty::Int.normalize_output(value)
+    })
+  }
+  @debug.assert_eq(compare(observations), @contracts.Consistent)
+  @debug.assert_eq(
+    compare(
+      observations.filter(observation => {
+        observation.configuration != "native-release" ||
+        observation.phase != Execute
+      }),
+    ),
+    @contracts.Incomplete,
+  )
+  let malformed = observations.map(observation => {
+    if observation.phase == Execute {
+      {
+        ..observation,
+        output: { ..observation.output, stdout: "not-an-int\n", },
+      }
+    } else {
+      observation
+    }
+  })
+  @debug.assert_eq(compare(malformed), @contracts.Incomplete)
+}
+
+///|
+fn assert_planned_observations(
+  observations : Array[@contracts.Observation],
+  configurations : Array[String],
+  phases : Array[@contracts.Phase],
+) -> Unit raise {
+  @debug.assert_eq(
+    observations.length(),
+    configurations.length() * phases.length(),
+    msg=@debug.to_string(observations),
+  )
+  for configuration in configurations {
+    for phase in phases {
+      @debug.assert_eq(
+        observations
+        .filter(observation => {
+          observation.configuration == configuration &&
+          observation.phase == phase
+        })
+        .length(),
+        1,
+        msg="expected one observation for \{configuration} \{@debug.to_string(phase)}",
+      )
+    }
+  }
+}
+
+///|
 fn composed_structure(input : Int) -> @moonbit.Template {
   {
     functions: [
@@ -70,11 +154,10 @@ async test "checked structures execute with known results and direct differentia
       build_timeout_ms=45000,
       run_timeout_ms=5000,
     )
-    @debug.assert_eq(
-      observations.length(),
-      6,
-      msg=@debug.to_string(observations),
-    )
+    assert_planned_observations(observations, @moon.configurations(), [
+      Build,
+      Execute,
+    ])
     for observation in observations {
       @debug.assert_eq(
         observation.output.status,
@@ -100,24 +183,34 @@ async test "checked structures execute with known results and direct differentia
       }),
       @contracts.Consistent,
     )
-    let injected = observations.copy()
-    injected[3] = {
-      ..injected[3],
-      injected_stdout: Some(
-        if program.result_type() == @moonbit.Ty::Int {
-          "0\n"
-        } else {
-          "true\n"
-        },
-      ),
-    }
+    let injected = observations.map(observation => {
+      if observation.configuration == "native-release" &&
+        observation.phase == Execute {
+        {
+          ..observation,
+          injected_stdout: Some(
+            if program.result_type() == @moonbit.Ty::Int {
+              "0\n"
+            } else {
+              "true\n"
+            },
+          ),
+        }
+      } else {
+        observation
+      }
+    })
     @debug.assert_eq(
       @engine.compare(@moon.configurations(), injected, normalize=value => {
         program.result_type().normalize_output(value)
       }),
       @contracts.Difference("native-debug", "native-release"),
     )
-    @debug.assert_eq(injected[3].output.stdout, expected)
+    for observation in injected {
+      if observation.phase == Execute {
+        @debug.assert_eq(observation.output.stdout, expected)
+      }
+    }
     // Equal malformed outputs cannot become a successful comparison.
     let malformed = observations.map(observation => {
       if observation.phase == Execute {
@@ -144,7 +237,7 @@ async test "compiler rejection retains diagnostics and is an incomplete differen
     directory, "fn main { let value : Int = true; println(value) }\n",
   )
   let observations = @moon.observe(directory)
-  @debug.assert_eq(observations.length(), @moon.configurations().length())
+  assert_planned_observations(observations, @moon.configurations(), [Build])
   for observation in observations {
     @debug.assert_eq(observation.phase, @contracts.Build)
     @debug.assert_eq(observation.command.timeout_ms, 30000)
@@ -168,7 +261,10 @@ async test "execution timeout is recorded and cannot become a differential resul
   // A deliberately nonterminating fixture tests the runner, outside the generated subset.
   @moon.prepare(directory, "fn main { while true { () } }\n")
   let observations = @moon.observe(directory, run_timeout_ms=200)
-  @debug.assert_eq(observations.length(), 6, msg=@debug.to_string(observations))
+  assert_planned_observations(observations, @moon.configurations(), [
+    Build,
+    Execute,
+  ])
   for observation in observations {
     if observation.phase == Build {
       @debug.assert_eq(observation.output.status, @contracts.Exited(0))
