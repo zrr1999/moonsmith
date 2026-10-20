@@ -18,7 +18,7 @@
 早期调研基于 `33f3c8f7f40ca43e9c49ed7a200b0a2bbc5efc4d` 加未提交设计的骨架现场，
 该现场已不能代表当前实现。
 
-[FP-0001](../../../fps/FP-0001-workspace-modules.md)与[贡献指南](../../../CONTRIBUTING.md#原型执行契约)
+[FP-0001](../../../fps/FP-0001-workspace-modules.md)与[CLI 实现说明](../../../modules/cli/README.md#差分执行与存证)
 规定 Engine 纯计算、语言适配器拥有程序与语义、Host 拥有进程和文件系统，app 装配。
 现有 `judge` 返回遇到的首个明确异常；`Reducer[P]` 以候选列表、严格下降和 fingerprint 相等推进；
 完整执行与确认流程位于 app。这些是现有实现事实，不是对未来所有 Oracle 和搜索方法的约束。

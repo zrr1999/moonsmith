@@ -52,7 +52,7 @@ cases/
 
 历史参考入口按每例的配置执行，复用 `toolchains/moon` 与 Engine 的明确预期判定，
 保存工具链、平台、命令、原始观察及报告。某例预期不满足时继续其余案例并汇总失败。
-来源及旧版真实复现见[历史验收记录](../.agents/notes/research/historical-regressions.md)。
+来源及旧版真实复现见[历史验收记录](../docs/historical-regressions.md)。
 
 验证目标与文件目录分别维护：
 
@@ -63,8 +63,8 @@ cases/
 | 归约保留失败 | 每个候选提供新证据，满足会话冻结的[失败判据](../fps/FP-0004-engine-execution-contract.md#term-failure-predicate)，并改善同一成本顺序；保持配置对分歧不证明根因相同，也不保证全局最小 |
 | 基础行为与批量验收 | 生成合法性、预算、判定、重放和执行失败由模块行为测试覆盖；样本规模及完整矩阵以[申报书](../docs/project-proposal.md#预期验收产物)和实际批跑报告验收 |
 
-纯算法使用显式种子和预算。再发现目标、批跑安排及尚缺能力维护在
-[工程笔记](../.agents/notes/research/corpus-layout.md)。批跑参数使用根目录的
+纯算法使用显式种子和预算。批量验收目标见[申报书](../docs/project-proposal.md#预期验收产物)，
+参数使用根目录的
 [任务配置](../acceptance.toml)，执行与材料说明见 [CLI 模块](../modules/cli/README.md#任务配置)，
 不为每个随机样本在此建立固定案例。
 算法孵化、对比与可视化归 Spore Lab 仓库，本仓库保留产品回归和真实工具链验收。

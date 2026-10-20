@@ -21,7 +21,7 @@ MoonSmith 拟根据类型、作用域和终止约束构造程序，再利用 Moo
 首版限定为确定性语言子集，归约对象限于工具自身生成的程序。
 架构上拟将通用 [Engine](../fps/FP-0001-workspace-modules.md#term-engine)与
 MoonBit [语言适配器](../fps/FP-0001-workspace-modules.md#term-language-adapter)解耦，后续还能接入 Rust、Swift 适配器。
-本文维护产品范围和验收目标，概念定义见[术语索引](glossary.md)，当前实现范围见[原型执行契约](../CONTRIBUTING.md#原型执行契约)。
+本文维护产品范围和验收目标，概念定义见[术语索引](glossary.md)，当前实现范围见[CLI 实现说明](../modules/cli/README.md#差分执行与存证)。
 
 ## 核心功能范围
 

@@ -43,7 +43,7 @@ wasm-gc debug 的正常输出，无需参考求值器。发现分歧后继续执
 
 设计见 [FP-0002](fps/FP-0002-moonbit-semantic-contract.md) 与
 [FP-0003](fps/FP-0003-cli-workflows.md)，实现边界见
-[执行契约](CONTRIBUTING.md#原型执行契约)。多配置一致不证明编译器正确，分歧仍需调查。
+[CLI 实现说明](modules/cli/README.md#差分执行与存证)。多配置一致不证明编译器正确，分歧仍需调查。
 
 ## 文档导航
 
@@ -56,6 +56,5 @@ wasm-gc debug 的正常输出，无需参考求值器。发现分歧后继续执
 | [Engine 设计提案](fps/FP-0004-engine-execution-contract.md) | 职责、协作模型、策略扩展和验收条件 |
 | [项目演进](EVOLUTION.md) | 过去的方向变化与原因 |
 | [长期路线图](ROADMAP.md) | MoonSmith 向 SemaForge 渐进提取的目标、依赖与推进门槛 |
-| [工程笔记](.agents/notes/README.md) | 来源证据、备选机制与实验规划 |
-| [贡献指南](CONTRIBUTING.md) | 开发入口、原型执行契约与交付约定 |
+| [贡献指南](CONTRIBUTING.md) | 开发流程、检查入口、文档分工与交付约定 |
 | [Contracts](modules/contracts/README.md)、[Engine](modules/engine/README.md)、[MoonBit](modules/moonbit/README.md)、[CLI](modules/cli/README.md) | 各模块现有 API、使用方式与实现限制 |
