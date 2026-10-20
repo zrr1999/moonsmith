@@ -6,6 +6,7 @@ import {
   "zrr1999/moonsmith/toolchains/moon",
   "zrr1999/moonsmith/artifacts",
   "zrr1999/moonsmith/report",
+  "moonbit-community/toml",
 }
 
 supported_targets = "native"
@@ -15,5 +16,4 @@ import {
   "moonbitlang/async/fs",
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
-  "moonbit-community/toml",
 } for "wbtest"

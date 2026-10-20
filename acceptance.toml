@@ -1,0 +1,19 @@
+name = "monthly-differential"
+seed_start = 0
+sample_count = 1000
+
+[generation]
+max_nodes = 128
+max_depth = 6
+max_attempts = 256
+
+[execution]
+configurations = ["native-debug", "native-release", "wasm-gc-debug"]
+build_timeout_ms = 30000
+run_timeout_ms = 2000
+
+[reduction]
+candidate_limit = 16
+
+[output]
+directory = "runs/monthly-differential"

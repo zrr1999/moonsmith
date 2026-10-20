@@ -3,6 +3,15 @@
 version: 1
 
 rules:
+  - id: formal-docs-do-not-cite-internal-notes
+    kind: file_content_forbidden
+    paths:
+      include: "**/*.md"
+      exclude: ".agents/**"
+    pattern: '(?i)\.agents[/\\]+notes\b'
+    level: error
+    message: "Formal documents must cite formal sources; internal notes belong in .agents only."
+
   # file_exists treats multiple paths as alternatives, so each component has its own rule.
   - id: required-contracts-module
     kind: file_exists
