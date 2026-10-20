@@ -24,7 +24,7 @@ fn parse(args : Array[String]) -> Operation raise {
         }
         guard flag == "--config" || flag == "--set" else {
           if flag == "--seed" {
-            fail("--seed was removed; use --set seed_start=VALUE")
+            fail("unsupported argument: --seed; use --set seed_start=VALUE")
           }
           fail("unknown run argument: \{argument}; use run --help")
         }

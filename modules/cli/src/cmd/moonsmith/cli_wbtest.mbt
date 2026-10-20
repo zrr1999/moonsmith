@@ -1,5 +1,5 @@
 ///|
-test "commands accept a config and repeated settings and reject obsolete or ambiguous arguments" {
+test "commands accept a config and repeated settings and reject unsupported or ambiguous arguments" {
   for
     args in [
       [],
@@ -60,7 +60,10 @@ async test "help describes the shared configuration and errors occur before a ru
   for
     (args, diagnostic) in [
       (["unknown"], "unknown command: unknown"),
-      (["run", "--seed", "42"], "use --set seed_start=VALUE"),
+      (
+        ["run", "--seed", "42"],
+        "unsupported argument: --seed; use --set seed_start=VALUE",
+      ),
       (["run", "--set"], "--set requires a value"),
       (["run", "--set", "seed_start=2147483648"], "seed_start"),
       (["run", "--set", "sample_count=0"], "sample_count"),
