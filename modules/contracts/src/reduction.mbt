@@ -18,6 +18,7 @@ pub(all) struct DifferentialReduction {
   candidate_limit : Int
   candidates : Int
   accepted : Int
+  elapsed_ms : Int64
   best_cost : ReductionCost
   best_attempt : String
   stop_reason : String

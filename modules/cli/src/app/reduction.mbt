@@ -23,9 +23,10 @@ async fn reduce_differential(
     return original
   }
   let predicate = @engine.difference_predicate(first, second)
+  let started = @host.monotonic_ms()
   let mut result = original
   let mut record : @contracts.DifferentialReduction = {
-    format_version: 2,
+    format_version: 3,
     first_configuration: first,
     second_configuration: second,
     original_attempt: original.attempt_directory,
@@ -34,6 +35,7 @@ async fn reduce_differential(
     candidate_limit: limit,
     candidates: 0,
     accepted: 0,
+    elapsed_ms: 0L,
     best_cost: program.cost(),
     best_attempt: original.attempt_directory,
     stop_reason: "not started",
@@ -116,7 +118,10 @@ async fn reduce_differential(
         error: Some(error.to_string()),
       }
   }
-  finish_reduction(result, record)
+  finish_reduction(result, {
+    ..record,
+    elapsed_ms: @host.monotonic_ms() - started,
+  })
 }
 
 ///|

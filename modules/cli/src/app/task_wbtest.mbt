@@ -250,6 +250,12 @@ async test "tasks execute their seed range and saved plan resolve output beside 
   @debug.assert_eq(run.summary.differences, 0)
   @debug.assert_eq(run.summary.incomplete, 0)
   @debug.assert_eq(run.summary.operation_errors, 0)
+  @debug.assert_eq(run.summary.format_version, 2)
+  @debug.assert_eq(run.summary.generated_valid, 2)
+  @debug.assert_eq(run.summary.baseline_configuration, Some("native-debug"))
+  @debug.assert_eq(run.summary.baseline_attempted, 2)
+  @debug.assert_eq(run.summary.baseline_accepted, 2)
+  @debug.assert_eq(run.summary.comparisons_complete, 2)
   assert_true(run.directory.has_prefix("\{base}/output/task-"))
   @debug.assert_eq(@host.read_text("\{run.directory}/task.toml"), source)
   let effective = parse_task(@host.read_text("\{run.directory}/effective.toml"))
@@ -267,12 +273,18 @@ async test "tasks execute their seed range and saved plan resolve output beside 
       @json.parse(sample_source),
     )
     @debug.assert_eq(sample.seed, seed)
+    @debug.assert_eq(sample.format_version, 2)
+    @debug.assert_eq(sample.baseline_build, Some(true))
+    @debug.assert_eq(sample.comparable_results, sample.planned_results)
+    assert_true(sample.elapsed_ms > 0L)
+    assert_true(run.summary.elapsed_ms >= sample.elapsed_ms)
     guard sample.outcome is Observed(observation) else {
       fail("missing observed sample")
     }
     @debug.assert_eq(observation.comparison, @contracts.Consistent)
     @debug.assert_eq(observation.error, None)
     let case = @artifacts.load_differential(observation.case_directory)
+    @debug.assert_eq(sample.generation, Some(case.generation))
     @debug.assert_eq(case.generation.seed, seed)
     @debug.assert_eq(case.generation.max_nodes, 1)
     @debug.assert_eq(case.generation.max_depth, 0)
@@ -349,12 +361,19 @@ async test "sample generation failures retain every seed and continue through th
   @debug.assert_eq(run.summary.attempted, 2)
   @debug.assert_eq(run.summary.operation_errors, 2)
   @debug.assert_eq(run.summary.consistent, 0)
+  @debug.assert_eq(run.summary.generated_valid, 0)
+  @debug.assert_eq(run.summary.baseline_attempted, 0)
+  @debug.assert_eq(run.summary.baseline_accepted, 0)
+  @debug.assert_eq(run.summary.comparisons_complete, 0)
   @debug.assert_eq(@host.list_directory("\{run.directory}/cases"), [])
   for index, seed in [2147483646, 2147483647] {
     let sample : @contracts.TaskSample = @json.from_json(
       @json.parse(@host.read_text("\{run.directory}/samples/\{index}.json")),
     )
     @debug.assert_eq(sample.seed, seed)
+    @debug.assert_eq(sample.generation, None)
+    @debug.assert_eq(sample.baseline_build, None)
+    @debug.assert_eq(sample.comparable_results, 0)
     guard sample.outcome is Failed(message) else {
       fail("missing generation failure")
     }
@@ -365,7 +384,7 @@ async test "sample generation failures retain every seed and continue through th
 ///|
 test "task aggregation preserves differences alongside errors and uses command result precedence" {
   let original : @contracts.TaskSummary = {
-    format_version: 1,
+    format_version: 2,
     name: "model-task",
     sample_count: 2,
     attempted: 0,
@@ -373,9 +392,21 @@ test "task aggregation preserves differences alongside errors and uses command r
     differences: 0,
     incomplete: 0,
     operation_errors: 0,
+    generated_valid: 0,
+    baseline_configuration: Some("native-debug"),
+    baseline_attempted: 0,
+    baseline_accepted: 0,
+    comparisons_complete: 0,
+    elapsed_ms: 0L,
   }
   let first = record_task_result(original, {
+    format_version: 2,
     seed: 0,
+    generation: Some(saved_fixture("fn main { println(0) }\n").generation),
+    baseline_build: Some(false),
+    comparable_results: 2,
+    planned_results: 3,
+    elapsed_ms: 50L,
     outcome: Observed({
       case_directory: "model-case",
       attempt_directory: "model-attempt",
@@ -384,12 +415,22 @@ test "task aggregation preserves differences alongside errors and uses command r
     }),
   })
   let summary = record_task_result(first, {
+    format_version: 2,
     seed: 1,
+    generation: None,
+    baseline_build: None,
+    comparable_results: 0,
+    planned_results: 3,
+    elapsed_ms: 0L,
     outcome: Failed("generation failed"),
   })
   @debug.assert_eq(summary.attempted, 2)
   @debug.assert_eq(summary.differences, 1)
   @debug.assert_eq(summary.operation_errors, 2)
+  @debug.assert_eq(summary.generated_valid, 1)
+  @debug.assert_eq(summary.baseline_attempted, 1)
+  @debug.assert_eq(summary.baseline_accepted, 0)
+  @debug.assert_eq(summary.comparisons_complete, 0)
   for
     (value, expected) in [
       (summary, 1),
@@ -416,7 +457,13 @@ async test "task sample records cannot be overwritten and failed finalization ha
   defer @host.remove_tree(base)
   let directory = @artifacts.create_task(base, task_fixture())
   let sample : @contracts.TaskSample = {
+    format_version: 2,
     seed: 1,
+    generation: None,
+    baseline_build: None,
+    comparable_results: 0,
+    planned_results: 3,
+    elapsed_ms: 0L,
     outcome: Failed("model generation failure"),
   }
   @artifacts.save_task_sample(directory, 0, sample)
@@ -430,7 +477,7 @@ async test "task sample records cannot be overwritten and failed finalization ha
   assert_true(overwrite_rejected)
   @host.mkdir("\{directory}/report.md")
   let summary : @contracts.TaskSummary = {
-    format_version: 1,
+    format_version: 2,
     name: "model-task",
     sample_count: 1,
     attempted: 1,
@@ -438,6 +485,12 @@ async test "task sample records cannot be overwritten and failed finalization ha
     differences: 0,
     incomplete: 0,
     operation_errors: 1,
+    generated_valid: 0,
+    baseline_configuration: None,
+    baseline_attempted: 0,
+    baseline_accepted: 0,
+    comparisons_complete: 0,
+    elapsed_ms: 0L,
   }
   let finish_rejected = try {
     @artifacts.finish_task(directory, summary, "report")

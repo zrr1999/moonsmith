@@ -14,7 +14,13 @@ pub(all) enum TaskOutcome {
 
 ///|
 pub(all) struct TaskSample {
+  format_version : Int
   seed : Int
+  generation : GenerationRecord?
+  baseline_build : Bool?
+  comparable_results : Int
+  planned_results : Int
+  elapsed_ms : Int64
   outcome : TaskOutcome
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
@@ -28,6 +34,12 @@ pub(all) struct TaskSummary {
   differences : Int
   incomplete : Int
   operation_errors : Int
+  generated_valid : Int
+  baseline_configuration : String?
+  baseline_attempted : Int
+  baseline_accepted : Int
+  comparisons_complete : Int
+  elapsed_ms : Int64
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
 ///|

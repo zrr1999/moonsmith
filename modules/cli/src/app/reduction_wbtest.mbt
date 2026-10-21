@@ -28,7 +28,8 @@ async test "stored generated inputs reduce with fresh confirmation and replay wi
     }
     assert_true(reduction.error is None)
     assert_true(reduction.best_cost.nodes < reduction.original_cost.nodes)
-    @debug.assert_eq(reduction.format_version, 2)
+    @debug.assert_eq(reduction.format_version, 3)
+    assert_true(reduction.elapsed_ms > 0L)
     @debug.assert_eq(reduction.cost_model, @moonbit.reduction_cost_model())
     assert_true(reduction.accepted > 0)
     assert_true(reduction.candidates <= reduction.candidate_limit)
@@ -157,7 +158,8 @@ async test "same-node integer reduction saves costs confirms fresh evidence and 
   assert_true(run.save_error is None)
   guard run.reduction is Some(reduction) else { fail("missing reduction") }
   assert_true(reduction.error is None)
-  @debug.assert_eq(reduction.format_version, 2)
+  @debug.assert_eq(reduction.format_version, 3)
+  assert_true(reduction.elapsed_ms > 0L)
   @debug.assert_eq(reduction.original_cost.nodes, 1)
   @debug.assert_eq(reduction.best_cost.nodes, 1)
   @debug.assert_eq(reduction.original_cost.integer_magnitude, 2147483648L)
