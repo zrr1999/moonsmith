@@ -41,6 +41,30 @@ jobs:
           node-version: "26.3.1"
       - name: Prepare development environment
         run: just install
+      - name: Install CLI from the clean workspace
+        run: moon install ./modules/cli/src/cmd/moonsmith --bin "${RUNNER_TEMP}/moonsmith-bin"
+      - name: Validate installed CLI outside the workspace
+        working-directory: ${{ runner.temp }}
+        run: |
+          validation_root="${RUNNER_TEMP}/moonsmith-acceptance"
+          mkdir -p "${validation_root}"
+          cd "${validation_root}"
+          installed_cli="${RUNNER_TEMP}/moonsmith-bin/moonsmith"
+          "${installed_cli}" --help
+          "${installed_cli}" run --set seed_start=42 \
+            --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
+            --set "output.directory=\"${GITHUB_WORKSPACE}/runs/installed-cli\""
+          sample_records=("${GITHUB_WORKSPACE}"/runs/installed-cli/task-*/samples/0.json)
+          test "${#sample_records[@]}" -eq 1
+          validation_case=$(jq -er '.outcome | select(.[0] == "Observed") | .[1].case_directory' "${sample_records[0]}")
+          summary_file="${sample_records[0]%/samples/0.json}/summary.json"
+          jq -e '.format_version == 2 and .attempted == 1 and .generated_valid == 1 and
+            .baseline_accepted == 1 and .comparisons_complete == 1 and .consistent == 1 and
+            .operation_errors == 0' "${summary_file}"
+          sha256sum "${validation_case}/case.json" "${validation_case}/original.mbt" \
+            "${summary_file}" > before.sha256
+          "${installed_cli}" replay "${validation_case}"
+          sha256sum --check before.sha256
       - name: Build workspace modules
         run: just build
       - name: Run tests
