@@ -479,6 +479,8 @@ test "summaries preserve differences alongside failures and unknown toolchain pr
     attempt,
     attempt_directory: "/fixture/attempt",
     original_toolchain: Some(probe),
+    runtimes: [],
+    original_runtimes: None,
     save_error: None,
     reduction: None,
   }

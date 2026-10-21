@@ -79,7 +79,8 @@ moon test modules/cli/src/app/reduction_wbtest.mbt --target native
 ```
 
 结构检查只证明材料可读；尚未执行的受影响工具链、随机再发现和真实缺陷归约仍待取得证据。
-当前配置为 native debug、native release、wasm-gc debug，不等同于完整五配置验收。
+历史参考案例仍按各自声明的 native debug、native release、wasm-gc debug 执行。
+批量任务可另选完整五配置；固定案例通过不等同于达到申报书的样本规模。
 
 历史程序依据公开问题独立编写，生成快照记录实际生成条件，均使用本仓库的 GPL-3.0-only
 许可证。引入第三方原始源码时保留来源与许可。真实工具链、受控注入和模型观察分别报告，

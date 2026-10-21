@@ -20,6 +20,40 @@ fn toolchain_identity(evidence : @contracts.ProcessEvidence) -> String? {
 }
 
 ///|
+fn runtime_lines(
+  current : Array[@contracts.ProcessEvidence],
+  original : Array[@contracts.ProcessEvidence]?,
+  replay~ : Bool,
+) -> Array[String] {
+  let lines = []
+  for probe in current {
+    let program = probe.command.program
+    let identity = toolchain_identity(probe)
+    lines.push(
+      "Runtime `\{program}`: \{identity.unwrap_or("unknown")} (\{@debug.to_string(probe.output.status)})",
+    )
+    if !replay {
+      continue
+    }
+    let mut before : String? = None
+    for previous in original.unwrap_or([]) {
+      if previous.command.program == program {
+        before = toolchain_identity(previous)
+        break
+      }
+    }
+    match (before, identity) {
+      (Some(before), Some(after)) =>
+        if before != after {
+          lines.push("Runtime changed: \{program}: \{before} -> \{after}")
+        }
+      _ => lines.push("Runtime version comparison unavailable: \{program}")
+    }
+  }
+  lines
+}
+
+///|
 fn configuration_details(
   configuration : String,
   observations : Array[@contracts.Observation],
@@ -63,6 +97,8 @@ pub fn summarize_differential(
   attempt_directory~ : String,
   original_toolchain~ : @contracts.ProcessEvidence?,
   save_error~ : String?,
+  runtimes? : Array[@contracts.ProcessEvidence] = [],
+  original_runtimes? : Array[@contracts.ProcessEvidence]? = None,
 ) -> String {
   let result = match attempt.comparison {
     Consistent => "consistent (no difference observed)"
@@ -127,6 +163,13 @@ pub fn summarize_differential(
         lines.push("Toolchain version comparison is unavailable.")
     }
   }
+  lines.append(
+    runtime_lines(
+      runtimes,
+      original_runtimes,
+      replay=attempt.purpose == "replay",
+    ),
+  )
   match save_error {
     None => lines.push("Evidence: saved")
     Some(error) => {

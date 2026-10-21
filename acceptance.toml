@@ -8,7 +8,7 @@ max_depth = 6
 max_attempts = 256
 
 [execution]
-configurations = ["native-debug", "native-release", "wasm-gc-debug"]
+configurations = ["native-debug", "native-release", "wasm-gc-debug", "wasm-debug", "js-debug"]
 build_timeout_ms = 30000
 run_timeout_ms = 2000
 

@@ -260,11 +260,9 @@ async test "execution timeout is recorded and cannot become a differential resul
   defer @host.remove_tree(directory)
   // A deliberately nonterminating fixture tests the runner, outside the generated subset.
   @moon.prepare(directory, "fn main { while true { () } }\n")
-  let observations = @moon.observe(directory, run_timeout_ms=200)
-  assert_planned_observations(observations, @moon.configurations(), [
-    Build,
-    Execute,
-  ])
+  let planned = @moon.available_configurations()
+  let observations = @moon.observe(directory, run_timeout_ms=200, planned~)
+  assert_planned_observations(observations, planned, [Build, Execute])
   for observation in observations {
     if observation.phase == Build {
       @debug.assert_eq(observation.output.status, @contracts.Exited(0))
@@ -276,9 +274,7 @@ async test "execution timeout is recorded and cannot become a differential resul
     }
   }
   @debug.assert_eq(
-    @engine.compare(@moon.configurations(), observations, normalize=value => {
-      Some(value)
-    }),
+    @engine.compare(planned, observations, normalize=value => Some(value)),
     @contracts.Incomplete,
   )
 }

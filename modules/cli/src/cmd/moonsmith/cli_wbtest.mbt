@@ -56,6 +56,8 @@ async test "help describes the shared configuration and errors occur before a ru
   )
   assert_true(help.join("\n").contains("replay CASE_DIR"))
   assert_true(help.join("\n").contains("generation.max_nodes"))
+  assert_true(help.join("\n").contains("wasm-debug"))
+  assert_true(help.join("\n").contains("js-debug"))
   assert_true(help.join("\n").contains("bounded reduction"))
   for
     (args, diagnostic) in [

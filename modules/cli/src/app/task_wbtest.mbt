@@ -52,7 +52,15 @@ test "defaults partial files and settings share field types and last assignments
   @debug.assert_eq(defaults.seed_start, -7)
   @debug.assert_eq(defaults.sample_count, 1)
   @debug.assert_eq(defaults.limits, @moonbit.GenerationLimits::default())
-  @debug.assert_eq(defaults.configurations, @moon.configurations())
+  @debug.assert_eq(defaults.configurations, [
+    "native-debug", "native-release", "wasm-gc-debug",
+  ])
+  let extended = parse_task(
+    "",
+    settings=["execution.configurations=['js-debug','wasm-debug']"],
+    automatic=() => 0,
+  )
+  @debug.assert_eq(extended.configurations, ["js-debug", "wasm-debug"])
 }
 
 ///|

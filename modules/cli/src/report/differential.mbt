@@ -1,5 +1,9 @@
 ///|
-pub fn render_differential(attempt : @contracts.DifferentialAttempt) -> String {
+pub fn render_differential(
+  attempt : @contracts.DifferentialAttempt,
+  runtimes? : Array[@contracts.ProcessEvidence] = [],
+  original_runtimes? : Array[@contracts.ProcessEvidence]? = None,
+) -> String {
   let lines = [
     "# MoonSmith differential report",
     "",
@@ -38,5 +42,19 @@ pub fn render_differential(attempt : @contracts.DifferentialAttempt) -> String {
   lines.push(
     "Toolchain and platform probes, commands, raw stdout/stderr, and any injected output are preserved in attempt.json.",
   )
+  if !runtimes.is_empty() {
+    lines.push("")
+    lines.push("## Runtime versions")
+    lines.push("")
+    lines.append(
+      runtime_lines(
+        runtimes,
+        original_runtimes,
+        replay=attempt.purpose == "replay",
+      ),
+    )
+    lines.push("")
+    lines.push("Raw runtime version probes are preserved in runtimes.json.")
+  }
   lines.join("\n") + "\n"
 }
