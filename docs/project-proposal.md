@@ -17,11 +17,7 @@ MoonSmith 计划使用 MoonBit 实现编译器测试工具，提供随机程序�
 - 生态维护者升级工具链前，重跑固定案例检查已知问题是否再次出现。
 - 开发者报告工具发现的异常时，自动缩减失败程序并生成可重放的源码与环境记录。
 
-MoonSmith 拟根据类型、作用域和终止约束构造程序，再利用 MoonBit 的多后端及受限子集的参考解释器检查计算结果，减少人工编写测试和缩减用例的工作。
-首版限定为确定性语言子集，归约对象限于工具自身生成的程序。
-架构上拟将通用 [Engine](../fps/FP-0001-workspace-modules.md#term-engine)与
-MoonBit [语言适配器](../fps/FP-0001-workspace-modules.md#term-language-adapter)解耦，后续还能接入 Rust、Swift 适配器。
-本文维护产品范围和验收目标，概念定义见[术语索引](glossary.md)，当前实现范围见[CLI 实现说明](../modules/cli/README.md#差分执行与存证)。
+MoonSmith 拟根据类型、作用域和终止约束构造程序，再利用 MoonBit 的多后端及受限子集的参考解释器检查计算结果，减少人工编写测试和缩减用例的工作。首版限定为确定性语言子集，归约对象限于工具自身生成的程序。架构上拟将通用 [Engine](../fps/FP-0001-workspace-modules.md#term-engine)与 MoonBit [语言适配器](../fps/FP-0001-workspace-modules.md#term-language-adapter)解耦，后续还能接入 Rust、Swift 适配器。本文维护产品范围和验收目标，概念定义见[术语索引](glossary.md)，当前实现范围见[CLI 实现说明](../modules/cli/README.md#差分执行与存证)。
 
 ## 核心功能范围
 
