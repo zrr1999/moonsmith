@@ -26,7 +26,9 @@
 
 ## 方法与判定标准
 
-在被测源码版本下准备[开发环境](../CONTRIBUTING.md#开发准备)，通过 CLI 源码入口执行任务：
+原实验通过 `just build` 产出的 native debug 可执行文件启动任务。
+独立复测时，可在相同源码版本下准备[开发环境](../CONTRIBUTING.md#开发准备)，
+通过以下 CLI 源码入口启动相同参数的任务；这条复测指引不代表重新执行了原实验：
 
 ```shell
 moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- \
