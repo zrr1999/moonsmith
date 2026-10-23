@@ -28,7 +28,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/tombi-toml/tombi-pre-commit"
-rev = "v1.5.0"
+rev = "v1.9.0"
 hooks = [
   { id = "tombi-format", args = ["--check", "--offline"] },
   { id = "tombi-lint", args = ["--error-on-warnings", "--offline"] },
@@ -41,7 +41,7 @@ hooks = [{ id = "yamllint", args = ["--strict", "--config-file", ".yamllint.yml"
 
 [[repos]]
 repo = "https://github.com/rvben/rumdl-pre-commit"
-rev = "v0.2.78"
+rev = "v0.3.0"
 hooks = [{ id = "rumdl-check", args = ["--config", ".rumdl.toml", "--deny-config-warnings"] }]
 
 [[repos]]
@@ -59,7 +59,7 @@ hooks = [{ id = "actionlint" }]
 
 [[repos]]
 repo = "https://github.com/zizmorcore/zizmor-pre-commit"
-rev = "v1.30.0"
+rev = "v1.31.1"
 hooks = [{ id = "zizmor", args = ["--offline", "--no-progress", "--strict-collection"] }]
 
 [[repos]]
@@ -79,7 +79,7 @@ hooks = [
 
 [[repos]]
 repo = "https://github.com/crate-ci/typos"
-rev = "v1.50.0"
+rev = "v1.51.1"
 hooks = [{ id = "typos", args = ["--force-exclude"] }]
 
 [[repos]]
@@ -89,7 +89,7 @@ hooks = [{ id = "check-justfile" }]
 
 [[repos]]
 repo = "https://github.com/asamarts/alint-pre-commit"
-rev = "v0.17.0"
+rev = "v0.20.0"
 hooks = [{ id = "alint" }]
 
 [[repos]]
