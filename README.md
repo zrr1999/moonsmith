@@ -28,25 +28,11 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run --set 
 moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay runs/task-<id>/cases/case-<id>
 ```
 
-可执行程序无参数时只显示帮助，`run` 执行有限测试任务，默认一个样本。
-`run --config acceptance.toml --set sample_count=10` 可读取任务文件并覆盖字段；
-键名与 TOML 一致，默认值、文件和命令行依次覆盖。省略起始种子时自动选择并记录完整范围。
-首版组合局部绑定与引用、条件分支、无环函数定义与调用，比较 native debug、native release、
-wasm-gc debug 的正常输出，无需参考求值器。任务配置还可选择 wasm debug 与 js debug；
-[acceptance.toml](acceptance.toml) 显式使用全部五配置。发现分歧后继续执行剩余配置。
-原始证据保存成功后自动归约，保持同一对配置的输出分歧，并独立执行一次确认。
-摘要显示缩减前后的节点数、整数常量量级与源码字节数、停止原因和确认状态，不保证全局最小。
-任务汇总分别记录内部生成检查、基线编译接受、完整比较与操作错误，并保留计划样本数作为分母。
+可执行程序无参数时只显示帮助，`run` 执行有限测试任务，默认一个样本。 `run --config acceptance.toml --set sample_count=10` 可读取任务文件并覆盖字段；键名与 TOML 一致，默认值、文件和命令行依次覆盖。省略起始种子时自动选择并记录完整范围。首版组合局部绑定与引用、条件分支、无环函数定义与调用，比较 native debug、native release、 wasm-gc debug 的正常输出，无需参考求值器。任务配置还可选择 wasm debug 与 js debug；[acceptance.toml](acceptance.toml) 显式使用全部五配置。发现分歧后继续执行剩余配置。原始证据保存成功后自动归约，保持同一对配置的输出分歧，并独立执行一次确认。摘要显示缩减前后的节点数、整数常量量级与源码字节数、停止原因和确认状态，不保证全局最小。任务汇总分别记录内部生成检查、基线编译接受、完整比较与操作错误，并保留计划样本数作为分母。
 
-摘要显示结果、种子、有效配置数和材料路径；异常时展开关键差异或失败原因。保存成功后，
-一致返回 `0`、分歧返回 `2`、比较未完成返回 `3`；参数、生成或保存错误返回 `1`。
-源码、构建文件和原始观察保存在 `runs/`；重放使用当前工具链和运行时并追加记录，已知版本变化会提示。
-将重执行参数替换为摘要中的 `Replay material` 路径，可重放归约结果；传入案例目录则重放原例。
-重放不再次启动归约。
+摘要显示结果、种子、有效配置数和材料路径；异常时展开关键差异或失败原因。保存成功后，一致返回 `0`、分歧返回 `2`、比较未完成返回 `3`；参数、生成或保存错误返回 `1`。源码、构建文件和原始观察保存在 `runs/`；重放使用当前工具链和运行时并追加记录，已知版本变化会提示。将重执行参数替换为摘要中的 `Replay material` 路径，可重放归约结果；传入案例目录则重放原例。重放不再次启动归约。
 
-设计见 [FP-0002](fps/FP-0002-moonbit-semantic-contract.md) 与
-[FP-0003](fps/FP-0003-cli-workflows.md)，实现边界见
-[CLI 实现说明](modules/cli/README.md#差分执行与存证)。多配置一致不证明编译器正确，分歧仍需调查。
+设计见 [FP-0002](fps/FP-0002-moonbit-semantic-contract.md) 与 [FP-0003](fps/FP-0003-cli-workflows.md)，实现边界见 [CLI 实现说明](modules/cli/README.md#差分执行与存证)。多配置一致不证明编译器正确，分歧仍需调查。
 
 ## 文档导航
 
