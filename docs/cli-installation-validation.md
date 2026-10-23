@@ -1,43 +1,56 @@
-# CLI 源码安装验收
+# CLI 源码安装验证报告
 
-2026-10-21 对提交 `dae0ff2` 的完整源码快照执行安装与仓库外运行检查。
-使用 `git archive` 导出已跟踪源码，导出目录不含 `.mooncakes` 或 `_build`，
-通过 `moon install ./modules/cli/src/cmd/moonsmith --bin <独立安装目录>` 构建并安装 native 命令。
-内部模块由导出快照的 `moon.work` 解析，外部模块使用声明的正式版本。
+本报告记录 2026-10-21 对完整源码快照 `dae0ff260204aae1dc1e5004e1dd2faa16916d6b` 的安装与仓库外运行验证。目标是确认：从不含构建产物的源码快照安装 native CLI 后，可在工作区外显示帮助、完成单样本五配置任务，并重放保存的案例。
 
-## 环境与结果
+## 环境与方法
 
-| 项目 | 结果 |
+| 条件 | 实测值 |
 | --- | --- |
 | 宿主 | Darwin 27.0.0 arm64 |
-| Moon / moonrun | 0.1.20260920，`914d7da` |
+| Moon / moonrun | `0.1.20260920`，提交 `914d7da` |
 | 编译器与 core | `0.10.14+7d59c7ec9` |
-| 外部依赖 | async 0.22.4、toml 0.5.0，复用宿主下载缓存 |
-| 安装 | 成功，产出独立 `moonsmith` 可执行文件 |
-| 仓库外 `--help` | 退出码 0，列出统一任务配置和五个配置名称 |
-| 仓库外 `run` | 种子 42，默认生成预算，显式选择全部五配置，退出码 0 |
-| 任务统计 | 计划、内部检查通过、基线编译接受、完整比较、一致均为 1；操作错误为 0 |
-| 样本处理耗时 | 1448 毫秒，单调时钟 |
-| 保存源码重放 | 退出码 0，新增独立尝试，五配置继续一致 |
-| 既有材料 | 案例、原始源码、原始尝试和任务汇总的四份 SHA-256 保持不变 |
+| 外部依赖 | async `0.22.4`、toml `0.5.0`；使用宿主下载缓存 |
+| Node.js | 初始运行 `v26.8.1`；另一命令环境的重放为 `v26.3.1` |
 
-安装目录位于 `runs/install-validation-20261021-01/bin/`，运行目录位于其同级 `outside/`，
-与导出的 `source/` 分开。运行时没有将当前目录切入源码快照。
-此检查隔离工作区的依赖目录与构建产物，仍使用宿主已安装工具链和用户级下载缓存，
-不代表在全新操作系统上安装了 MoonBit 或 Node.js。
+从仓库根目录导出被测 revision 的已跟踪文件；导出内容不含 `.mooncakes` 与 `_build`。以下命令创建独立的临时安装根目录和工作目录：源码快照与可执行文件位于安装根目录下，任务从其外部工作目录启动。
 
-任务 ID 为 `task-8767ca8496626579d8ac8bfd0158cc4f`，保存在运行目录的 `evidence/` 下，
-原始案例 ID 为 `case-c106124dbff55bb2e4bc565a25d7d010`。
+```shell
+MOONSMITH_VALIDATION_ROOT=$(mktemp -d)
+MOONSMITH_VALIDATION_WORK=$(mktemp -d)
+SOURCE_DIR="$MOONSMITH_VALIDATION_ROOT/source"
+INSTALL_DIR="$MOONSMITH_VALIDATION_ROOT/bin"
+mkdir -p "$SOURCE_DIR" "$INSTALL_DIR"
+git archive dae0ff260204aae1dc1e5004e1dd2faa16916d6b | tar -x -C "$SOURCE_DIR"
+(cd "$SOURCE_DIR" && moon install ./modules/cli/src/cmd/moonsmith --bin "$INSTALL_DIR")
 
-初始运行使用 Node.js `v26.8.1`。从另一宿主命令环境重放同一材料时，实际 Node.js 为
-`v26.3.1`，终端和报告正确提示版本变化，五配置仍取得相同结果；原记录继续保留。
-两次重放后共三份独立尝试，运行时版本取自每次实际探测，不由安装文档固定推断。
+(cd "$MOONSMITH_VALIDATION_WORK" && "$INSTALL_DIR/moonsmith" --help)
+(cd "$MOONSMITH_VALIDATION_WORK" && "$INSTALL_DIR/moonsmith" run \
+  --set seed_start=42 \
+  --set sample_count=1 \
+  --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
+  --set 'output.directory="evidence"')
+# 将此值替换为任务输出报告的已保存案例目录。
+CASE_DIR=/absolute/path/to/saved-case
+(cd "$MOONSMITH_VALIDATION_WORK" && "$INSTALL_DIR/moonsmith" replay "$CASE_DIR")
+```
 
-## 持续集成与边界
+最后一条命令使用前一步保存材料中报告的案例目录。安装由快照内 `moon.work` 解析内部模块，外部模块使用声明的正式版本。运行和重放均从独立工作目录发起，不切换回源码快照。
 
-CI 在 Ubuntu 24.04 的新检出中先安装 CLI，再到工作区外执行帮助、完整五配置任务和重放，
-核对版本 2 汇总及原例校验和；后续继续运行全仓构建、行为测试与归约演示。
-生成材料随 `execution-evidence` artifact 保留七天，具体运行结果以对应提交的 CI 为准。
+## 预期与实测结果
 
-安装方法见根目录[安装说明](../README.md#安装)。当前支持完整源码安装，尚未发布 registry 包
-或预编译发行包。本次单样本安装验收不计作[规模实验](project-proposal.md#预期验收产物)。
+| 检查 | 预期 | 实测 |
+| --- | --- | --- |
+| 安装 | 生成独立 native `moonsmith` 可执行文件 | 成功 |
+| `--help` | 退出码 0，列出统一任务配置与五个配置名称 | 符合 |
+| 单样本任务 | 种子 42、默认生成预算、五配置完成比较 | 计划、内部检查、基线编译接受、完整比较及一致均为 1；操作错误为 0，退出码 0 |
+| 样本处理时间 | 记录单调时钟耗时 | 1448 毫秒 |
+| 保存案例重放 | 新增独立尝试且五配置结果一致 | 退出码 0，五配置继续一致 |
+| 已有材料完整性 | 比较案例、原始源码、原始尝试与任务汇总的 SHA-256 | 四项均保持不变 |
+
+在另一宿主命令环境重放同一案例时，Node.js 实际版本为 `v26.3.1`，初始运行版本为 `v26.8.1`。工具正确提示版本变化，五配置结果仍一致；每次版本均来自实际探测。重放追加独立尝试，不覆盖原记录。
+
+## 结论与边界
+
+该验证确认完整源码安装、工作区外启动、五配置单样本执行及保存源码重放路径可用。它使用宿主已安装的 MoonBit、Node.js 和用户级依赖下载缓存；没有验证全新操作系统上的工具链安装。单样本耗时不代表性能基准，也不计作项目规模验收。
+
+安装入口和用户可见安装要求见[根目录安装说明](../README.md#安装)；CLI 的案例、尝试与重放存储行为见[差分执行与存证](../modules/cli/README.md#差分执行与存证)。项目规模目标见[项目申报书](project-proposal.md#预期验收产物)。

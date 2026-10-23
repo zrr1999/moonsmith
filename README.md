@@ -74,7 +74,7 @@ wasm-gc debug 的正常输出，无需参考求值器。任务配置还可选择
 | --- | --- |
 | [项目申报书](docs/project-proposal.md) | 产品范围与预期验收目标 |
 | [固定验证案例](cases/README.md) | 可复用输入、预言机、执行入口与待验收边界 |
-| [五配置试运行](docs/five-configuration-pilot.md) | 100 个样本的真实工具链结果、条件及证据边界 |
+| [五配置矩阵验证](docs/five-configuration-pilot.md) | 固定输入、判定标准、复现方法与 100 例验证结果 |
 | [归约演示](docs/reduction-demonstration.md) | 受控注入的缩减率、耗时、独立确认与源码重放 |
 | [CLI 安装验收](docs/cli-installation-validation.md) | 完整源码安装、仓库外执行和工具链依赖边界 |
 | [任务配置示例](acceptance.toml)与[命令行配置](modules/cli/README.md#任务配置) | 有限种子任务、统一覆盖、逐样本存证和汇总 |
