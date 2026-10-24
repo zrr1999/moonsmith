@@ -59,6 +59,7 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay run
 | 文档 | 内容 |
 | --- | --- |
 | [项目申报书](docs/project-proposal.md) | 产品范围与预期验收目标 |
+| [项目验收记录](docs/acceptance-validation.md) | 10,000 个样本、1,000 例五配置、三例可重放工具链异常及验收证据 |
 | [固定验证案例](cases/README.md) | 可复用输入、预言机、执行入口与待验收边界 |
 | [五配置矩阵验证](docs/five-configuration-pilot.md) | 固定输入、判定标准、复现方法与 100 例验证结果 |
 | [归约演示](docs/reduction-demonstration.md) | 受控注入的缩减率、耗时、独立确认与源码重放 |
