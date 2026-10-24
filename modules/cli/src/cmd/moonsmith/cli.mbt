@@ -96,6 +96,7 @@ async fn cli(
             "Configuration: defaults < explicit TOML file < --set assignments (last value wins).",
             "--set uses the same keys and TOML values as the file; arrays replace the whole list.",
             "Keys: name (string), seed_start (Int32), sample_count (positive Int32).",
+            "  generation.generator (string; supported: \{@app.generator_identifiers().join(", ")}).",
             "  generation.max_nodes (1..2048), generation.max_depth (0..16), generation.max_attempts (1..8192).",
             "  execution.configurations (array of at least two distinct supported names).",
             "  execution.build_timeout_ms, execution.run_timeout_ms (1..600000 milliseconds).",

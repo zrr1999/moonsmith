@@ -3,6 +3,7 @@ seed_start = 0
 sample_count = 1000
 
 [generation]
+generator = "template-rules-v2"
 max_nodes = 128
 max_depth = 6
 max_attempts = 256

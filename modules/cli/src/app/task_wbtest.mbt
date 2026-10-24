@@ -52,6 +52,11 @@ test "defaults partial files and settings share field types and last assignments
   @debug.assert_eq(defaults.seed_start, -7)
   @debug.assert_eq(defaults.sample_count, 1)
   @debug.assert_eq(defaults.limits, @moonbit.GenerationLimits::default())
+  @debug.assert_eq(defaults.generator, @moonbit.CompositeV2)
+  @debug.assert_eq(
+    parse_task("[generation]\ngenerator='template-rules-v1'", automatic=() => 0).generator,
+    @moonbit.ScalarV1,
+  )
   @debug.assert_eq(defaults.configurations, [
     "native-debug", "native-release", "wasm-gc-debug",
   ])
@@ -96,6 +101,8 @@ test "automatic starts fit complete Int32 ranges and invalid tasks never request
       ["execution.configurations=['native-debug','native-debug']"],
       ["generation.max_nodes=1\nsample_count=2"],
       ["generation.max_nodes=1\n[value]\nextra=2"],
+      ["generation.generator='unsupported'"],
+      ["generation.generator=1"],
       ["output.directory=bare"],
     ] {
     let mut requested = false
@@ -284,6 +291,10 @@ async test "tasks execute their seed range and saved plan resolve output beside 
     @debug.assert_eq(observation.comparison, @contracts.Consistent)
     @debug.assert_eq(observation.error, None)
     let case = @artifacts.load_differential(observation.case_directory)
+    @debug.assert_eq(
+      case.generation.generator,
+      effective.generator.identifier(),
+    )
     @debug.assert_eq(sample.generation, Some(case.generation))
     @debug.assert_eq(case.generation.seed, seed)
     @debug.assert_eq(case.generation.max_nodes, 1)

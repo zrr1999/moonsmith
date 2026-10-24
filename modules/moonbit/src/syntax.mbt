@@ -172,10 +172,15 @@ fn Expr::size(self : Expr) -> Int {
 }
 
 ///|
+fn EnumDefinition::size(self : EnumDefinition) -> Int {
+  self.variants.fold(init=1, (n, fields) => n + 1 + fields.length())
+}
+
+///|
 /// Count expressions, definitions, constructors and parameters; a hole occupies one node.
 pub fn Template::size(self : Template) -> Int {
   let declarations = self.enums.fold(init=0, (n, definition) => {
-    n + definition.variants.fold(init=1, (n, fields) => n + 1 + fields.length())
+    n + definition.size()
   })
   self.functions.fold(init=declarations + self.result.size(), (n, f) => {
     n + 1 + f.parameters.length() + f.body.size()
