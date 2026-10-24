@@ -27,7 +27,7 @@ cases/
 | --- | --- |
 | `reference-output` | `source` 保留上游来源，`reported_compiler` 可选；`configurations` 和完整 `expected_stdout` 由[历史参考测试](../modules/cli/src/app/regression_wbtest.mbt)执行和判定，空输出写空字符串 |
 | `reduction` | 保存生成器来源、种子和生成预算；[归约测试](../modules/cli/src/app/reduction_wbtest.mbt)先核对生成源码与快照，再运行已有受控故障注入、成本检查、独立确认和重放 |
-| `differential` | 保存源码、报告版本、配置对及预期现象；目前仅保存候选材料，尚未接入对应受影响工具链与观察协议，不能计作真实差分验收成功 |
+| `differential` | 保存源码、报告版本、配置对及预期现象；目前仅保存候选材料，尚未接入对应受影响工具链与观察协议 |
 
 测试直接读取 `cases/moonbit/` 下的案例目录，按 Host 的确定排序遍历，忽略隐藏条目。
 新增或重命名案例无需维护路径清单。未知种类、缺失元数据、缺失或空源码明确报错；
@@ -47,8 +47,8 @@ cases/
 | [#1006](moonbit/moonbit-docs-1006/case.toml) | 字符串尾部模式输出 `n`；上游讨论指向 core 修复 |
 | [#1070](moonbit/moonbit-docs-1070/case.toml) | 正零的 Int64 位表示为 `0` |
 | [#1266](moonbit/moonbit-docs-1266/case.toml) | 管道向 tuple struct 传参正常编译且无输出；旧版真实复现与当前回归分别记录 |
-| [#1326](moonbit/moonbit-docs-1326/case.toml) | UInt 可选值与移位的历史差分候选；材料存在不代表由 MoonSmith 检测或重新生成了该问题 |
-| [生成快照](moonbit/reduce-root-call/case.toml) | 实际导出的 128 节点输入，通过现有受控注入验证缩减、确认和重放；不作为真实编译器缺陷归约证据 |
+| [#1326](moonbit/moonbit-docs-1326/case.toml) | UInt 可选值与移位的历史差分候选；待接入受影响工具链与观察协议 |
+| [生成快照](moonbit/reduce-root-call/case.toml) | 实际导出的 128 节点输入，通过现有受控注入验证缩减、确认和重放 |
 
 历史参考入口按每例的配置执行，复用 `toolchains/moon` 与 Engine 的明确预期判定，
 保存工具链、平台、命令、原始观察及报告。某例预期不满足时继续其余案例并汇总失败。
@@ -60,7 +60,7 @@ cases/
 | --- | --- |
 | 已知输入暴露问题 | 固定输入在指定工具链下满足明确预期或出现目标异常；当前正常参考检查与旧版真实复现分别报告 |
 | 生成机制发现问题 | 同一个生成程序在不同配置下的有效结果存在分歧，无需与历史源码逐字一致；历史归因还需独立证据，当前没有自动归因实现 |
-| 归约保留失败 | 每个候选提供新证据，满足会话冻结的[失败判据](../fps/FP-0004-engine-execution-contract.md#term-failure-predicate)，并改善同一成本顺序；保持配置对分歧不证明根因相同，也不保证全局最小 |
+| 归约保留失败 | 每个候选提供新证据，满足会话冻结的[失败判据](../fps/FP-0004-engine-execution-contract.md#term-failure-predicate)，并改善同一成本顺序 |
 | 基础行为与批量验收 | 生成合法性、预算、判定、重放和执行失败由模块行为测试覆盖；样本规模及完整矩阵以[申报书](../docs/project-proposal.md#预期验收产物)和实际批跑报告验收 |
 
 纯算法使用显式种子和预算。批量验收目标见[申报书](../docs/project-proposal.md#预期验收产物)，
@@ -78,9 +78,8 @@ moon test modules/cli/src/app/cases_wbtest.mbt modules/cli/src/app/regression_wb
 moon test modules/cli/src/app/reduction_wbtest.mbt --target native
 ```
 
-结构检查只证明材料可读；尚未执行的受影响工具链、随机再发现和真实缺陷归约仍待取得证据。
 历史参考案例仍按各自声明的 native debug、native release、wasm-gc debug 执行。
-批量任务可另选完整五配置；固定案例通过不等同于达到申报书的样本规模。
+批量任务可另选完整五配置。
 
 历史程序依据公开问题独立编写，生成快照记录实际生成条件，均使用本仓库的 GPL-3.0-only
 许可证。引入第三方原始源码时保留来源与许可。真实工具链、受控注入和模型观察分别报告，

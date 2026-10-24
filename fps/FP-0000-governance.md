@@ -80,9 +80,9 @@ FP 按编号时序建立设计依赖：一份提案只能依赖编号更小的�
 | `Draft` | 起草中，仍有待补充的设计或未决问题；新提案默认使用此状态 |
 | `Proposed` | 作者已整理好设计、兼容性与验证计划，提交讨论和设计评审 |
 
-作者准备好提交讨论时，将 `Draft` 改为 `Proposed`；评审中需要重新起草时可以改回 `Draft`。状态变更保留原编号、文件名与历史，并重新生成索引。状态不会随 PR 的 Draft、Ready 或合并操作自动变化；`Proposed` 也不代表设计已被采纳、排期或实现。
+作者准备好提交讨论时，将 `Draft` 改为 `Proposed`；评审中需要重新起草时可以改回 `Draft`。状态变更保留原编号、文件名与历史，并重新生成索引。状态不会随 PR 的 Draft、Ready 或合并操作自动变化。
 
-两种状态均遵守相同的元数据、章节和关系检查，均纳入 `fps-index.json`，索引保留 `status`。草稿可以明确列出未决问题和待补充内容，检查通过不代表这些问题已解决。
+两种状态均遵守相同的元数据、章节和关系检查，均纳入 `fps-index.json`，索引保留 `status`。草稿可以明确列出未决问题和待补充内容。
 
 ### 术语定义与引用
 
@@ -123,7 +123,5 @@ FP 按编号时序建立设计依赖：一份提案只能依赖编号更小的�
 ## 验证
 
 `zendev.toml` 配置固定版本 ZenDev 的元数据、状态取值、文件名、模板章节、依赖与替代关系、术语定义和确定性索引检查。schema 要求 `requires` 存在并约束编号格式与唯一性；ZenDev 拒绝缺失依赖目标、自依赖和依赖循环，检查术语声明与锚点对应及跨提案的定义归属。 `proposal.graph.require_declared_references` 和 `proposal.graph.requires_earlier` 均启用，分别检查正文引用已直接声明依赖，以及依赖编号严格早于当前提案。 lychee 检查本地文档链接及目标锚点。`just check` 与 CI 共用这些门禁；更新提案后用 `zendev proposal check --fix` 生成 `fps-index.json`。
-
-检查通过说明文档结构与索引一致，不能证明设计已被采纳、实现正确或实验完成。是否需要新提案及证据是否充分，由作者与评审者依据具体契约判断。
 
 参考 [Cue FP-0000](https://github.com/zendev-lab/cue/blob/1a7d822266333fbc7bf509f2a4227c188b2cf928/fps/FP-0000-governance.md) 与 [ZenDev ZFP-0000](https://github.com/zendev-lab/zendev/blob/6d2c1ca43d2a794e08c9e22459ff7fe81ccf6600/zfps/ZFP-0000-governance.md) 的轻量提案组织方式。
