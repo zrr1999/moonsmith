@@ -41,10 +41,11 @@ pub async fn load_differential(
 }
 
 ///|
-pub async fn original_toolchain(
+pub async fn original_environment(
   directory : String,
-) -> @contracts.ProcessEvidence? {
+) -> (@contracts.ProcessEvidence?, Array[@contracts.ProcessEvidence]?) {
   let mut original : @contracts.ProcessEvidence? = None
+  let mut runtimes : Array[@contracts.ProcessEvidence]? = None
   for name in @host.list_directory("\{directory}/attempts") {
     let path = "\{directory}/attempts/\{name}/attempt.json"
     if !@host.exists(path) {
@@ -61,9 +62,10 @@ pub async fn original_toolchain(
         fail("multiple original execution records")
       }
       original = Some(attempt.toolchain)
+      runtimes = load_runtimes("\{directory}/attempts/\{name}")
     }
   }
-  original
+  (original, runtimes)
 }
 
 ///|

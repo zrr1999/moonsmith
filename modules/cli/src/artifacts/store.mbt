@@ -26,12 +26,50 @@ pub async fn begin_attempt(directory : String) -> String {
 }
 
 ///|
+priv struct RuntimeRecord {
+  format_version : Int
+  probes : Array[@contracts.ProcessEvidence]
+} derive(ToJson, @json.FromJson)
+
+///|
+pub async fn load_runtimes(
+  directory : String,
+) -> Array[@contracts.ProcessEvidence]? {
+  let path = "\{directory}/runtimes.json"
+  if !@host.exists(path) {
+    return None
+  }
+  let record : RuntimeRecord = @json.from_json(
+    @json.parse(@host.read_text(path)),
+  )
+  guard record.format_version == 1 else {
+    fail("unsupported runtime record format at \{path}")
+  }
+  let programs : Array[String] = []
+  for probe in record.probes {
+    guard !programs.contains(probe.command.program) else {
+      fail("duplicate runtime identity at \{path}")
+    }
+    programs.push(probe.command.program)
+  }
+  Some(record.probes)
+}
+
+///|
 /// attempt.json is the completion marker; unfinished attempts retain their workspace.
 pub async fn[T : ToJson] finish_attempt(
   directory : String,
   attempt : T,
   report : String,
+  runtimes? : Array[@contracts.ProcessEvidence] = [],
 ) -> Unit {
+  if !runtimes.is_empty() {
+    let record : RuntimeRecord = { format_version: 1, probes: runtimes, }
+    @host.write_new(
+      "\{directory}/runtimes.json",
+      ToJson::to_json(record).stringify(),
+    )
+  }
   @host.write_new("\{directory}/report.md", report)
   @host.write_new("\{directory}/attempt.json", attempt.to_json().stringify())
 }

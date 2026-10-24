@@ -1,6 +1,80 @@
 ///|
+priv enum Runner {
+  Native
+  Moonrun
+  Node
+}
+
+///|
+priv struct Configuration {
+  name : String
+  target : String
+  mode : String
+  runner : Runner
+  default_enabled : Bool
+}
+
+///|
+fn configuration_specs() -> Array[Configuration] {
+  [
+    {
+      name: "native-debug",
+      target: "native",
+      mode: "debug",
+      runner: Native,
+      default_enabled: true,
+    },
+    {
+      name: "native-release",
+      target: "native",
+      mode: "release",
+      runner: Native,
+      default_enabled: true,
+    },
+    {
+      name: "wasm-gc-debug",
+      target: "wasm-gc",
+      mode: "debug",
+      runner: Moonrun,
+      default_enabled: true,
+    },
+    {
+      name: "wasm-debug",
+      target: "wasm",
+      mode: "debug",
+      runner: Moonrun,
+      default_enabled: false,
+    },
+    {
+      name: "js-debug",
+      target: "js",
+      mode: "debug",
+      runner: Node,
+      default_enabled: false,
+    },
+  ]
+}
+
+///|
+fn select_configuration(name : String) -> Configuration raise {
+  for configuration in configuration_specs() {
+    if configuration.name == name {
+      return configuration
+    }
+  }
+  fail("unsupported configuration: \{name}")
+}
+
+///|
 pub fn configurations() -> Array[String] {
-  ["native-debug", "native-release", "wasm-gc-debug"]
+  configuration_specs()
+  .filter(configuration => configuration.default_enabled)
+  .map(configuration => configuration.name)
+}
+
+///|
+pub fn available_configurations() -> Array[String] {
+  configuration_specs().map(configuration => configuration.name)
 }
 
 ///|
@@ -31,6 +105,35 @@ pub async fn identify() -> @contracts.ProcessEvidence {
     10000,
   )
   { command, output: @host.execute(command), }
+}
+
+///|
+pub async fn identify_runtimes(
+  planned : Array[String],
+) -> Array[@contracts.ProcessEvidence] {
+  validate_plan(planned)
+  let programs : Array[String] = []
+  for name in planned {
+    let program = match select_configuration(name).runner {
+      Native => continue
+      Moonrun => "moonrun"
+      Node => "node"
+    }
+    if !programs.contains(program) {
+      programs.push(program)
+    }
+  }
+  let evidence : Array[@contracts.ProcessEvidence] = []
+  for program in programs {
+    let command = command(
+      program,
+      ["--version"],
+      @host.current_directory(),
+      10000,
+    )
+    evidence.push({ command, output: @host.execute(command), })
+  }
+  evidence
 }
 
 ///|
@@ -66,9 +169,7 @@ pub fn validate_plan(planned : Array[String]) -> Unit raise {
     fail("comparison requires at least two configurations")
   }
   for i, configuration in planned {
-    guard configurations().contains(configuration) else {
-      fail("unsupported configuration: \{configuration}")
-    }
+    ignore(select_configuration(configuration))
     guard !planned[:i].contains(configuration) else {
       fail("duplicate configuration: \{configuration}")
     }
@@ -100,19 +201,10 @@ pub async fn observe(
   validate_plan(planned)
   let observations : Array[@contracts.Observation] = []
   for configuration in planned {
-    let target = if configuration == "wasm-gc-debug" {
-      "wasm-gc"
-    } else {
-      "native"
-    }
-    let mode = if configuration == "native-release" {
-      "release"
-    } else {
-      "debug"
-    }
+    let spec = select_configuration(configuration)
     let build = command(
       "moon",
-      ["build", "--target", target, "--\{mode}"],
+      ["build", "--target", spec.target, "--\{spec.mode}"],
       directory,
       build_timeout_ms,
     )
@@ -128,11 +220,12 @@ pub async fn observe(
       continue
     }
     // The generated root package has a fixed name; each attempt has a fresh build directory.
-    let artifact = "\{directory}/_build/\{target}/\{mode}/build/generated"
-    let run = if target == "native" {
-      command("\{artifact}.exe", [], directory, run_timeout_ms)
-    } else {
-      command("moonrun", ["\{artifact}.wasm"], directory, run_timeout_ms)
+    let artifact = "\{directory}/_build/\{spec.target}/\{spec.mode}/build/generated"
+    let run = match spec.runner {
+      Native => command("\{artifact}.exe", [], directory, run_timeout_ms)
+      Moonrun =>
+        command("moonrun", ["\{artifact}.wasm"], directory, run_timeout_ms)
+      Node => command("node", ["\{artifact}.js"], directory, run_timeout_ms)
     }
     let output = @host.execute(run)
     let injected_stdout = if inject &&

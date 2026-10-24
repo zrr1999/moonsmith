@@ -5,13 +5,15 @@ pub struct DifferentialRun {
   attempt : @contracts.DifferentialAttempt
   attempt_directory : String
   original_toolchain : @contracts.ProcessEvidence?
+  runtimes : Array[@contracts.ProcessEvidence]
+  original_runtimes : Array[@contracts.ProcessEvidence]?
   save_error : String?
   reduction : @contracts.DifferentialReduction?
 }
 
 ///|
 pub fn differential_configurations() -> Array[String] {
-  @moon.configurations()
+  @moon.available_configurations()
 }
 
 ///|
@@ -29,6 +31,7 @@ async fn execute_differential(
   purpose : String,
   source? : String,
   original_toolchain? : @contracts.ProcessEvidence,
+  original_runtimes? : Array[@contracts.ProcessEvidence],
   on_plan? : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
   let source = source.unwrap_or(case.source)
@@ -47,6 +50,7 @@ async fn execute_differential(
   )
   let toolchain = @moon.identify()
   let platform = @host.platform()
+  let runtimes = @moon.identify_runtimes(case.configurations)
   let observations = @moon.observe(
     attempt_directory,
     build_timeout_ms=case.build_timeout_ms,
@@ -88,7 +92,13 @@ async fn execute_differential(
     comparison,
   }
   finish_differential(
-    directory, case, attempt_directory, attempt, original_toolchain,
+    directory,
+    case,
+    attempt_directory,
+    attempt,
+    original_toolchain,
+    runtimes~,
+    original_runtimes~,
   )
 }
 
@@ -99,12 +109,15 @@ async fn finish_differential(
   attempt_directory : String,
   attempt : @contracts.DifferentialAttempt,
   original_toolchain : @contracts.ProcessEvidence?,
+  runtimes? : Array[@contracts.ProcessEvidence] = [],
+  original_runtimes? : Array[@contracts.ProcessEvidence]? = None,
 ) -> DifferentialRun {
   let save_error = try {
     @artifacts.finish_attempt(
       attempt_directory,
       attempt,
-      @report.render_differential(attempt),
+      @report.render_differential(attempt, runtimes~, original_runtimes~),
+      runtimes~,
     )
     None
   } catch {
@@ -116,6 +129,8 @@ async fn finish_differential(
     attempt,
     attempt_directory,
     original_toolchain,
+    runtimes,
+    original_runtimes,
     save_error,
     reduction: None,
   }
@@ -181,15 +196,22 @@ pub async fn replay_differential(
   on_plan? : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
   let input = @host.canonical(directory)
-  let (directory, case, source, original_toolchain) = try {
+  let (directory, case, source, original_toolchain, original_runtimes) = try {
     if @host.exists("\{input}/case.json") {
       let case = @artifacts.load_differential(input)
-      (input, case, case.source, @artifacts.original_toolchain(input))
+      let (toolchain, runtimes) = @artifacts.original_environment(input)
+      (input, case, case.source, toolchain, runtimes)
     } else {
       let directory = @host.canonical("\{input}/../..")
       let case = @artifacts.load_differential(directory)
       let saved = @artifacts.load_differential_attempt(input, case)
-      (directory, case, saved.source, Some(saved.toolchain))
+      (
+        directory,
+        case,
+        saved.source,
+        Some(saved.toolchain),
+        @artifacts.load_runtimes(input),
+      )
     }
   } catch {
     error => fail("loading saved material at \{input} failed: \{error}")
@@ -200,6 +222,7 @@ pub async fn replay_differential(
     "replay",
     source~,
     original_toolchain?,
+    original_runtimes?,
     on_plan~,
   ) catch {
     error =>
@@ -230,6 +253,8 @@ pub fn describe_differential(run : DifferentialRun) -> String {
     attempt_directory=run.attempt_directory,
     original_toolchain=run.original_toolchain,
     save_error=run.save_error,
+    runtimes=run.runtimes,
+    original_runtimes=run.original_runtimes,
   )
   match run.reduction {
     None => summary
