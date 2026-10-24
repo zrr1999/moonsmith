@@ -4,15 +4,14 @@ pub fn CompleteProgram::equivalent_variants(
   self : CompleteProgram,
 ) -> Array[CompleteProgram] raise StructureError {
   let result = self.syntax.result
-  let neutral : Expr = match self.result_ty {
-    Int => Add(result, IntLiteral(0))
-    Bool => Not(Not(result))
+  let variants : Array[Expr] = []
+  match self.result_ty {
+    Int => variants.push(Add(result, IntLiteral(0)))
+    Bool => variants.push(Not(Not(result)))
+    _ => ()
   }
-  [
-    { ..self.syntax, result: neutral, }.finish(),
-    {
-      ..self.syntax,
-      result: If(BoolLiteral(true), result, self.result_ty.zero()),
-    }.finish(),
-  ]
+  variants.push(
+    If(BoolLiteral(true), result, self.result_ty.zero(self.syntax.enums)),
+  )
+  variants.map(result => { ..self.syntax, result, }.finish())
 }

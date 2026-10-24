@@ -25,6 +25,7 @@ test "structural reduction preserves result type scope and deterministic order" 
 ///|
 test "removing bindings repairs references while retaining surrounding bindings" {
   let program = Template::{
+    enums: [],
     functions: [],
     result: Let(
       { id: 0, ty: Int, },
@@ -37,6 +38,7 @@ test "removing bindings repairs references while retaining surrounding bindings"
     ),
   }.finish()
   let expected = Template::{
+      enums: [],
       functions: [],
       result: Let(
         { id: 0, ty: Int, },
@@ -52,6 +54,7 @@ test "removing bindings repairs references while retaining surrounding bindings"
 ///|
 test "removing a function rewrites forward and backward calls and compacts identities" {
   let program = Template::{
+    enums: [],
     functions: [
       { parameters: [], returns: Int, body: Call(2, []), },
       { parameters: [], returns: Int, body: Call(0, []), },
@@ -60,6 +63,7 @@ test "removing a function rewrites forward and backward calls and compacts ident
     result: Add(Call(1, []), Call(2, [])),
   }.finish()
   let expected = Template::{
+      enums: [],
       functions: [
         { parameters: [], returns: Int, body: IntLiteral(0), },
         { parameters: [], returns: Int, body: IntLiteral(42), },
@@ -70,7 +74,7 @@ test "removing a function rewrites forward and backward calls and compacts ident
     .emit()
   assert_true(program.candidates().any(p => p.emit() == expected))
   @debug.assert_eq(
-    Template::{ functions: [], result: BoolLiteral(true), }
+    Template::{ enums: [], functions: [], result: BoolLiteral(true), }
     .finish()
     .candidates()
     .length(),

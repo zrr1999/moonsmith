@@ -24,8 +24,13 @@ fn Expr::integer_magnitude(self : Expr) -> Int64 {
       condition.integer_magnitude() +
       yes.integer_magnitude() +
       no.integer_magnitude()
-    Call(_, arguments) =>
+    Call(_, arguments) | Tuple(arguments) | Variant(_, _, arguments) =>
       arguments.fold(init=0L, (n, e) => n + e.integer_magnitude())
+    Project(value, _) => value.integer_magnitude()
+    Match(_, value, arms) =>
+      arms.fold(init=value.integer_magnitude(), (n, arm) => {
+        n + arm.body.integer_magnitude()
+      })
   }
 }
 

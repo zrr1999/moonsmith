@@ -4,6 +4,27 @@ fn require_type(actual : Ty, expected : Ty) -> Unit raise StructureError {
 }
 
 ///|
+fn Ty::dependencies(self : Ty, enums : Int) -> Array[Int] raise StructureError {
+  match self {
+    Int | Bool => []
+    Enum(id) => {
+      guard id >= 0 && id < enums else { raise UnknownEnum(id) }
+      [id]
+    }
+    Tuple(fields) => {
+      guard fields.length() >= 2 else {
+        raise InvalidTupleArity(fields.length())
+      }
+      let dependencies = []
+      for field in fields {
+        dependencies.append(field.dependencies(enums))
+      }
+      dependencies
+    }
+  }
+}
+
+///|
 fn bind(
   scope : Array[Binder],
   binder : Binder,
@@ -18,15 +39,37 @@ fn bind(
 }
 
 ///|
-fn Expr::infer(
-  self : Expr,
+priv struct Checking {
+  enums : Array[EnumDefinition]
+  functions : Array[Function]
+  calls : Array[Int]
+  allow_holes : Bool
+}
+
+///|
+fn Checking::definition(
+  self : Checking,
+  id : Int,
+) -> EnumDefinition raise StructureError {
+  guard id >= 0 && id < self.enums.length() else { raise UnknownEnum(id) }
+  self.enums[id]
+}
+
+///|
+fn Checking::infer(
+  self : Checking,
+  expression : Expr,
   scope : Array[Binder],
-  functions : Array[Function],
-  calls : Array[Int],
-  allow_holes : Bool,
 ) -> Ty raise StructureError {
-  match self {
-    Hole(ty) => if allow_holes { ty } else { raise UnfilledHole(ty) }
+  match expression {
+    Hole(ty) => {
+      ignore(ty.dependencies(self.enums.length()))
+      if self.allow_holes {
+        ty
+      } else {
+        raise UnfilledHole(ty)
+      }
+    }
     IntLiteral(_) => Int
     BoolLiteral(_) => Bool
     Ref(id) => {
@@ -38,34 +81,35 @@ fn Expr::infer(
       raise UnknownBinding(id)
     }
     Let(binder, value, body) => {
-      require_type(value.infer(scope, functions, calls, allow_holes), binder.ty)
-      body.infer(bind(scope, binder), functions, calls, allow_holes)
+      ignore(binder.ty.dependencies(self.enums.length()))
+      require_type(self.infer(value, scope), binder.ty)
+      self.infer(body, bind(scope, binder))
     }
     Add(a, b) | Subtract(a, b) => {
-      require_type(a.infer(scope, functions, calls, allow_holes), Int)
-      require_type(b.infer(scope, functions, calls, allow_holes), Int)
+      require_type(self.infer(a, scope), Int)
+      require_type(self.infer(b, scope), Int)
       Int
     }
     Less(a, b) => {
-      require_type(a.infer(scope, functions, calls, allow_holes), Int)
-      require_type(b.infer(scope, functions, calls, allow_holes), Int)
+      require_type(self.infer(a, scope), Int)
+      require_type(self.infer(b, scope), Int)
       Bool
     }
     Not(e) => {
-      require_type(e.infer(scope, functions, calls, allow_holes), Bool)
+      require_type(self.infer(e, scope), Bool)
       Bool
     }
     If(condition, yes, no) => {
-      require_type(condition.infer(scope, functions, calls, allow_holes), Bool)
-      let ty = yes.infer(scope, functions, calls, allow_holes)
-      require_type(no.infer(scope, functions, calls, allow_holes), ty)
+      require_type(self.infer(condition, scope), Bool)
+      let ty = self.infer(yes, scope)
+      require_type(self.infer(no, scope), ty)
       ty
     }
     Call(id, arguments) => {
-      guard id >= 0 && id < functions.length() else {
+      guard id >= 0 && id < self.functions.length() else {
         raise UnknownFunction(id)
       }
-      let function = functions[id]
+      let function = self.functions[id]
       guard arguments.length() == function.parameters.length() else {
         raise ArgumentCount(
           id,
@@ -73,33 +117,89 @@ fn Expr::infer(
           arguments.length(),
         )
       }
-      for i, argument in arguments {
-        require_type(
-          argument.infer(scope, functions, calls, allow_holes),
-          function.parameters[i].ty,
-        )
+      for index, argument in arguments {
+        require_type(self.infer(argument, scope), function.parameters[index].ty)
       }
-      calls.push(id)
+      self.calls.push(id)
       function.returns
+    }
+    Tuple(fields) => {
+      guard fields.length() >= 2 else {
+        raise InvalidTupleArity(fields.length())
+      }
+      Ty::Tuple(fields.map(field => self.infer(field, scope)))
+    }
+    Project(value, index) => {
+      let ty = self.infer(value, scope)
+      guard ty is Ty::Tuple(fields) else { raise ExpectedTuple(ty) }
+      guard index >= 0 && index < fields.length() else {
+        raise InvalidProjection(index, fields.length())
+      }
+      fields[index]
+    }
+    Variant(id, tag, arguments) => {
+      let definition = self.definition(id)
+      guard tag >= 0 && tag < definition.variants.length() else {
+        raise UnknownVariant(id, tag)
+      }
+      let fields = definition.variants[tag]
+      guard fields.length() == arguments.length() else {
+        raise VariantArguments(id, tag, fields.length(), arguments.length())
+      }
+      for index, argument in arguments {
+        require_type(self.infer(argument, scope), fields[index])
+      }
+      Enum(id)
+    }
+    Match(id, value, arms) => {
+      let definition = self.definition(id)
+      require_type(self.infer(value, scope), Enum(id))
+      guard arms.length() == definition.variants.length() else {
+        raise MatchArms(id, definition.variants.length(), arms.length())
+      }
+      let mut result : Ty? = None
+      for tag, arm in arms {
+        let fields = definition.variants[tag]
+        guard arm.parameters.length() == fields.length() else {
+          raise PatternArguments(
+            id,
+            tag,
+            fields.length(),
+            arm.parameters.length(),
+          )
+        }
+        let mut nested = scope
+        for index, parameter in arm.parameters {
+          require_type(parameter.ty, fields[index])
+          nested = bind(nested, parameter)
+        }
+        let ty = self.infer(arm.body, nested)
+        match result {
+          None => result = Some(ty)
+          Some(expected) => require_type(ty, expected)
+        }
+      }
+      result.unwrap()
     }
   }
 }
 
 ///|
-fn visit_calls(
+fn visit_dependencies(
   id : Int,
   graph : Array[Array[Int]],
   state : Array[Int],
+  cycle : (Int) -> StructureError,
 ) -> Unit raise StructureError {
   if state[id] == 1 {
-    raise CyclicCall(id)
+    raise cycle(id)
   }
   if state[id] == 2 {
     return
   }
   state[id] = 1
   for target in graph[id] {
-    visit_calls(target, graph, state)
+    visit_dependencies(target, graph, state, cycle)
   }
   state[id] = 2
 }
@@ -109,38 +209,65 @@ fn Template::check_structure(
   self : Template,
   allow_holes : Bool,
 ) -> Ty raise StructureError {
+  let types : Array[Array[Int]] = []
+  for id, definition in self.enums {
+    guard !definition.variants.is_empty() else { raise EmptyEnum(id) }
+    let dependencies = []
+    for fields in definition.variants {
+      for ty in fields {
+        dependencies.append(ty.dependencies(self.enums.length()))
+      }
+    }
+    types.push(dependencies)
+  }
+  let type_state = Array::make(types.length(), 0)
+  for id in 0..<types.length() {
+    visit_dependencies(id, types, type_state, id => CyclicEnum(id))
+  }
   let graph : Array[Array[Int]] = []
   for function in self.functions {
-    let mut scope : Array[Binder] = []
+    ignore(function.returns.dependencies(self.enums.length()))
+    let mut scope = []
     for parameter in function.parameters {
+      ignore(parameter.ty.dependencies(self.enums.length()))
       scope = bind(scope, parameter)
     }
-    let calls : Array[Int] = []
-    require_type(
-      function.body.infer(scope, self.functions, calls, allow_holes),
-      function.returns,
-    )
-    graph.push(calls)
+    let checking = {
+      enums: self.enums,
+      functions: self.functions,
+      calls: [],
+      allow_holes,
+    }
+    require_type(checking.infer(function.body, scope), function.returns)
+    graph.push(checking.calls)
   }
   let state = Array::make(self.functions.length(), 0)
-  for id = 0; id < self.functions.length(); id = id + 1 {
-    visit_calls(id, graph, state)
+  for id in 0..<self.functions.length() {
+    visit_dependencies(id, graph, state, id => CyclicCall(id))
   }
-  self.result.infer([], self.functions, [], allow_holes)
+  Checking::{
+    enums: self.enums,
+    functions: self.functions,
+    calls: [],
+    allow_holes,
+  }.infer(self.result, [])
 }
 
 ///|
-/// Check the constraints of a partial program. Typed holes remain permissible.
+/// Check every definition and branch, allowing well-typed holes.
 pub fn Template::check(self : Template) -> Ty raise StructureError {
   self.check_structure(true)
 }
 
 ///|
-/// Require a complete, well-formed, acyclic program and take an owned snapshot.
+/// Own a complete checked snapshot whose result has a supported observation protocol.
 pub fn Template::finish(
   self : Template,
 ) -> CompleteProgram raise StructureError {
   let syntax = self.snapshot()
   let result_ty = syntax.check_structure(false)
+  guard result_ty.result_protocol() is Some(_) else {
+    raise UnsupportedResultType(result_ty)
+  }
   { syntax, result_ty, }
 }
