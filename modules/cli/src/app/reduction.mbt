@@ -13,22 +13,17 @@ fn reduction_assessment(run : DifferentialRun) -> @contracts.Assessment {
 }
 
 ///|
-async fn reduce_differential(
+async fn reduce_program(
   original : DifferentialRun,
   program : @moonbit.CompleteProgram,
   limit : Int,
-) -> DifferentialRun {
-  guard original.save_error is None &&
-    original.attempt.comparison is Difference(first, second) else {
-    return original
-  }
-  let predicate = @engine.difference_predicate(first, second)
+  predicate : @contracts.FailurePredicate,
+  assess : (DifferentialRun) -> @contracts.Assessment,
+  prefix? : String = "",
+) -> (DifferentialRun, @contracts.ReductionProgress) {
   let started = @host.monotonic_ms()
   let mut result = original
-  let mut record : @contracts.DifferentialReduction = {
-    format_version: 3,
-    first_configuration: first,
-    second_configuration: second,
+  let mut record : @contracts.ReductionProgress = {
     original_attempt: original.attempt_directory,
     cost_model: @moonbit.reduction_cost_model(),
     original_cost: program.cost(),
@@ -42,11 +37,12 @@ async fn reduce_differential(
     confirmation_attempt: None,
     confirmation: None,
     error: None,
+    trials: [],
   }
   try {
     guard @engine.Reducer::new(
         program,
-        reduction_assessment(original),
+        assess(original),
         predicate,
         id=original.attempt_directory,
         limit~,
@@ -55,21 +51,29 @@ async fn reduce_differential(
         operations=[p => p.structural_candidates(), p => p.integer_candidates()],
       )
       is Ok(search) else {
-      fail("initial differential reduction evidence is invalid")
+      fail("initial reduction evidence is invalid")
     }
     while search.next() is Some(request) {
       record = { ..record, candidates: search.attempts(), }
       let candidate = execute_differential(
         original.directory,
         original.case,
-        "reduction-\{request.id.attempt}",
+        "\{prefix}reduction-\{request.id.attempt}",
         source=request.program.emit(),
       )
       if candidate.save_error is Some(error) {
         result = { ..result, save_error: Some(error), }
         fail("candidate evidence at \{candidate.attempt_directory}: \{error}")
       }
-      if search.observe(request.id, reduction_assessment(candidate)) {
+      let evidence = assess(candidate)
+      let accepted = search.observe(request.id, evidence)
+      record.trials.push({
+        attempt: candidate.attempt_directory,
+        cost: request.program.cost(),
+        status: @engine.match_failure(predicate, evidence),
+        accepted,
+      })
+      if accepted {
         record = {
           ..record,
           accepted: record.accepted + 1,
@@ -91,7 +95,7 @@ async fn reduce_differential(
     let confirmation = execute_differential(
       original.directory,
       original.case,
-      "confirmation",
+      "\{prefix}confirmation",
       source=search.result().emit(),
     )
     record = {
@@ -106,9 +110,7 @@ async fn reduce_differential(
     }
     record = {
       ..record,
-      confirmation: Some(
-        @engine.match_failure(predicate, reduction_assessment(confirmation)),
-      ),
+      confirmation: Some(@engine.match_failure(predicate, assess(confirmation))),
     }
   } catch {
     error =>
@@ -118,9 +120,43 @@ async fn reduce_differential(
         error: Some(error.to_string()),
       }
   }
+  (result, { ..record, elapsed_ms: @host.monotonic_ms() - started, })
+}
+
+///|
+async fn reduce_differential(
+  original : DifferentialRun,
+  program : @moonbit.CompleteProgram,
+  limit : Int,
+) -> DifferentialRun {
+  guard original.save_error is None &&
+    original.attempt.comparison is Difference(first, second) else {
+    return original
+  }
+  let (result, progress) = reduce_program(
+    original,
+    program,
+    limit,
+    @engine.difference_predicate(first, second),
+    reduction_assessment,
+  )
   finish_reduction(result, {
-    ..record,
-    elapsed_ms: @host.monotonic_ms() - started,
+    format_version: 3,
+    first_configuration: first,
+    second_configuration: second,
+    original_attempt: progress.original_attempt,
+    cost_model: progress.cost_model,
+    original_cost: progress.original_cost,
+    candidate_limit: progress.candidate_limit,
+    candidates: progress.candidates,
+    accepted: progress.accepted,
+    elapsed_ms: progress.elapsed_ms,
+    best_cost: progress.best_cost,
+    best_attempt: progress.best_attempt,
+    stop_reason: progress.stop_reason,
+    confirmation_attempt: progress.confirmation_attempt,
+    confirmation: progress.confirmation,
+    error: progress.error,
   })
 }
 

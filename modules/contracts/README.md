@@ -34,6 +34,10 @@
 版本 1、2 的旧摘要保持原样；源码重放读取案例和尝试材料，不依赖归约摘要。
 摘要升版不改变版本 2 的案例、尝试或原始生成记录，也不表示搜索可以恢复。
 
+`ReductionProgress` 与 `ReductionTrial` 表达运行时搜索摘要和逐候选判定；
+`BuildFailureReduction` 关联专用 `FailurePredicate`。它们用于应用装配和本地报告，
+不提供独立 JSON 归档协议或迁移承诺。已有差分归约仍保存上述版本 3 格式。
+
 ## 有限任务记录
 
 版本 2 的 `TaskSample` 关联显式种子与结果：`TaskOutcome` 区分取得比较结果和操作失败。

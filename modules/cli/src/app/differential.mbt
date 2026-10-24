@@ -9,6 +9,7 @@ pub struct DifferentialRun {
   original_runtimes : Array[@contracts.ProcessEvidence]?
   save_error : String?
   reduction : @contracts.DifferentialReduction?
+  build_reduction : @contracts.BuildFailureReduction?
 }
 
 ///|
@@ -139,6 +140,7 @@ async fn finish_differential(
     original_runtimes,
     save_error,
     reduction: None,
+    build_reduction: None,
   }
 }
 
@@ -201,7 +203,11 @@ pub async fn run_differential(
   let run = execute_differential(directory, case, "original", on_plan~) catch {
     error => fail("execution failed for seed \{seed} at \{directory}: \{error}")
   }
-  reduce_differential(run, program, reduction_limit)
+  if run.attempt.comparison is Difference(_, _) {
+    reduce_differential(run, program, reduction_limit)
+  } else {
+    reduce_build_failure(run, program, reduction_limit)
+  }
 }
 
 ///|
@@ -270,8 +276,13 @@ pub fn describe_differential(run : DifferentialRun) -> String {
     runtimes=run.runtimes,
     original_runtimes=run.original_runtimes,
   )
-  match run.reduction {
+  let summary = match run.reduction {
     None => summary
     Some(reduction) => summary + "\n" + @report.summarize_reduction(reduction)
+  }
+  match run.build_reduction {
+    None => summary
+    Some(reduction) =>
+      summary + "\n" + @report.summarize_build_reduction(reduction)
   }
 }
