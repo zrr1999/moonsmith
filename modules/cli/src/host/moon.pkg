@@ -14,3 +14,7 @@ supported_targets = "native"
 import {
   "moonbitlang/core/debug",
 } for "wbtest"
+
+options(
+  "native-stub": [ "clock.c" ],
+)

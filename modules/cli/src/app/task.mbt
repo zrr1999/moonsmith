@@ -9,7 +9,23 @@ fn record_task_result(
   summary : @contracts.TaskSummary,
   sample : @contracts.TaskSample,
 ) -> @contracts.TaskSummary {
-  let mut summary = { ..summary, attempted: summary.attempted + 1, }
+  let mut summary = {
+    ..summary,
+    attempted: summary.attempted + 1,
+    generated_valid: summary.generated_valid +
+    (if sample.generation is Some(_) { 1 } else { 0 }),
+    baseline_attempted: summary.baseline_attempted +
+    (if sample.baseline_build is Some(_) { 1 } else { 0 }),
+    baseline_accepted: summary.baseline_accepted +
+    (if sample.baseline_build == Some(true) { 1 } else { 0 }),
+    comparisons_complete: summary.comparisons_complete +
+    (if sample.planned_results > 0 &&
+      sample.comparable_results == sample.planned_results {
+      1
+    } else {
+      0
+    }),
+  }
   match sample.outcome {
     Failed(_) =>
       summary = { ..summary, operation_errors: summary.operation_errors + 1, }
@@ -71,7 +87,7 @@ pub async fn run_task(
       )
   }
   let mut summary : @contracts.TaskSummary = {
-    format_version: 1,
+    format_version: 2,
     name: task.name,
     sample_count: task.sample_count,
     attempted: 0,
@@ -79,11 +95,26 @@ pub async fn run_task(
     differences: 0,
     incomplete: 0,
     operation_errors: 0,
+    generated_valid: 0,
+    baseline_configuration: if task.configurations.contains("native-debug") {
+      Some("native-debug")
+    } else {
+      None
+    },
+    baseline_attempted: 0,
+    baseline_accepted: 0,
+    comparisons_complete: 0,
+    elapsed_ms: 0L,
   }
+  let started = @host.monotonic_ms()
   on_progress(0, task.sample_count)
   try {
     for index in 0..<task.sample_count {
       let seed = task.seed_start + index
+      let sample_started = @host.monotonic_ms()
+      let mut generation = None
+      let mut baseline_build = None
+      let mut comparable_results = 0
       let mut result = None
       let outcome : @contracts.TaskOutcome = try {
         let run = run_differential(
@@ -94,9 +125,29 @@ pub async fn run_task(
           build_timeout_ms=task.build_timeout_ms,
           run_timeout_ms=task.run_timeout_ms,
           reduction_limit=task.candidate_limit,
+          on_generated=record => generation = Some(record),
         )
         let errors : Array[String] = []
         result = Some(run)
+        if summary.baseline_configuration is Some(baseline) {
+          for observation in run.attempt.observations {
+            if observation.configuration == baseline &&
+              observation.phase == Build {
+              baseline_build = Some(observation.output.status == Exited(0))
+              break
+            }
+          }
+        }
+        comparable_results = @engine.comparable_results(
+          run.attempt.configurations,
+          run.attempt.observations,
+          normalize=value => {
+            match @moonbit.parse_result_protocol(run.attempt.result_protocol) {
+              Some(ty) => ty.normalize_output(value)
+              None => None
+            }
+          },
+        ).length()
         if run.save_error is Some(error) {
           errors.push(error)
         }
@@ -116,12 +167,22 @@ pub async fn run_task(
       } catch {
         error => Failed(error.to_string())
       }
-      let sample : @contracts.TaskSample = { seed, outcome, }
+      let sample : @contracts.TaskSample = {
+        format_version: 2,
+        seed,
+        generation,
+        baseline_build,
+        comparable_results,
+        planned_results: task.configurations.length(),
+        elapsed_ms: @host.monotonic_ms() - sample_started,
+        outcome,
+      }
       @artifacts.save_task_sample(directory, index, sample)
       summary = record_task_result(summary, sample)
       on_sample(sample, result)
       on_progress(summary.attempted, task.sample_count)
     }
+    summary = { ..summary, elapsed_ms: @host.monotonic_ms() - started, }
     @artifacts.finish_task(
       directory,
       summary,

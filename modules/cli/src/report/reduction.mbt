@@ -5,8 +5,18 @@ pub fn summarize_reduction(record : @contracts.DifferentialReduction) -> String 
     "Reduction nodes: \{record.original_cost.nodes} -> \{record.best_cost.nodes}",
     "Reduction cost (\{record.cost_model}): \{record.original_cost.integer_magnitude} -> \{record.best_cost.integer_magnitude} integer magnitude; \{record.original_cost.source_bytes} -> \{record.best_cost.source_bytes} UTF-8 bytes",
     "Reduction candidates: \{record.candidates}/\{record.candidate_limit}; accepted: \{record.accepted}",
+    "Reduction elapsed: \{record.elapsed_ms} ms (search and independent confirmation)",
     "Reduction stop: \{record.stop_reason}",
   ]
+  if record.original_cost.nodes > 0 {
+    let removed = record.original_cost.nodes - record.best_cost.nodes
+    let tenths = removed.to_int64() *
+      1000L /
+      record.original_cost.nodes.to_int64()
+    lines.push(
+      "Reduction nodes removed: \{removed}/\{record.original_cost.nodes} (\{tenths / 10L}.\{tenths % 10L}%)",
+    )
+  }
   match record.confirmation {
     Some(Preserved) => {
       lines.push(

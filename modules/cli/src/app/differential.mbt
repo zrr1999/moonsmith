@@ -147,6 +147,7 @@ pub async fn run_differential(
   reduction_limit? : Int = 16,
   planned? : Array[String] = @moon.configurations(),
   on_plan? : (Array[String]) -> Unit = _ => (),
+  on_generated? : (@contracts.GenerationRecord) -> Unit = _ => (),
 ) -> DifferentialRun {
   @moon.validate_plan(planned)
   @moon.validate_timeouts(build_timeout_ms, run_timeout_ms)
@@ -181,6 +182,7 @@ pub async fn run_differential(
     run_timeout_ms,
     injected,
   }
+  on_generated(case.generation)
   let directory = @artifacts.create_differential(base, case) catch {
     error => fail("case storage failed for seed \{seed}: \{error}")
   }

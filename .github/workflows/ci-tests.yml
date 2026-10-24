@@ -47,3 +47,17 @@ jobs:
         run: just test
       - name: Run differential compiler testing
         run: moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run
+      - name: Demonstrate reduction and replay
+        run: moon run modules/cli/src/examples/reduction --target native --deny-warn
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: execution-evidence
+          retention-days: 7
+          path: |
+            runs/**/*.json
+            runs/**/*.toml
+            runs/**/*.mbt
+            runs/**/moon.mod
+            runs/**/moon.pkg
+            runs/**/*.md
