@@ -6,6 +6,7 @@ priv struct TaskConfig {
   generator : @moonbit.Generator
   limits : @moonbit.GenerationLimits
   configurations : Array[String]
+  equivalent_variants : Bool
   build_timeout_ms : Int
   run_timeout_ms : Int
   candidate_limit : Int
@@ -41,6 +42,7 @@ fn default_task() -> TaskConfig {
     generator: @moonbit.Generator::default(),
     limits: @moonbit.GenerationLimits::default(),
     configurations: @moon.configurations(),
+    equivalent_variants: false,
     build_timeout_ms: 30000,
     run_timeout_ms: 2000,
     candidate_limit: 16,
@@ -61,6 +63,7 @@ fn TaskConfig::document(self : TaskConfig) -> @toml.TomlValue {
       "max_attempts": TomlInteger(self.limits.max_attempts.to_int64()),
     }),
     "execution": TomlTable({
+      "equivalent_variants": TomlBoolean(self.equivalent_variants),
       "configurations": TomlArray(
         self.configurations.map(name => TomlString(name)),
       ),
@@ -203,6 +206,10 @@ fn parse_task(
       }
       name
     }),
+    equivalent_variants: match execution.get("equivalent_variants") {
+      Some(TomlBoolean(value)) => value
+      _ => fail("execution.equivalent_variants must be a boolean")
+    },
     build_timeout_ms: task_int(execution, "build_timeout_ms"),
     run_timeout_ms: task_int(execution, "run_timeout_ms"),
     candidate_limit: task_int(reduction, "candidate_limit"),

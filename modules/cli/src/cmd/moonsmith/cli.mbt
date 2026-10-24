@@ -74,7 +74,10 @@ fn present(run : @app.DifferentialRun, output : (String) -> Unit) -> Int {
     reduction.progress.error is Some(_) {
     return 1
   }
-  match run.attempt.comparison {
+  if run.equivalents is Some(comparison) && comparison.error is Some(_) {
+    return 1
+  }
+  match run.comparison() {
     Consistent => 0
     Difference(_, _) => 2
     Incomplete => 3
@@ -103,6 +106,7 @@ async fn cli(
             "  generation.generator (string; supported: \{@app.generator_identifiers().join(", ")}).",
             "  generation.max_nodes (1..2048), generation.max_depth (0..16), generation.max_attempts (1..8192).",
             "  execution.configurations (array of at least two distinct supported names).",
+            "  execution.equivalent_variants (boolean, default false; compare two output-preserving variants).",
             "  execution.build_timeout_ms, execution.run_timeout_ms (1..600000 milliseconds).",
             "  reduction.candidate_limit (0..64), output.directory (string).",
             "Omitted seed_start is selected automatically to fit the full sample range and recorded.",
@@ -113,7 +117,8 @@ async fn cli(
             "          moonsmith run --set 'execution.configurations=[\"native-debug\",\"native-release\"]'",
             "Configurations: \{@app.differential_configurations().join(", ")}",
             "Runs continue through all configurations and save their evidence.",
-            "A difference triggers bounded reduction and one fresh confirmation.",
+            "An original-program difference triggers bounded reduction and one fresh confirmation.",
+            "Equivalent program differences use the same exit code; cross-program reduction is not yet supported.",
             "Recognized constructor build failures also reduce with agreeing controls; their comparison stays incomplete.",
             "Replay uses saved material with the current toolchain and appends a new record.",
             "Pass a saved attempt directory to replay a reduced program without restarting reduction.",

@@ -10,6 +10,7 @@ pub struct DifferentialRun {
   save_error : String?
   reduction : @contracts.DifferentialReduction?
   build_reduction : @contracts.BuildFailureReduction?
+  equivalents : @contracts.EquivalentComparison?
 }
 
 ///|
@@ -141,6 +142,7 @@ async fn finish_differential(
     save_error,
     reduction: None,
     build_reduction: None,
+    equivalents: None,
   }
 }
 
@@ -153,6 +155,7 @@ pub async fn run_differential(
   build_timeout_ms? : Int = 30000,
   run_timeout_ms? : Int = 2000,
   injected? : Bool = false,
+  equivalent_variants? : Bool = false,
   reduction_limit? : Int = 16,
   planned? : Array[String] = @moon.configurations(),
   on_plan? : (Array[String]) -> Unit = _ => (),
@@ -172,6 +175,11 @@ pub async fn run_differential(
       )
   }
   let program = generated.program
+  let variants = if equivalent_variants {
+    program.equivalent_variants()
+  } else {
+    []
+  }
   guard program.result_type().result_protocol() is Some(result_protocol) else {
     fail("generated program has no supported output protocol")
   }
@@ -202,6 +210,11 @@ pub async fn run_differential(
   }
   let run = execute_differential(directory, case, "original", on_plan~) catch {
     error => fail("execution failed for seed \{seed} at \{directory}: \{error}")
+  }
+  let run = if equivalent_variants {
+    check_equivalents(run, variants)
+  } else {
+    run
   }
   if run.attempt.comparison is Difference(_, _) {
     reduce_differential(run, program, reduction_limit)
@@ -280,9 +293,16 @@ pub fn describe_differential(run : DifferentialRun) -> String {
     None => summary
     Some(reduction) => summary + "\n" + @report.summarize_reduction(reduction)
   }
-  match run.build_reduction {
+  let summary = match run.build_reduction {
     None => summary
     Some(reduction) =>
       summary + "\n" + @report.summarize_build_reduction(reduction)
+  }
+  match run.equivalents {
+    None => summary
+    Some(comparison) =>
+      @report.render_equivalents(comparison, equivalent_values(run, comparison)) +
+      "\n\nOriginal program execution:\n" +
+      summary
   }
 }
