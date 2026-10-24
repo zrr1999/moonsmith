@@ -483,6 +483,7 @@ test "summaries preserve differences alongside failures and unknown toolchain pr
     original_runtimes: None,
     save_error: None,
     reduction: None,
+    build_reduction: None,
   }
   let text = describe_differential(run)
   assert_true(text.contains("difference observed"))
