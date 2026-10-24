@@ -52,7 +52,7 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay run
 
 摘要显示结果、种子、有效配置数和材料路径；异常时展开关键差异或失败原因。保存成功后，一致返回 `0`、分歧返回 `2`、比较未完成返回 `3`；参数、生成或保存错误返回 `1`。源码、构建文件和原始观察保存在 `runs/`；重放使用当前工具链和运行时并追加记录，已知版本变化会提示。将重执行参数替换为摘要中的 `Replay material` 路径，可重放归约结果；传入案例目录则重放原例。重放不再次启动归约。
 
-设计见 [FP-0002](fps/FP-0002-moonbit-semantic-contract.md) 与 [FP-0003](fps/FP-0003-cli-workflows.md)，实现边界见 [CLI 实现说明](modules/cli/README.md#差分执行与存证)。多配置一致不证明编译器正确，分歧仍需调查。
+设计见 [FP-0002](fps/FP-0002-moonbit-semantic-contract.md) 与 [FP-0003](fps/FP-0003-cli-workflows.md)，实现边界见 [CLI 实现说明](modules/cli/README.md#差分执行与存证)。
 
 ## 文档导航
 
