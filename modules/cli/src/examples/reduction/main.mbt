@@ -2,6 +2,7 @@
 async fn main {
   let run = @app.run_differential(
     seed=7,
+    generator=@moonbit.ScalarV1,
     base="runs/reduction-demo",
     injected=true,
   )

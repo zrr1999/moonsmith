@@ -5,14 +5,17 @@ async test "stored generated inputs reduce with fresh confirmation and replay wi
     guard @toml.parse(fixture.metadata) is TomlTable(fields) else {
       fail("reduction case metadata must be a table")
     }
-    @debug.assert_eq(case_string(fields, "generator"), "template-rules-v1")
+    guard @moonbit.parse_generator(case_string(fields, "generator"))
+      is Some(generator) else {
+      fail("unsupported reduction fixture generator")
+    }
     let seed = case_int(fields, "seed")
     let limits : @moonbit.GenerationLimits = {
       max_nodes: case_int(fields, "max_nodes"),
       max_depth: case_int(fields, "max_depth"),
       max_attempts: case_int(fields, "max_attempts"),
     }
-    let generated = @moonbit.synthesize(seed, limits~)
+    let generated = @moonbit.synthesize(seed, limits~, generator~)
     @debug.assert_eq(
       generated.program.emit().trim_end().to_owned() + "\n",
       fixture.source,
@@ -20,7 +23,7 @@ async test "stored generated inputs reduce with fresh confirmation and replay wi
     @host.mkdir("runs")
     let base = @host.new_directory("runs/reduction-")
     defer @host.remove_tree(base)
-    let run = run_differential(seed~, limits~, base~, injected=true)
+    let run = run_differential(seed~, limits~, generator~, base~, injected=true)
     @debug.assert_eq(run.case.source, generated.program.emit())
     assert_true(run.save_error is None)
     guard run.reduction is Some(reduction) else {

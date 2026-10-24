@@ -17,6 +17,11 @@ pub fn differential_configurations() -> Array[String] {
 }
 
 ///|
+pub fn generator_identifiers() -> Array[String] {
+  @moonbit.generator_identifiers()
+}
+
+///|
 fn choose_seed(seed : Int?, automatic : () -> Int raise) -> Int raise {
   match seed {
     Some(value) => value
@@ -141,6 +146,7 @@ async fn finish_differential(
 pub async fn run_differential(
   seed? : Int,
   base? : String = "runs",
+  generator? : @moonbit.Generator = @moonbit.Generator::default(),
   limits? : @moonbit.GenerationLimits = @moonbit.GenerationLimits::default(),
   build_timeout_ms? : Int = 30000,
   run_timeout_ms? : Int = 2000,
@@ -157,9 +163,11 @@ pub async fn run_differential(
     fail("reduction limit must be between 0 and 64")
   }
   let seed = choose_seed(seed, @host.random_seed)
-  let generated = @moonbit.synthesize(seed, limits~) catch {
+  let generated = @moonbit.synthesize(seed, limits~, generator~) catch {
     error =>
-      fail("generation failed for seed \{seed} (template-rules-v1): \{error}")
+      fail(
+        "generation failed for seed \{seed} (\{generator.identifier()}): \{error}",
+      )
   }
   let program = generated.program
   guard program.result_type().result_protocol() is Some(result_protocol) else {
@@ -168,7 +176,7 @@ pub async fn run_differential(
   let case : @contracts.DifferentialCase = {
     format_version: 2,
     generation: {
-      generator: "template-rules-v1",
+      generator: generated.generator.identifier(),
       seed,
       max_nodes: limits.max_nodes,
       max_depth: limits.max_depth,
