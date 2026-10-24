@@ -115,6 +115,7 @@ pub async fn run_task(
       let mut generation = None
       let mut baseline_build = None
       let mut comparable_results = 0
+      let mut planned_results = task.configurations.length()
       let mut result = None
       let outcome : @contracts.TaskOutcome = try {
         let run = run_differential(
@@ -126,6 +127,7 @@ pub async fn run_task(
           build_timeout_ms=task.build_timeout_ms,
           run_timeout_ms=task.run_timeout_ms,
           reduction_limit=task.candidate_limit,
+          equivalent_variants=task.equivalent_variants,
           on_generated=record => generation = Some(record),
         )
         let errors : Array[String] = []
@@ -149,6 +151,13 @@ pub async fn run_task(
             }
           },
         ).length()
+        if run.equivalents is Some(comparison) {
+          comparable_results = equivalent_values(run, comparison).length()
+          planned_results = comparison.configurations.length()
+          if comparison.error is Some(error) {
+            errors.push(error)
+          }
+        }
         if run.save_error is Some(error) {
           errors.push(error)
         }
@@ -162,7 +171,7 @@ pub async fn run_task(
         Observed({
           case_directory: run.directory,
           attempt_directory: run.attempt_directory,
-          comparison: run.attempt.comparison,
+          comparison: run.comparison(),
           error: if errors.is_empty() {
             None
           } else {
@@ -178,7 +187,7 @@ pub async fn run_task(
         generation,
         baseline_build,
         comparable_results,
-        planned_results: task.configurations.length(),
+        planned_results,
         elapsed_ms: @host.monotonic_ms() - sample_started,
         outcome,
       }

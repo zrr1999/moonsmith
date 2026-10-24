@@ -109,3 +109,8 @@ pub async fn save_reduction(
 pub async fn save_build_reduction(directory : String, report : String) -> Unit {
   @host.write_new("\{directory}/build-reduction.md", report)
 }
+
+///|
+pub async fn save_equivalents(directory : String, report : String) -> Unit {
+  @host.write_new("\{directory}/equivalents.md", report)
+}
