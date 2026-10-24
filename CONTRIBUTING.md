@@ -2,7 +2,7 @@
 
 ## 开发准备
 
-工具链要求见 [README](README.md#使用)。确认 `moon` 在 `PATH` 中后，在仓库根目录运行 `just install`，刷新包索引并安装 `pre-commit` 与 `commit-msg` hooks。第三方依赖使用正式发布版本；固定提交必须对应正式 release，不能用开发分支、私有补丁或旁路脚本替代缺失的上游能力。规范确需调整时，先说明原因和影响并取得维护者同意。
+工具链要求见 [README](README.md#安装)。确认 `moon` 在 `PATH` 中后，在仓库根目录运行 `just install`，刷新包索引并安装 `pre-commit` 与 `commit-msg` hooks。第三方依赖使用正式发布版本；固定提交必须对应正式 release，不能用开发分支、私有补丁或旁路脚本替代缺失的上游能力。规范确需调整时，先说明原因和影响并取得维护者同意。
 
 ## 常用命令
 

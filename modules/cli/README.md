@@ -8,6 +8,10 @@ MoonBit 适配器、宿主执行、案例存储和报告，提供有限差分测
 `run --config acceptance.toml --set sample_count=10` 从文件读取并覆盖参数，
 `replay <保存材料目录>` 追加一次重执行。配置字段统一通过 `--set` 覆盖，不另设专用参数。
 
+从仓库根目录执行 `moon install ./modules/cli/src/cmd/moonsmith` 安装 native 命令，
+位置与依赖要求见[安装说明](../../README.md#安装)。完整工作区提供内部模块，不要求其先发布到 registry。
+安装后的二进制可以在其他目录执行，输出位置仍按任务配置的来源解释。
+
 ## 应用装配
 
 `cmd/moonsmith` 拥有参数解析、帮助、终端输出与退出码，只依赖 app 与 Host。

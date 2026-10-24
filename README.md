@@ -15,10 +15,30 @@
 
 流程：自动组合模板 → 按类型与作用域补全 → 多配置执行 → 差分比较 → 保存原例 → 归约分歧 → 确认与重放。
 
+## 安装
+
+支持 macOS、Linux；需 MoonBit `0.10.14+7d59c7ec9` 和 C 编译器。
+选择 JS 配置时还需 Node.js；Wasm 与 Wasm GC 由 MoonBit 工具链中的 `moonrun` 执行。
+Just 用于仓库开发检查。
+
+从完整仓库检出安装 native 命令：
+
+```shell
+git clone https://github.com/zrr1999/moonsmith.git
+cd moonsmith
+moon install ./modules/cli/src/cmd/moonsmith
+moonsmith --help
+```
+
+`moon install` 默认将可执行文件放入 `~/.moon/bin`，需将该目录加入 `PATH`；
+可用 `--bin /absolute/bin` 选择安装位置。安装从仓库根目录执行，以 `moon.work` 解析本仓库的库，
+外部依赖使用声明的正式版本。当前内部库尚未发布到 registry，使用完整源码安装。
+安装后的命令可从其他工作目录启动，使用宿主已安装的 MoonBit 与运行时。
+
 ## 使用
 
-支持 macOS、Linux；需 MoonBit `0.10.14+7d59c7ec9`、Just 和 C 编译器。
-选择 JS 配置时还需 Node.js；Wasm 与 Wasm GC 由 MoonBit 工具链中的 `moonrun` 执行。
+安装后使用 `moonsmith run`、`moonsmith run --set seed_start=42` 和
+`moonsmith replay <保存材料目录>`。仓库开发可以直接运行源码：
 
 ```shell
 just install   # 准备包索引并安装 Git hooks
@@ -42,6 +62,7 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay run
 | [固定验证案例](cases/README.md) | 可复用输入、预言机、执行入口与待验收边界 |
 | [五配置矩阵验证](docs/five-configuration-pilot.md) | 固定输入、判定标准、复现方法与 100 例验证结果 |
 | [归约演示](docs/reduction-demonstration.md) | 受控注入的缩减率、耗时、独立确认与源码重放 |
+| [CLI 安装验收](docs/cli-installation-validation.md) | 完整源码安装、仓库外执行和工具链依赖边界 |
 | [任务配置示例](acceptance.toml)与[命令行配置](modules/cli/README.md#任务配置) | 有限种子任务、统一覆盖、逐样本存证和汇总 |
 | [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 当前提案阶段、设计决定、概念定义及引用规则 |
 | [Engine 设计提案](fps/FP-0004-engine-execution-contract.md) | 职责、协作模型、策略扩展和验收条件 |
