@@ -10,10 +10,11 @@ fn structure_error(template : Template) -> StructureError? {
 
 ///|
 test "typed holes are valid in templates but cannot become complete programs" {
-  let template : Template = { functions: [], result: Hole(Int), }
+  let template : Template = { enums: [], functions: [], result: Hole(Int), }
   @debug.assert_eq(template.check(), Ty::Int)
   @debug.assert_eq(structure_error(template), Some(UnfilledHole(Int)))
   let incompatible : Template = {
+    enums: [],
     functions: [],
     result: Let({ id: 0, ty: Bool, }, Hole(Int), Ref(0)),
   }
@@ -40,12 +41,12 @@ test "lexical references cannot escape their binding or refer forward" {
       ),
     ] {
     @debug.assert_eq(
-      structure_error({ functions: [], result: expression, }),
+      structure_error({ enums: [], functions: [], result: expression, }),
       Some(UnknownBinding(0)),
     )
   }
   @debug.assert_eq(
-    structure_error({ functions: [], result: Ref(-1), }),
+    structure_error({ enums: [], functions: [], result: Ref(-1), }),
     Some(UnknownBinding(-1)),
   )
 }
@@ -54,6 +55,7 @@ test "lexical references cannot escape their binding or refer forward" {
 test "binding identities are unique within a live scope and can repeat in separate scopes" {
   @debug.assert_eq(
     structure_error({
+      enums: [],
       functions: [],
       result: Let(
         { id: 0, ty: Int, },
@@ -65,12 +67,14 @@ test "binding identities are unique within a live scope and can repeat in separa
   )
   @debug.assert_eq(
     structure_error({
+      enums: [],
       functions: [],
       result: Let({ id: -1, ty: Int, }, IntLiteral(1), IntLiteral(2)),
     }),
     Some(InvalidBinder(-1)),
   )
   let disjoint : Template = {
+    enums: [],
     functions: [],
     result: If(
       BoolLiteral(true),
@@ -90,7 +94,7 @@ test "operators conditions and both branch results must agree with their types" 
       Less(BoolLiteral(true), IntLiteral(0)),
     ] {
     @debug.assert_eq(
-      structure_error({ functions: [], result: expression, }),
+      structure_error({ enums: [], functions: [], result: expression, }),
       Some(TypeMismatch(Int, Bool)),
     )
   }
@@ -100,12 +104,13 @@ test "operators conditions and both branch results must agree with their types" 
       If(IntLiteral(0), IntLiteral(1), IntLiteral(2)),
     ] {
     @debug.assert_eq(
-      structure_error({ functions: [], result: expression, }),
+      structure_error({ enums: [], functions: [], result: expression, }),
       Some(TypeMismatch(Bool, Int)),
     )
   }
   @debug.assert_eq(
     structure_error({
+      enums: [],
       functions: [],
       result: If(BoolLiteral(true), IntLiteral(1), BoolLiteral(false)),
     }),
@@ -121,6 +126,7 @@ test "function parameters arguments returns and entry scopes are checked separat
     body: If(Ref(1), Add(Ref(0), IntLiteral(1)), Ref(0)),
   }
   let template : Template = {
+    enums: [],
     functions: [function],
     result: Call(0, [IntLiteral(4), BoolLiteral(true)]),
   }
@@ -147,6 +153,7 @@ test "function parameters arguments returns and entry scopes are checked separat
   @debug.assert_eq(
     structure_error({
       ..template,
+      enums: [],
       functions: [
         { ..function, parameters: [{ id: 0, ty: Int, }, { id: 0, ty: Bool, }], },
       ],
@@ -155,6 +162,7 @@ test "function parameters arguments returns and entry scopes are checked separat
   )
   @debug.assert_eq(
     structure_error({
+      enums: [],
       functions: [{ parameters: [], returns: Int, body: Ref(0), }],
       result: Let({ id: 0, ty: Int, }, IntLiteral(4), Call(0, [])),
     }),
@@ -186,11 +194,12 @@ test "all call dependencies must be acyclic including uncalled functions and dea
       ],
     ] {
     @debug.assert_eq(
-      structure_error({ functions, result: IntLiteral(0), }),
+      structure_error({ enums: [], functions, result: IntLiteral(0), }),
       Some(CyclicCall(0)),
     )
   }
   let forward : Template = {
+    enums: [],
     functions: [
       { parameters: [], returns: Int, body: Call(1, []), },
       { parameters: [], returns: Int, body: IntLiteral(42), },
@@ -203,10 +212,11 @@ test "all call dependencies must be acyclic including uncalled functions and dea
 ///|
 test "structural checking never evaluates arithmetic or selects a branch" {
   let expression = Expr::Add(IntLiteral(2147483647), IntLiteral(1))
-  let template : Template = { functions: [], result: expression, }
+  let template : Template = { enums: [], functions: [], result: expression, }
   @debug.assert_eq(template.finish().result_type(), Ty::Int)
   @debug.assert_eq(
     structure_error({
+      enums: [],
       functions: [],
       result: If(BoolLiteral(true), IntLiteral(0), Ref(9)),
     }),
@@ -219,7 +229,11 @@ test "completed programs own nested argument and parameter arrays" {
   let arguments = [Expr::IntLiteral(5)]
   let parameters = [Binder::{ id: 0, ty: Int, }]
   let functions = [Function::{ parameters, returns: Int, body: Ref(0), }]
-  let template : Template = { functions, result: Call(0, arguments), }
+  let template : Template = {
+    enums: [],
+    functions,
+    result: Call(0, arguments),
+  }
   let program = template.finish()
   let source = program.emit()
   arguments[0] = Hole(Int)
@@ -233,6 +247,7 @@ test "completed programs own nested argument and parameter arrays" {
 ///|
 test "size includes definitions and parameters while depth measures expression nesting" {
   let template : Template = {
+    enums: [],
     functions: [
       { parameters: [{ id: 0, ty: Bool, }], returns: Bool, body: Not(Ref(0)), },
     ],
@@ -243,6 +258,7 @@ test "size includes definitions and parameters while depth measures expression n
   @debug.assert_eq(template.finish().size(), 6)
   @debug.assert_eq(template.finish().depth(), 1)
   let binding_tree : Template = {
+    enums: [],
     functions: [],
     result: Let({ id: 0, ty: Int, }, IntLiteral(1), Add(Ref(0), IntLiteral(2))),
   }

@@ -115,6 +115,7 @@ fn Construction::terminal(
         },
       )
     }
+    _ => abort("this generator only requests scalar terminal types")
   }
 }
 
@@ -158,6 +159,7 @@ fn Construction::expand(
             rules.push(Negate)
           }
         }
+        _ => ()
       }
     }
   }
@@ -226,6 +228,29 @@ fn Construction::fill(
         id,
         arguments.map(e => self.fill(e, scope, functions, room - 1, template)),
       )
+    Tuple(fields) =>
+      Tuple(fields.map(e => self.fill(e, scope, functions, room - 1, template)))
+    Project(value, index) =>
+      Project(self.fill(value, scope, functions, room - 1, template), index)
+    Variant(id, tag, arguments) =>
+      Variant(
+        id,
+        tag,
+        arguments.map(e => self.fill(e, scope, functions, room - 1, template)),
+      )
+    Match(id, value, arms) =>
+      Match(
+        id,
+        self.fill(value, scope, functions, room - 1, template),
+        arms.map(arm => {
+          let nested = scope.copy()
+          nested.append(arm.parameters)
+          {
+            ..arm,
+            body: self.fill(arm.body, nested, functions, room - 1, template),
+          }
+        }),
+      )
   }
 }
 
@@ -263,7 +288,11 @@ fn Construction::compose_template(
       ),
     }
   }
-  { functions, result: self.expand(self.ty(), [], functions, room, true), }
+  {
+    enums: [],
+    functions,
+    result: self.expand(self.ty(), [], functions, room, true),
+  }
 }
 
 ///|
@@ -291,7 +320,7 @@ fn Construction::complete(
     self.limits.max_depth,
     false,
   )
-  Template::{ functions, result, }.finish()
+  Template::{ enums: template.enums, functions, result, }.finish()
 }
 
 ///|

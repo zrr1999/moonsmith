@@ -5,10 +5,12 @@ async test "equivalent variants agree with their original across five real compi
   defer @host.remove_tree(base)
   let programs = [
     @moonbit.Template::{
+      enums: [],
       functions: [],
       result: Add(IntLiteral(2147483647), IntLiteral(1)),
     }.finish(),
     @moonbit.Template::{
+      enums: [],
       functions: [],
       result: Less(
         Subtract(IntLiteral(-2147483648), IntLiteral(1)),
@@ -26,7 +28,7 @@ async test "equivalent variants agree with their original across five real compi
       let case = {
         ..saved_fixture(
           variant.emit(),
-          protocol=variant.result_type().result_protocol(),
+          protocol=variant.result_type().result_protocol().unwrap(),
         ),
         configurations: planned,
       }

@@ -1,6 +1,6 @@
 ///|
 fn literal_program(value : Int) -> CompleteProgram raise StructureError {
-  Template::{ functions: [], result: IntLiteral(value), }.finish()
+  Template::{ enums: [], functions: [], result: IntLiteral(value), }.finish()
 }
 
 ///|
@@ -35,6 +35,7 @@ test "integer cost and same-node simplification cover signed boundaries without 
 ///|
 test "cost prioritizes structure then integer magnitude then source bytes" {
   let zero_sum = Template::{
+    enums: [],
     functions: [],
     result: Add(IntLiteral(0), IntLiteral(0)),
   }.finish()
@@ -47,6 +48,7 @@ test "cost prioritizes structure then integer magnitude then source bytes" {
 ///|
 test "integer operations visit nested results and function bodies in stable order" {
   let program = Template::{
+    enums: [],
     functions: [
       {
         parameters: [{ id: 0, ty: Int, }],

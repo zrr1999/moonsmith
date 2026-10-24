@@ -148,6 +148,7 @@ async test "same-node integer reduction saves costs confirms fresh evidence and 
   let base = @host.new_directory("runs/integer-reduction-")
   defer @host.remove_tree(base)
   let program = @moonbit.Template::{
+    enums: [],
     functions: [],
     result: IntLiteral(-2147483648),
   }.finish()
