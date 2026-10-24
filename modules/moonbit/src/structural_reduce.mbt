@@ -95,7 +95,12 @@ fn Expr::reductions(self : Expr, enums : Array[EnumDefinition]) -> Array[Expr] {
         ]
       Add(a, b) | Subtract(a, b) | Less(a, b) =>
         [IntLiteral(0), BoolLiteral(false), a, b]
+      Not(BoolLiteral(value)) => [BoolLiteral(!value)]
       Not(e) => [BoolLiteral(false), e]
+      If(condition, BoolLiteral(true), BoolLiteral(false)) =>
+        [condition, BoolLiteral(false)]
+      If(condition, BoolLiteral(false), BoolLiteral(true)) =>
+        [Not(condition), BoolLiteral(false)]
       If(_, yes, no) => [IntLiteral(0), BoolLiteral(false), yes, no]
       Call(_, _) => [IntLiteral(0), BoolLiteral(false)]
       Tuple(fields) => [IntLiteral(0), BoolLiteral(false)] + fields
@@ -107,8 +112,16 @@ fn Expr::reductions(self : Expr, enums : Array[EnumDefinition]) -> Array[Expr] {
         result
       }
       Variant(id, _, arguments) => [Ty::Enum(id).zero(enums)] + arguments
-      Match(_, _, arms) => {
+      Match(id, value, arms) => {
         let result = [IntLiteral(0), BoolLiteral(false)]
+        if value is Variant(enum_id, tag, arguments) && id == enum_id {
+          let arm = arms[tag]
+          let mut body = arm.body
+          for i = arm.parameters.length() - 1; i >= 0; i = i - 1 {
+            body = Let(arm.parameters[i], arguments[i], body)
+          }
+          result.push(body)
+        }
         for arm in arms {
           let mut body = arm.body
           for parameter in arm.parameters {
@@ -184,6 +197,7 @@ fn CompleteProgram::structural_templates(
   for length = syntax.enums.length() - 1; length >= 0; length = length - 1 {
     candidates.push({ ..syntax, enums: syntax.enums[:length].to_owned(), })
   }
+  candidates.append(syntax.coordinated_templates())
   for
     candidate in syntax.rewrite_expressions(expr => {
       expr.reductions(syntax.enums)
