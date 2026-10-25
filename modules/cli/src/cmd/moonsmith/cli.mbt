@@ -70,6 +70,10 @@ fn present(run : @app.DifferentialRun, output : (String) -> Unit) -> Int {
   if run.reduction is Some(reduction) && reduction.error is Some(_) {
     return 1
   }
+  if run.build_reduction is Some(reduction) &&
+    reduction.progress.error is Some(_) {
+    return 1
+  }
   match run.attempt.comparison {
     Consistent => 0
     Difference(_, _) => 2
@@ -110,6 +114,7 @@ async fn cli(
             "Configurations: \{@app.differential_configurations().join(", ")}",
             "Runs continue through all configurations and save their evidence.",
             "A difference triggers bounded reduction and one fresh confirmation.",
+            "Recognized constructor build failures also reduce with agreeing controls; their comparison stays incomplete.",
             "Replay uses saved material with the current toolchain and appends a new record.",
             "Pass a saved attempt directory to replay a reduced program without restarting reduction.",
             "Exit codes: 0 consistent, 2 difference, 3 incomplete comparison, 1 operation error.",

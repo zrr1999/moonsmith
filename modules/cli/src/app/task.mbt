@@ -155,6 +155,10 @@ pub async fn run_task(
         if run.reduction is Some(reduction) && reduction.error is Some(error) {
           errors.push(error)
         }
+        if run.build_reduction is Some(reduction) &&
+          reduction.progress.error is Some(error) {
+          errors.push(error)
+        }
         Observed({
           case_directory: run.directory,
           attempt_directory: run.attempt_directory,
