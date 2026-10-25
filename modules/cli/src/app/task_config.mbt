@@ -3,6 +3,7 @@ priv struct TaskConfig {
   name : String
   seed_start : Int
   sample_count : Int
+  generator : @moonbit.Generator
   limits : @moonbit.GenerationLimits
   configurations : Array[String]
   build_timeout_ms : Int
@@ -37,6 +38,7 @@ fn default_task() -> TaskConfig {
     name: "differential",
     seed_start: 0,
     sample_count: 1,
+    generator: @moonbit.Generator::default(),
     limits: @moonbit.GenerationLimits::default(),
     configurations: @moon.configurations(),
     build_timeout_ms: 30000,
@@ -53,6 +55,7 @@ fn TaskConfig::document(self : TaskConfig) -> @toml.TomlValue {
     "seed_start": TomlInteger(self.seed_start.to_int64()),
     "sample_count": TomlInteger(self.sample_count.to_int64()),
     "generation": TomlTable({
+      "generator": TomlString(self.generator.identifier()),
       "max_nodes": TomlInteger(self.limits.max_nodes.to_int64()),
       "max_depth": TomlInteger(self.limits.max_depth.to_int64()),
       "max_attempts": TomlInteger(self.limits.max_attempts.to_int64()),
@@ -174,6 +177,10 @@ fn parse_task(
     }
   }
   let generation = task_section(fields, "generation")
+  let generator_name = task_string(generation, "generator")
+  guard @moonbit.parse_generator(generator_name) is Some(generator) else {
+    fail("unsupported generator: \{generator_name}")
+  }
   let execution = task_section(fields, "execution")
   let reduction = task_section(fields, "reduction")
   let output = task_section(fields, "output")
@@ -184,6 +191,7 @@ fn parse_task(
     name: task_string(fields, "name"),
     seed_start: task_int(fields, "seed_start"),
     sample_count: task_int(fields, "sample_count"),
+    generator,
     limits: {
       max_nodes: task_int(generation, "max_nodes"),
       max_depth: task_int(generation, "max_depth"),

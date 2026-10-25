@@ -39,7 +39,9 @@ app 包的行为测试直接发现[固定案例](../../cases/README.md)，按 `c
 
 ## 差分执行与存证
 
-`app.run_differential(seed?, ...)` 接通模板生成、多配置执行、Engine 比较和版本 2 存证。
+`app.run_differential(seed?, generator?, ...)` 接通模板生成、多配置执行、Engine 比较和版本 2 存证。
+默认使用 `template-rules-v2`，记录 `GeneratedProgram` 返回的实际生成器版本；
+库调用可选择保留的标量版本，固定归约案例按元数据中的原版本生成并核对快照。
 省略种子时从系统熵选择 Int 值；显式种子优先，熵不可用时报告错误，不回退到固定种子。
 生成器取得显式值，案例与失败报告保留该值。库调用可指定生成预算与执行超时。
 默认三配置全部尝试，库参数 `planned` 允许从下表选择至少两个不同配置并保留顺序；
@@ -124,7 +126,8 @@ stdout/stderr 按 UTF-8 文本保存，无效编码使用替换字符，记录�
 | --- | --- |
 | `name` | 非空任务名，只用于记录与呈现，默认 `differential` |
 | `seed_start`、`sample_count` | 起始种子与正整数样本数，默认自动选择起点、一个样本；整个连续范围必须落在有符号 32 位整数内 |
-| `generation` | `max_nodes`、`max_depth`、`max_attempts`，沿用[语言适配器预算](../moonbit/README.md)的校验 |
+| `generation.generator` | 已支持的生成器版本标识，默认 `template-rules-v2`；当前还支持 `template-rules-v1`，未知标识在生成前拒绝 |
+| `generation` 预算 | `max_nodes`、`max_depth`、`max_attempts`，沿用[语言适配器预算](../moonbit/README.md)的校验 |
 | `execution` | 至少两个不同的已支持 `configurations`，保留用户顺序；`build_timeout_ms`、`run_timeout_ms` 均为 `1..600000` |
 | `reduction.candidate_limit` | 每个发生分歧的样本的候选预算，范围 `0..64`，另外执行一次独立确认 |
 | `output.directory` | 非空输出位置，默认 `runs`；文件中的相对值以实际配置文件目录为基准，默认值与 `--set` 相对值以调用目录为基准；绝对路径直接使用 |
@@ -152,6 +155,7 @@ task-<id>/
 `on_plan` 在执行前给出计划副本，`on_progress` 显示完成进度，`on_sample` 在样本记录保存后给出
 本次记录及已取得的 `DifferentialRun`（失败时可能没有运行对象），供 CLI 展示结果与错误。
 `effective.toml` 是完整生效配置，可显式传给 `run --config` 发起同条件的新任务；
+其中包含实际生成器版本，升级工具后仍按该标识解析；当前实现不支持的版本明确报错。
 重新运行仍创建新任务，保存案例的 `replay` 则继续使用实际源码。
 
 每个样本结束后独占写入一份带种子的记录；取得比较结果时链接原案例与原始尝试，操作失败时
@@ -181,7 +185,7 @@ task-<id>/
 ## 归约演示
 
 `moon run modules/cli/src/examples/reduction --target native --deny-warn` 使用现有库入口，
-对显式种子 7 启用受控输出注入，执行归约、独立确认及源码重放。
+对显式种子 7 和 `template-rules-v1` 启用受控输出注入，执行归约、独立确认及源码重放。
 演示在 `runs/reduction-demo/` 追加保留原例、候选、确认和重放材料。
 它验证检测与归约流程，结果明确标记为注入，不作为真实编译器缺陷；实测见
 [归约演示记录](../../docs/reduction-demonstration.md)。

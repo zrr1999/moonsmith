@@ -35,19 +35,26 @@ pub fn GenerationLimits::validate(
 pub(all) struct GeneratedProgram {
   program : CompleteProgram
   construction_attempts : Int
+  generator : Generator
 }
 
 ///|
 priv struct Construction {
   rng : @random.Rand
   limits : GenerationLimits
+  generator : Generator
+  enums : Array[EnumDefinition]
   // Existing holes reserve a node, so closing them never needs more space.
   mut nodes : Int
   mut attempts : Int
 }
 
 ///|
-fn Construction::new(seed : Int, limits : GenerationLimits) -> Construction {
+fn Construction::new(
+  seed : Int,
+  limits : GenerationLimits,
+  generator? : Generator = Generator::default(),
+) -> Construction {
   let bytes = Bytes::makei(32, i => {
     if i < 4 {
       (seed >> (i * 8)).to_byte()
@@ -55,7 +62,14 @@ fn Construction::new(seed : Int, limits : GenerationLimits) -> Construction {
       0
     }
   })
-  { rng: @random.Rand::chacha8(seed=bytes), limits, nodes: 1, attempts: 0, }
+  {
+    rng: @random.Rand::chacha8(seed=bytes),
+    limits,
+    generator,
+    enums: [],
+    nodes: 1,
+    attempts: 0,
+  }
 }
 
 ///|
@@ -85,6 +99,79 @@ priv enum Rule {
   Minus
   Compare
   Negate
+  Composite(Expr, EnumDefinition?)
+}
+
+///|
+fn Construction::tuple_rule(
+  self : Construction,
+  ty : Ty,
+  scope : Array[Binder],
+) -> (Expr, EnumDefinition?) {
+  let types = Array::makei(2 + self.rng.int(limit=2), _ => self.ty())
+  let index = self.rng.int(limit=types.length())
+  types[index] = ty
+  let binder = {
+    id: scope.fold(init=-1, (id, binder) => id.max(binder.id)) + 1,
+    ty: Ty::Tuple(types),
+  }
+  (
+    Let(
+      binder,
+      Tuple(types.map(ty => Hole(ty))),
+      Project(Ref(binder.id), index),
+    ),
+    None,
+  )
+}
+
+///|
+fn Construction::enum_rule(
+  self : Construction,
+  ty : Ty,
+  scope : Array[Binder],
+) -> (Expr, EnumDefinition?) {
+  let (id, definition, added) = if self.enums.is_empty() {
+    let definition : EnumDefinition = {
+      variants: Array::makei(2 + self.rng.int(limit=2), _ => {
+        Array::makei(self.rng.int(limit=3), _ => self.ty())
+      }),
+    }
+    (0, definition, Some(definition))
+  } else {
+    let id = self.rng.int(limit=self.enums.length())
+    (id, self.enums[id], None)
+  }
+  let tag = self.rng.int(limit=definition.variants.length())
+  let other = if definition.variants.length() > 1 {
+    (tag + 1 + self.rng.int(limit=definition.variants.length() - 1)) %
+    definition.variants.length()
+  } else {
+    tag
+  }
+  let binder = {
+    id: scope.fold(init=-1, (id, binder) => id.max(binder.id)) + 1,
+    ty: Ty::Enum(id),
+  }
+  let arms = definition.variants.map(fields => {
+    parameters: Array::makei(fields.length(), index => Binder::{
+      id: binder.id + index + 1,
+      ty: fields[index],
+    }),
+    body: Hole(ty),
+  })
+  (
+    Let(
+      binder,
+      If(
+        Hole(Bool),
+        Variant(id, tag, definition.variants[tag].map(ty => Hole(ty))),
+        Variant(id, other, definition.variants[other].map(ty => Hole(ty))),
+      ),
+      Match(id, Ref(binder.id), arms),
+    ),
+    added,
+  )
 }
 
 ///|
@@ -163,6 +250,22 @@ fn Construction::expand(
       }
     }
   }
+  if self.generator == CompositeV2 && room >= 2 {
+    for
+      (expression, added) in [
+        self.tuple_rule(ty, scope),
+        self.enum_rule(ty, scope),
+      ] {
+      let extra = match added {
+        Some(definition) => definition.size()
+        None => 0
+      }
+      let cost = expression.size() - 1 + extra
+      if expression.depth() <= room && cost <= remaining {
+        rules.push(Composite(expression, added))
+      }
+    }
+  }
   let expression = match rules[self.rng.int(limit=rules.length())] {
     Terminal => return self.terminal(ty, scope, template)
     Binding => {
@@ -178,6 +281,17 @@ fn Construction::expand(
     Minus => Subtract(Hole(Int), Hole(Int))
     Compare => Less(Hole(Int), Hole(Int))
     Negate => Not(Hole(Bool))
+    Composite(expression, added) => {
+      if added is Some(definition) {
+        self.attempt()
+        for _ in definition.variants {
+          self.attempt()
+        }
+        self.enums.push(definition)
+        self.nodes += definition.size()
+      }
+      expression
+    }
   }
   self.nodes += expression.size() - 1
   self.fill(expression, scope, functions, room, template)
@@ -288,11 +402,8 @@ fn Construction::compose_template(
       ),
     }
   }
-  {
-    enums: [],
-    functions,
-    result: self.expand(self.ty(), [], functions, room, true),
-  }
+  let result = self.expand(self.ty(), [], functions, room, true)
+  { enums: self.enums.copy(), functions, result, }
 }
 
 ///|
@@ -300,6 +411,8 @@ fn Construction::complete(
   self : Construction,
   template : Template,
 ) -> CompleteProgram raise {
+  self.enums.clear()
+  self.enums.append(template.enums)
   let functions : Array[Function] = []
   for id, function in template.functions {
     functions.push({
@@ -320,20 +433,21 @@ fn Construction::complete(
     self.limits.max_depth,
     false,
   )
-  Template::{ enums: template.enums, functions, result, }.finish()
+  Template::{ enums: self.enums.copy(), functions, result, }.finish()
 }
 
 ///|
-/// template-rules-v1: deterministic Int/Bool expressions with wrapping Int arithmetic.
+/// Deterministic, versioned template rules with one random stream and shared budgets.
 pub fn synthesize(
   seed : Int,
   limits? : GenerationLimits = GenerationLimits::default(),
+  generator? : Generator = Generator::default(),
 ) -> GeneratedProgram raise {
   limits.validate()
-  let state = Construction::new(seed, limits)
+  let state = Construction::new(seed, limits, generator~)
   let template = state.compose_template()
   let program = state.complete(template)
-  { program, construction_attempts: state.attempts, }
+  { program, construction_attempts: state.attempts, generator, }
 }
 
 ///|

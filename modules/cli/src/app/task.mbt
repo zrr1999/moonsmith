@@ -121,6 +121,7 @@ pub async fn run_task(
           seed~,
           base="\{directory}/cases",
           limits=task.limits,
+          generator=task.generator,
           planned=task.configurations,
           build_timeout_ms=task.build_timeout_ms,
           run_timeout_ms=task.run_timeout_ms,
