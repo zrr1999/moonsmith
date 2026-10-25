@@ -30,8 +30,8 @@ test "defaults partial files and settings share field types and last assignments
     settings=[
       "seed_start = 42", "sample_count=1_000", "sample_count={value=3}", "sample_count=3",
       "generation.max_nodes=64", "execution.configurations=['native-release','native-debug']",
-      "execution.build_timeout_ms=45000", "execution.run_timeout_ms=5000", "reduction.candidate_limit=0",
-      "name='settings task'", "output.directory='path=with spaces'",
+      "execution.equivalent_variants=true", "execution.build_timeout_ms=45000", "execution.run_timeout_ms=5000",
+      "reduction.candidate_limit=0", "name='settings task'", "output.directory='path=with spaces'",
     ],
     automatic=() => fail("explicit seed must not request entropy"),
   )
@@ -43,6 +43,7 @@ test "defaults partial files and settings share field types and last assignments
     max_attempts: 256,
   })
   @debug.assert_eq(task.configurations, ["native-release", "native-debug"])
+  assert_true(task.equivalent_variants)
   @debug.assert_eq(task.build_timeout_ms, 45000)
   @debug.assert_eq(task.run_timeout_ms, 5000)
   @debug.assert_eq(task.candidate_limit, 0)
@@ -51,6 +52,7 @@ test "defaults partial files and settings share field types and last assignments
   let defaults = parse_task("", automatic=() => -7)
   @debug.assert_eq(defaults.seed_start, -7)
   @debug.assert_eq(defaults.sample_count, 1)
+  assert_false(defaults.equivalent_variants)
   @debug.assert_eq(defaults.limits, @moonbit.GenerationLimits::default())
   @debug.assert_eq(defaults.generator, @moonbit.CompositeV2)
   @debug.assert_eq(
@@ -98,6 +100,8 @@ test "automatic starts fit complete Int32 ranges and invalid tasks never request
       ["sample_count=0"],
       ["seed_start=2147483647", "sample_count=2"],
       ["execution.configurations=['native-debug']"],
+      ["execution.equivalent_variants=1"],
+      ["execution.equivalent_variants='true'"],
       ["execution.configurations=['native-debug','native-debug']"],
       ["generation.max_nodes=1\nsample_count=2"],
       ["generation.max_nodes=1\n[value]\nextra=2"],

@@ -104,6 +104,8 @@ async test "CLI runs default and file tasks through settings and saves the effec
       config +
       [
         "--set",
+        "execution.equivalent_variants=true",
+        "--set",
         "seed_start=41",
         "--set",
         "seed_start=42",
@@ -126,6 +128,11 @@ async test "CLI runs default and file tasks through settings and saves the effec
     let text = output.join("\n")
     assert_true(text.contains("Samples attempted: \{count}/\{count}"), msg=text)
     assert_true(text.contains("Seed: 42"), msg=text)
+    assert_true(
+      text.contains("Equivalent program result: consistent"),
+      msg=text,
+    )
+    assert_true(text.contains("Valid equivalent results: 6/6"), msg=text)
     if count == 2 {
       assert_true(text.contains("Seed: 43"), msg=text)
     }
