@@ -7,6 +7,7 @@
 - [对比项目与基准规划](research/comparison-projects.md)：外部项目清单、比较边界和实验方法。
 - [差分归约接入](research/differential-reduction.md)：自动接入的用户选择、失败保持与存证边界。
 - [构建异常归约补齐](research/native-release-reduction-plan.md)：三例调查后的源码缺口、未决公共语义及有界实施切片。
+- [本月剩余能力实施](research/monthly-completion.md)：stack 后续层、公共语义选择及 Host 依赖核对。
 - [Engine 抽象骨架](research/engine-abstraction.md)：职责与组合约束、最小 Int 简化及成本记录。
 - [历史回归验收](../../docs/historical-regressions.md)：首批案例来源、当前工具链检查与旧版真实复现。
 - [验证材料目录](research/corpus-layout.md)：上游组织方式调研、固定案例与模块测试的边界、待取得的证据。

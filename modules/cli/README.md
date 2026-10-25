@@ -73,6 +73,13 @@ JS 配置需要宿主已安装 Node.js。执行器缺失作为 Host 错误保存
 确认失败或证据不足时标为未确认，不展示为已确认的缩减结果。
 只处理有效输出分歧，不把比较未完成当作可归约的输出差异，也不保证最小性。
 
+工具链库提供 `native_constructor_assessment` 和 `native_constructor_predicate`，使用
+`moonbit-native-undeclared-constructor/1` 识别 native release 的未声明构造器变量诊断，
+覆盖 Clang 的 `use of undeclared identifier` 和 GCC 的 `undeclared (first use in this function)`。
+目标要求退出 255、至少一条错误且所有错误均属于该模式，同时 native debug 与 wasm-gc debug
+构建和执行成功，输出均等于调用方提供的当前候选控制输出。缺失、重复或截断证据为不确定，其他错误和
+失败的控制组不能保持目标；注入输出不参与该 Oracle。此库判据尚未接入自动归约入口。
+
 版本 2 案例保存原始源码、构建文件、观察协议、计划配置及有效预算。
 `app.replay_differential` 读取保存的源码、`moon.mod`、`moon.pkg`、配置及观察协议，复制到
 新的尝试目录执行，不重生成程序。不支持的格式、协议或配置在执行前拒绝。
