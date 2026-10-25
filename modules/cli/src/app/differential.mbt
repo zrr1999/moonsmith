@@ -70,6 +70,7 @@ async fn execute_differential(
           } else {
             "true\n"
           }
+        _ => fail("fault injection requires a scalar output protocol")
       }
       { ..observation, injected_stdout: Some(other), }
     } else {
@@ -161,6 +162,9 @@ pub async fn run_differential(
       fail("generation failed for seed \{seed} (template-rules-v1): \{error}")
   }
   let program = generated.program
+  guard program.result_type().result_protocol() is Some(result_protocol) else {
+    fail("generated program has no supported output protocol")
+  }
   let case : @contracts.DifferentialCase = {
     format_version: 2,
     generation: {
@@ -176,7 +180,7 @@ pub async fn run_differential(
     source: program.emit(),
     module_source: @moon.module_source(),
     package_source: @moon.package_source(),
-    result_protocol: program.result_type().result_protocol(),
+    result_protocol,
     configurations: planned.copy(),
     build_timeout_ms,
     run_timeout_ms,

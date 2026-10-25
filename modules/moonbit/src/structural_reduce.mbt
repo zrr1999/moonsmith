@@ -1,8 +1,10 @@
 ///|
-fn Ty::zero(self : Ty) -> Expr {
+fn Ty::zero(self : Ty, enums : Array[EnumDefinition]) -> Expr {
   match self {
     Int => IntLiteral(0)
     Bool => BoolLiteral(false)
+    Tuple(fields) => Expr::Tuple(fields.map(ty => ty.zero(enums)))
+    Enum(id) => Variant(id, 0, enums[id].variants[0].map(ty => ty.zero(enums)))
   }
 }
 
@@ -17,24 +19,38 @@ fn Expr::map_children(self : Expr, f : (Expr) -> Expr) -> Expr {
     Not(e) => Not(f(e))
     If(condition, yes, no) => If(f(condition), f(yes), f(no))
     Call(id, arguments) => Call(id, arguments.map(f))
+    Tuple(fields) => Tuple(fields.map(f))
+    Project(value, index) => Project(f(value), index)
+    Variant(id, tag, arguments) => Variant(id, tag, arguments.map(f))
+    Match(id, value, arms) =>
+      Match(id, f(value), arms.map(arm => { ..arm, body: f(arm.body), }))
   }
 }
 
 ///|
-fn Expr::erase_binding(self : Expr, binder : Binder) -> Expr {
+fn Expr::erase_binding(
+  self : Expr,
+  binder : Binder,
+  enums : Array[EnumDefinition],
+) -> Expr {
   match self {
-    Ref(id) if id == binder.id => binder.ty.zero()
-    _ => self.map_children(child => child.erase_binding(binder))
+    Ref(id) if id == binder.id => binder.ty.zero(enums)
+    _ => self.map_children(child => child.erase_binding(binder, enums))
   }
 }
 
 ///|
-fn Expr::erase_function(self : Expr, removed : Int, returns : Ty) -> Expr {
+fn Expr::erase_function(
+  self : Expr,
+  removed : Int,
+  returns : Ty,
+  enums : Array[EnumDefinition],
+) -> Expr {
   let rewritten = self.map_children(child => {
-    child.erase_function(removed, returns)
+    child.erase_function(removed, returns, enums)
   })
   match rewritten {
-    Call(id, _) if id == removed => returns.zero()
+    Call(id, _) if id == removed => returns.zero(enums)
     Call(id, arguments) if id > removed => Call(id - 1, arguments)
     _ => rewritten
   }
@@ -66,17 +82,42 @@ fn Expr::rewrites(self : Expr, rewrite : (Expr) -> Array[Expr]) -> Array[Expr] {
 }
 
 ///|
-fn Expr::reductions(self : Expr) -> Array[Expr] {
+fn Expr::reductions(self : Expr, enums : Array[EnumDefinition]) -> Array[Expr] {
   self.rewrites(expr => {
     match expr {
       Hole(_) | IntLiteral(_) | BoolLiteral(_) | Ref(_) => []
       Let(binder, value, body) =>
-        [IntLiteral(0), BoolLiteral(false), value, body.erase_binding(binder)]
+        [
+          IntLiteral(0),
+          BoolLiteral(false),
+          value,
+          body.erase_binding(binder, enums),
+        ]
       Add(a, b) | Subtract(a, b) | Less(a, b) =>
         [IntLiteral(0), BoolLiteral(false), a, b]
       Not(e) => [BoolLiteral(false), e]
       If(_, yes, no) => [IntLiteral(0), BoolLiteral(false), yes, no]
       Call(_, _) => [IntLiteral(0), BoolLiteral(false)]
+      Tuple(fields) => [IntLiteral(0), BoolLiteral(false)] + fields
+      Project(value, index) => {
+        let result = [IntLiteral(0), BoolLiteral(false), value]
+        if value is Tuple(fields) {
+          result.push(fields[index])
+        }
+        result
+      }
+      Variant(id, _, arguments) => [Ty::Enum(id).zero(enums)] + arguments
+      Match(_, _, arms) => {
+        let result = [IntLiteral(0), BoolLiteral(false)]
+        for arm in arms {
+          let mut body = arm.body
+          for parameter in arm.parameters {
+            body = body.erase_binding(parameter, enums)
+          }
+          result.push(body)
+        }
+        result
+      }
     }
   })
 }
@@ -122,16 +163,31 @@ fn CompleteProgram::structural_templates(
       if id != removed {
         functions.push({
           ..other,
-          body: other.body.erase_function(removed, function.returns),
+          body: other.body.erase_function(
+            removed,
+            function.returns,
+            syntax.enums,
+          ),
         })
       }
     }
     candidates.push({
+      enums: syntax.enums,
       functions,
-      result: syntax.result.erase_function(removed, function.returns),
+      result: syntax.result.erase_function(
+        removed,
+        function.returns,
+        syntax.enums,
+      ),
     })
   }
-  for candidate in syntax.rewrite_expressions(expr => expr.reductions()) {
+  for length = syntax.enums.length() - 1; length >= 0; length = length - 1 {
+    candidates.push({ ..syntax, enums: syntax.enums[:length].to_owned(), })
+  }
+  for
+    candidate in syntax.rewrite_expressions(expr => {
+      expr.reductions(syntax.enums)
+    }) {
     candidates.push(candidate)
   }
   candidates

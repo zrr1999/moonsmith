@@ -62,6 +62,7 @@ test "automatic templates combine bindings branches and calls across seeds" {
 ///|
 test "completion preserves a template's binding references and function arguments" {
   let template : Template = {
+    enums: [],
     functions: [
       {
         parameters: [{ id: 4, ty: Int, }],

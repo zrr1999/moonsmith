@@ -18,14 +18,16 @@ pub fn Ty::normalize_output(self : Ty, stdout : String) -> String? {
         None
       }
     }
+    Tuple(_) | Enum(_) => None
   }
 }
 
 ///|
-pub fn Ty::result_protocol(self : Ty) -> String {
+pub fn Ty::result_protocol(self : Ty) -> String? {
   match self {
-    Int => "moonbit-int32-line-v1"
-    Bool => "moonbit-bool-line-v1"
+    Int => Some("moonbit-int32-line-v1")
+    Bool => Some("moonbit-bool-line-v1")
+    Tuple(_) | Enum(_) => None
   }
 }
 

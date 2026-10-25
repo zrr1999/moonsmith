@@ -85,6 +85,7 @@ fn assert_planned_observations(
 ///|
 fn composed_structure(input : Int) -> @moonbit.Template {
   {
+    enums: [],
     functions: [
       {
         parameters: [{ id: 0, ty: Int, }, { id: 1, ty: Bool, }],
@@ -123,6 +124,7 @@ async test "checked structures execute with known results and direct differentia
     (composed_structure(10), "14\n"),
     (
       {
+        enums: [],
         functions: [
           { parameters: [], returns: Int, body: Call(1, []), },
           { parameters: [], returns: Int, body: IntLiteral(42), },
@@ -133,6 +135,7 @@ async test "checked structures execute with known results and direct differentia
     ),
     (
       {
+        enums: [],
         functions: [
           {
             parameters: [{ id: 0, ty: Bool, }],
