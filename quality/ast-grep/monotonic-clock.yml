@@ -1,0 +1,11 @@
+id: monotonic-host-clock
+language: C
+severity: error
+message: Host duration measurements require a monotonic clock.
+note: modules/cli/src/host/clock.mbt promises milliseconds without calendar meaning.
+files:
+  - modules/cli/src/host/clock.c
+rule:
+  any:
+    - pattern: clock_gettime(CLOCK_REALTIME, $VALUE)
+    - pattern: gettimeofday($VALUE, $ZONE)

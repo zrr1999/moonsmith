@@ -6,5 +6,5 @@ useDefault = true
 description = "Build caches, managed worktrees, and experiment output"
 paths = [
   '^(\./)?(modules/[^/]+/)?(_build|\.mooncakes)(/|$)',
-  '^(\./)?(\.tools|\.agents/worktrees|runs)(/|$)',
+  '^(\./)?(\.tools|\.artifacts|\.agents/worktrees|runs)(/|$)',
 ]

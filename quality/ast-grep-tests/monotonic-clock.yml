@@ -1,0 +1,6 @@
+id: monotonic-host-clock
+valid:
+  - clock_gettime(CLOCK_MONOTONIC, &value);
+invalid:
+  - clock_gettime(CLOCK_REALTIME, &value);
+  - gettimeofday(&value, NULL);
