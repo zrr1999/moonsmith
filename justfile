@@ -6,7 +6,7 @@ default:
 # Initialize the MoonBit registry and install Git hooks
 install:
     moon update
-    uvx prek==0.5.7 install --prepare-hooks
+    uvx --isolated prek install --prepare-hooks
 
 # Format sources
 format:
@@ -15,7 +15,7 @@ format:
 
 # Run the repository gate
 check:
-    uvx prek==0.5.7 run --all-files
+    uvx --isolated prek run --all-files
 
 # Build all workspace modules and the native executable
 build:
@@ -37,8 +37,3 @@ coverage:
 benchmark:
     mkdir -p .artifacts/quality
     moon bench modules/moonbit/src --target native --release --deny-warn 2>&1 | tee .artifacts/quality/benchmarks.log
-
-# Network link checks run weekly and manually; local hooks check repository links
-links:
-    mkdir -p .artifacts/quality
-    git ls-files -z '*.md' ':(exclude).agents/notes/**' | xargs -0 uvx --from lychee-bin==0.24.2 lychee --scheme https --scheme http --no-progress --timeout 20 --max-retries 1 --format json --output .artifacts/quality/links.json

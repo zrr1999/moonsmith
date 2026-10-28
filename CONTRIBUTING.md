@@ -10,16 +10,15 @@
 | --- | --- |
 | `just install` | 准备依赖索引和 Git hooks |
 | `just format` | 格式化 justfile 与 MoonBit 源码 |
-| `just check` | 运行统一静态检查，与 `uvx prek run --all-files` 相同 |
+| `just check` | 运行统一静态检查，通过独立的 prek 工具环境执行 |
 | `just build` | 构建全部模块及 native 可执行入口 |
 | `just test` | 运行单元测试与真实工具链集成测试 |
 | `just coverage` | 运行相同测试并生成 MoonBit 原生 Cobertura 覆盖率 |
 | `just benchmark` | 对固定种子的生成与归约候选运行原生性能基准 |
-| `just links` | 检查外部 HTTP/HTTPS 文档链接 |
 
 命令行使用与实际入口验证见 [README](README.md#使用)。检查工具、版本和适用范围统一维护在 [prek.toml](prek.toml)，本地和 CI 使用同一门禁；不得为交付跳过或降低检查。新增文件需纳入 Git 索引后才能被 `--all-files` 检查；未准备暂存时可使用 `git add --intent-to-add <文件>`，或运行 `uvx prek run --files <文件>`。
 
-覆盖率和性能报告写入 `.artifacts/quality/`。PR 运行原生覆盖率并上传到 Codecov；性能、外部链接和完整 Git 历史的密钥扫描每周运行，也可手动触发。本地 hooks 检查仓库内链接和锚点。受信任的主分支 CI 另执行严格在线 workflow 审计，查询失败或跳过视为失败。
+覆盖率和性能报告写入 `.artifacts/quality/`。PR 运行原生覆盖率并上传到 Codecov；[测试工作流](.github/workflows/ci-tests.yml) 的性能任务每周运行；[静态检查工作流](.github/workflows/ci-static-checks.yml) 维护外部链接、完整 Git 历史的密钥扫描和在线审计。两者均可手动触发，具体低频检查命令保留在对应 job。本地 hooks 检查仓库内链接和锚点。受信任的主分支 CI 另执行严格在线 workflow 审计，查询失败或跳过视为失败。
 
 MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准运行器检查。SonarQube Cloud 与 CodeQL 仅分析它们支持的 GitHub Actions 和 C 时钟适配层；这些结果不代表 MoonBit 源码分析。ast-grep 的时钟规则有正反例，模块依赖边界继续由 alint 检查。当前 Semgrep、OSV、jscpd、Lizard 和变异工具不支持本仓库的 MoonBit 源码或依赖格式；CodSpeed 尚无可用的正式 MoonBit 集成，因此性能采集保留原生报告，不将未执行的扫描记为通过。
 
