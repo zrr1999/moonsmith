@@ -1,0 +1,8 @@
+{
+  "file": "moonsmith-0.0.1-historical-evidence.tar.gz",
+  "sha256": "e968b7c83809f516f55e1d8efdc16683e6c1b9ba53880c03a01b93a5f67ef226",
+  "bytes": 30621498,
+  "evidence_files": 115175,
+  "scale_commit": "f87e8526f90d8e0f5ab71116cf42e00738c577a8",
+  "investigation_commit": "b077513396101e7f47c1ca02aca29cd6d8418635"
+}

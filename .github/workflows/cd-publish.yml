@@ -1,0 +1,182 @@
+name: "CD - Publish"
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mooncakes-publication
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.ref_name }}
+
+jobs:
+  evidence:
+    name: Validate tag and staged historical evidence
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write # Draft release visibility requires push access.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.13.5"
+          python-version: "3.13"
+      - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
+        with:
+          version: "0.10.18+6c83a7f62"
+          core-version: "0.10.18+6c83a7f62"
+      - name: Verify the exact main commit and draft evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/release.py preflight --tag "$RELEASE_TAG"
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          gh release download "$RELEASE_TAG" --pattern '*-historical-evidence.tar.gz' --dir .artifacts/historical
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts.release import digest, verify_archive
+          expected = json.loads(Path('.github/release-evidence.json').read_text())
+          archive = Path('.artifacts/historical') / expected['file']
+          if digest(archive.read_bytes()) != expected['sha256']:
+              raise ValueError('historical evidence differs from the reviewed manifest')
+          verify_archive(archive)
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: historical-evidence
+          path: .artifacts/historical/*.tar.gz
+          include-hidden-files: true
+          if-no-files-found: error
+  prepare:
+    needs: evidence
+    uses: $/.github/workflows/release-prepare.yml
+    with:
+      full_acceptance: true
+  publish:
+    name: Publish modules in dependency order
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.13.5"
+          python-version: "3.13"
+      - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
+        with:
+          version: "0.10.18+6c83a7f62"
+          core-version: "0.10.18+6c83a7f62"
+      - name: Publish and resolve each exact module
+        env:
+          MOONCAKES_CREDENTIALS: ${{ secrets.MOONCAKES_CREDENTIALS }}
+        run: python scripts/release.py publish --tag "$RELEASE_TAG" --output .artifacts/publication
+      - name: Remove temporary registry credentials
+        if: always()
+        run: rm -f "${MOON_HOME:-$HOME/.moon}/credentials.json"
+  registry:
+    name: Verify registry install (${{ matrix.platform }})
+    needs: publish
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x86_64
+          - runner: macos-15
+            platform: macos-arm64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.13.5"
+          python-version: "3.13"
+      - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
+        with:
+          version: "0.10.18+6c83a7f62"
+          core-version: "0.10.18+6c83a7f62"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26.3.1"
+          package-manager-cache: false
+      - name: Install the exact release outside the workspace
+        run: python scripts/release.py verify-registry --output .artifacts/registry/evidence
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: registry-${{ matrix.platform }}
+          path: .artifacts/registry/*.tar.gz
+          include-hidden-files: true
+          if-no-files-found: error
+  release:
+    name: Publish verified GitHub release
+    needs: [evidence, prepare, registry]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.13.5"
+          python-version: "3.13"
+      - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
+        with:
+          version: "0.10.18+6c83a7f62"
+          core-version: "0.10.18+6c83a7f62"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26.3.1"
+          package-manager-cache: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: .artifacts/downloads
+      - name: Collect and verify all release assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          from scripts.release import digest, verify_archive
+          destination = Path('.artifacts/final')
+          destination.mkdir()
+          sums = []
+          for archive in sorted(Path('.artifacts/downloads').rglob('*.tar.gz')):
+              verify_archive(archive)
+              target = destination / archive.name
+              if target.exists():
+                  raise ValueError('duplicate release asset')
+              shutil.copy2(archive, target)
+              sums.append(f'{digest(target.read_bytes())}  {target.name}\n')
+          if len(sums) != 7:
+              raise ValueError('missing binary, evidence, historical or registry assets')
+          (destination / 'SHA256SUMS').write_text(''.join(sums))
+          PY
+      - name: Upload draft assets and validate their download before publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+          gh release upload "$RELEASE_TAG" .artifacts/final/* --clobber
+          gh release download "$RELEASE_TAG" --dir .artifacts/verified-download
+          python scripts/release.py verify-download --output .artifacts/verified-download
+          gh release edit "$RELEASE_TAG" --draft=false --title "MoonSmith $RELEASE_TAG" \
+            --notes-file "docs/releases/${RELEASE_TAG#v}.md"
