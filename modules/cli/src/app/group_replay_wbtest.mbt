@@ -221,7 +221,8 @@ async test "group replay rejects unknown formats relations and mismatched materi
   assert_group_refused(saved.directory, original.directory)
   @fs.write_file(path, record.to_json().stringify())
   @debug.assert_eq(@artifacts.load_group(saved.directory).record, record)
-  let misplaced = @host.new_directory("\{base}/misplaced-")
+  @host.mkdir("\{original.directory}/misplaced")
+  let misplaced = @host.new_directory("\{original.directory}/misplaced/group-")
   @host.write_new("\{misplaced}/group.json", record.to_json().stringify())
   assert_group_refused(misplaced, original.directory)
 }

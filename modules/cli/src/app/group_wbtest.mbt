@@ -356,3 +356,89 @@ async test "failed variant preparation retains missing members and reports the e
   @debug.assert_eq(comparison.attempts.length(), 1)
   @debug.assert_eq(@host.read_text(attempts), "occupied")
 }
+
+///|
+async test "group confirmation execution errors retain the finding and append an unconfirmed record" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/group-confirmation-")
+  defer @host.remove_tree(base)
+  let group = composed_structure(42).finish().equivalent_group()
+  let original = original_group_fixture(base, group)
+  let directory = group_material(original)
+  let before = @host.read_text("\{directory}/group.json")
+  let attempts = @host.list_directory("\{original.directory}/attempts")
+  let result = reduce_equivalent_group(original, group, 0, evaluate=(_, purpose) => {
+    @debug.assert_eq(purpose, "confirmation")
+    fail("confirmation process failed")
+  })
+  @debug.assert_eq(result.comparison(), original.comparison())
+  guard result.group_reduction is Some(reduction) else {
+    fail("missing unconfirmed reduction")
+  }
+  @debug.assert_eq(reduction.progress.candidates, 0)
+  @debug.assert_eq(reduction.progress.confirmation_attempt, None)
+  @debug.assert_eq(reduction.progress.confirmation, None)
+  @debug.assert_eq(reduction.progress.stop_reason, "operation error")
+  guard reduction.progress.error is Some(error) else {
+    fail("missing execution error")
+  }
+  assert_true(error.contains("confirmation process failed"))
+  assert_false(describe_differential(result).contains("Reduction: confirmed"))
+  @debug.assert_eq(@host.read_text("\{directory}/group.json"), before)
+  @debug.assert_eq(
+    @host.list_directory("\{original.directory}/attempts"),
+    attempts,
+  )
+  let saved : @contracts.EquivalentGroupReduction = @json.from_json(
+    @json.parse(@host.read_text("\{directory}/reduction.json")),
+  )
+  @debug.assert_eq(saved.progress.error, reduction.progress.error)
+  @debug.assert_eq(saved.progress.confirmation, None)
+}
+
+///|
+async test "group assembly refuses missing or reordered members without saving a misleading group" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/group-members-")
+  defer @host.remove_tree(base)
+  let group = @moonbit.synthesize(42).program.equivalent_group()
+  for reordered in [false, true] {
+    let original = run_differential(seed=42, base~)
+    let runs = [("original", original)]
+    if reordered {
+      runs.push(("equivalent-2", replay_differential(original.directory)))
+      runs.push(("equivalent-1", replay_differential(original.directory)))
+    }
+    let attempts = @host.list_directory("\{original.directory}/attempts")
+    let result = record_equivalent_group(
+      original,
+      group.relations(),
+      runs,
+      "original",
+      [],
+    )
+    assert_true(result.group is None)
+    guard execution_error(result) is Some(error) else {
+      fail("missing group assembly error")
+    }
+    assert_true(
+      error.contains(
+        if reordered {
+          "member order changed"
+        } else {
+          "missing members"
+        },
+      ),
+    )
+    assert_false(@host.exists("\{original.directory}/groups"))
+    @debug.assert_eq(
+      @host.list_directory("\{original.directory}/attempts"),
+      attempts,
+    )
+    @debug.assert_eq(
+      @host.read_text("\{original.directory}/original.mbt"),
+      original.case.source,
+    )
+    assert_true(@host.exists("\{original.attempt_directory}/attempt.json"))
+  }
+}
