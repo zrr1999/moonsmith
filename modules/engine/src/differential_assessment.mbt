@@ -17,27 +17,17 @@ pub fn differential_assessment(
   observations : Array[@contracts.Observation],
   normalize~ : (String) -> String?,
 ) -> @contracts.Assessment {
-  let values = comparable_results(configurations, observations, normalize~)
+  let values = Map(comparable_results(configurations, observations, normalize~))
   let results : Array[@contracts.OracleResult] = []
   for i, first in configurations {
     for j = i + 1; j < configurations.length(); j = j + 1 {
       let second = configurations[j]
-      let mut left : String? = None
-      let mut right : String? = None
-      for (configuration, value) in values {
-        if configuration == first {
-          left = Some(value)
-        }
-        if configuration == second {
-          right = Some(value)
-        }
-      }
       let predicate = difference_predicate(first, second)
       results.push({
         oracle: predicate.oracle,
         configuration: second,
         phase: Execute,
-        outcome: match (left, right) {
+        outcome: match (values.get(first), values.get(second)) {
           (Some(a), Some(b)) =>
             if a == b {
               Satisfied
