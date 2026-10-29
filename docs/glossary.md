@@ -22,6 +22,7 @@
 | MoonBit 程序 | MoonBit program | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-moonbit-program) |
 | 程序模板 | program template | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-program-template) |
 | 静态合法性 | well-formedness | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-program-well-formedness) |
+| 等价程序组 | equivalent program group | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-equivalent-program-group) |
 | 观察协议 | observation protocol | [FP-0002](../fps/FP-0002-moonbit-semantic-contract.md#term-observation-protocol) |
 
 ## 案例、证据与判断

@@ -55,7 +55,8 @@
         "moonbit-program",
         "program-template",
         "program-well-formedness",
-        "observation-protocol"
+        "observation-protocol",
+        "equivalent-program-group"
       ],
       "requires": [
         0,

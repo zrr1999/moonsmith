@@ -2,6 +2,7 @@
 pub fn render_equivalents(
   record : @contracts.EquivalentComparison,
   values : Array[(String, String)],
+  group_directory~ : String? = None,
 ) -> String {
   let result = match record.comparison {
     Consistent => "consistent (no difference observed)"
@@ -13,9 +14,12 @@ pub fn render_equivalents(
     "Valid equivalent results: \{values.length()}/\{record.configurations.length()}",
     "Relation: equivalent-1 wraps the result with Int + 0 or Bool double negation; equivalent-2 wraps it in a true branch.",
     "Each program uses the original configuration plan and output protocol; comparison requires no reference value.",
-    "Replay each listed attempt separately to execute its saved source; replay does not recheck the group relation.",
-    "Cross-program differences are not automatically reduced; any attached reduction concerns the original program.",
+    "Replay the group directory to execute all saved sources and compare their outputs again.",
+    "Group reduction regenerates the same transformations from each smaller original; its target member/configuration pair stays fixed.",
   ]
+  if group_directory is Some(directory) {
+    lines.push("Group replay material: \{directory}")
+  }
   if record.injected {
     lines.push("Evidence: fault injection (not a compiler defect)")
   }

@@ -187,6 +187,51 @@ async test "CLI presents automatic reduction and replays its confirmed source" {
 }
 
 ///|
+async test "CLI replays entire groups and their independently confirmed sources" {
+  @host.mkdir("runs")
+  let base = @host.new_directory("runs/cli-group-")
+  defer @host.remove_tree(base)
+  for injected in [false, true] {
+    let run = @app.run_differential(
+      seed=42,
+      base~,
+      equivalent_variants=true,
+      injected~,
+      reduction_limit=1,
+    )
+    let output = []
+    let expected = if injected { 2 } else { 0 }
+    @debug.assert_eq(present(run, line => output.push(line)), expected)
+    guard run.group is Some(group) else { fail("missing group material") }
+    let replay_path = if injected {
+      guard run.group_reduction is Some(reduction) &&
+        reduction.progress.confirmation_attempt is Some(confirmation) else {
+        fail("missing independent group confirmation")
+      }
+      assert_true(output.join("\n").contains("Reduction: confirmed"))
+      confirmation
+    } else {
+      @debug.assert_eq(run.group_reduction, None)
+      group.directory
+    }
+    let attempts = @host.list_directory("\{run.directory}/attempts").length()
+    let replay_output = []
+    @debug.assert_eq(
+      cli(["replay", replay_path], output=line => replay_output.push(line)),
+      expected,
+    )
+    assert_true(
+      replay_output.join("\n").contains("Valid equivalent results: 9/9"),
+    )
+    assert_false(replay_output.join("\n").contains("Reduction:"))
+    @debug.assert_eq(
+      @host.list_directory("\{run.directory}/attempts").length(),
+      attempts + 3,
+    )
+  }
+}
+
+///|
 async test "replay exit codes and summaries follow saved differential evidence" {
   @host.mkdir("runs")
   let base = @host.new_directory("runs/cli-replay-")

@@ -11,6 +11,8 @@ pub struct DifferentialRun {
   reduction : @contracts.DifferentialReduction?
   build_reduction : @contracts.BuildFailureReduction?
   equivalents : @contracts.EquivalentComparison?
+  group : GroupExecution?
+  group_reduction : @contracts.EquivalentGroupReduction?
 }
 
 ///|
@@ -143,6 +145,8 @@ async fn finish_differential(
     reduction: None,
     build_reduction: None,
     equivalents: None,
+    group: None,
+    group_reduction: None,
   }
 }
 
@@ -175,11 +179,6 @@ pub async fn run_differential(
       )
   }
   let program = generated.program
-  let variants = if equivalent_variants {
-    program.equivalent_variants()
-  } else {
-    []
-  }
   guard program.result_type().result_protocol() is Some(result_protocol) else {
     fail("generated program has no supported output protocol")
   }
@@ -212,11 +211,13 @@ pub async fn run_differential(
     error => fail("execution failed for seed \{seed} at \{directory}: \{error}")
   }
   let run = if equivalent_variants {
-    check_equivalents(run, variants)
+    check_equivalents(run, program.equivalent_group())
   } else {
     run
   }
-  if run.attempt.comparison is Difference(_, _) {
+  if equivalent_variants && run.comparison() is Difference(_, _) {
+    reduce_equivalent_group(run, program.equivalent_group(), reduction_limit)
+  } else if run.attempt.comparison is Difference(_, _) {
     reduce_differential(run, program, reduction_limit)
   } else {
     reduce_build_failure(run, program, reduction_limit)
@@ -229,6 +230,9 @@ pub async fn replay_differential(
   on_plan~ : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
   let input = @host.canonical(directory)
+  if @host.exists("\{input}/group.json") {
+    return replay_equivalent_group(input, on_plan~)
+  }
   let (directory, case, source, original_toolchain, original_runtimes) = try {
     if @host.exists("\{input}/case.json") {
       let case = @artifacts.load_differential(input)
@@ -298,10 +302,19 @@ pub fn describe_differential(run : DifferentialRun) -> String {
     Some(reduction) =>
       summary + "\n" + @report.summarize_build_reduction(reduction)
   }
+  let summary = match run.group_reduction {
+    None => summary
+    Some(reduction) =>
+      summary + "\n" + @report.summarize_group_reduction(reduction)
+  }
   match run.equivalents {
     None => summary
     Some(comparison) =>
-      @report.render_equivalents(comparison, equivalent_values(run, comparison)) +
+      @report.render_equivalents(
+        comparison,
+        equivalent_values(run, comparison),
+        group_directory=run.group.map(group => group.directory),
+      ) +
       "\n\nOriginal program execution:\n" +
       summary
   }

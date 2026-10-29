@@ -13,26 +13,31 @@ fn reduction_assessment(run : DifferentialRun) -> @contracts.Assessment {
 }
 
 ///|
-async fn reduce_program(
+async fn[P] drive_reduction(
   original : DifferentialRun,
-  program : @moonbit.CompleteProgram,
+  original_cost : @contracts.ReductionCost,
   limit : Int32,
   predicate : @contracts.FailurePredicate,
   assess : (DifferentialRun) -> @contracts.Assessment,
-  prefix~ : String = "",
+  search~ : () -> Result[@engine.Reducer[P], @engine.ReductionStartError],
+  cost_model~ : String,
+  cost~ : (P) -> @contracts.ReductionCost,
+  execute~ : async (P, String) -> DifferentialRun,
+  material~ : (DifferentialRun) -> String raise,
 ) -> (DifferentialRun, @contracts.ReductionProgress) {
+  let original_material = material(original)
   let started = @host.monotonic_ms()
   let mut result = original
   let mut record : @contracts.ReductionProgress = {
-    original_attempt: original.attempt_directory,
-    cost_model: @moonbit.reduction_cost_model(),
-    original_cost: program.cost(),
+    original_attempt: original_material,
+    cost_model,
+    original_cost,
     candidate_limit: limit,
     candidates: 0,
     accepted: 0,
     elapsed_ms: 0L,
-    best_cost: program.cost(),
-    best_attempt: original.attempt_directory,
+    best_cost: original_cost,
+    best_attempt: original_material,
     stop_reason: "not started",
     confirmation_attempt: None,
     confirmation: None,
@@ -40,36 +45,24 @@ async fn reduce_program(
     trials: [],
   }
   try {
-    guard @engine.Reducer::new(
-        program,
-        assess(original),
-        predicate,
-        id=original.attempt_directory,
-        limit~,
-        better=(candidate, incumbent) => candidate.is_smaller_than(incumbent),
-        valid=p => p.result_type() == program.result_type(),
-        operations=[p => p.structural_candidates(), p => p.integer_candidates()],
-      )
-      is Ok(search) else {
+    guard search() is Ok(search) else {
       fail("initial reduction evidence is invalid")
     }
     while search.next() is Some(request) {
       record = { ..record, candidates: search.attempts(), }
-      let candidate = execute_differential(
-        original.directory,
-        original.case,
-        "\{prefix}reduction-\{request.id.attempt}",
-        source=request.program.emit(),
+      let candidate = execute(
+        request.program,
+        "reduction-\{request.id.attempt}",
       )
-      if candidate.save_error is Some(error) {
+      if execution_error(candidate) is Some(error) {
         result = { ..result, save_error: Some(error), }
         fail("candidate evidence at \{candidate.attempt_directory}: \{error}")
       }
       let evidence = assess(candidate)
       let accepted = search.observe(request.id, evidence)
       record.trials.push({
-        attempt: candidate.attempt_directory,
-        cost: request.program.cost(),
+        attempt: material(candidate),
+        cost: cost(request.program),
         status: @engine.match_failure(predicate, evidence),
         accepted,
       })
@@ -77,8 +70,8 @@ async fn reduce_program(
         record = {
           ..record,
           accepted: record.accepted + 1,
-          best_cost: search.result().cost(),
-          best_attempt: candidate.attempt_directory,
+          best_cost: cost(search.result()),
+          best_attempt: material(candidate),
         }
       }
     }
@@ -92,17 +85,16 @@ async fn reduce_program(
         None => "not stopped"
       },
     }
-    let confirmation = execute_differential(
-      original.directory,
-      original.case,
-      "\{prefix}confirmation",
-      source=search.result().emit(),
-    )
+    let confirmation = execute(search.result(), "confirmation")
     record = {
       ..record,
-      confirmation_attempt: Some(confirmation.attempt_directory),
+      confirmation_attempt: if execution_error(confirmation) is None {
+        Some(material(confirmation))
+      } else {
+        None
+      },
     }
-    if confirmation.save_error is Some(error) {
+    if execution_error(confirmation) is Some(error) {
       result = { ..result, save_error: Some(error), }
       fail(
         "confirmation evidence at \{confirmation.attempt_directory}: \{error}",
@@ -121,6 +113,47 @@ async fn reduce_program(
       }
   }
   (result, { ..record, elapsed_ms: @host.monotonic_ms() - started, })
+}
+
+///|
+async fn reduce_program(
+  original : DifferentialRun,
+  program : @moonbit.CompleteProgram,
+  limit : Int32,
+  predicate : @contracts.FailurePredicate,
+  assess : (DifferentialRun) -> @contracts.Assessment,
+  prefix~ : String = "",
+) -> (DifferentialRun, @contracts.ReductionProgress) {
+  drive_reduction(
+    original,
+    program.cost(),
+    limit,
+    predicate,
+    assess,
+    search=() => {
+      @engine.Reducer::new(
+        program,
+        assess(original),
+        predicate,
+        id=original.attempt_directory,
+        limit~,
+        better=(candidate, incumbent) => candidate.is_smaller_than(incumbent),
+        valid=p => p.result_type() == program.result_type(),
+        operations=[p => p.structural_candidates(), p => p.integer_candidates()],
+      )
+    },
+    cost_model=@moonbit.reduction_cost_model(),
+    cost=p => p.cost(),
+    material=run => run.attempt_directory,
+    execute=(p, purpose) => {
+      execute_differential(
+        original.directory,
+        original.case,
+        "\{prefix}\{purpose}",
+        source=p.emit(),
+      )
+    },
+  )
 }
 
 ///|
