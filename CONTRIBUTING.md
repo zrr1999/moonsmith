@@ -13,9 +13,10 @@
 | `just check` | 运行统一静态检查，通过独立的 prek 工具环境执行 |
 | `just build` | 构建全部模块及 native 可执行入口 |
 | `just test` | 运行单元测试与真实工具链集成测试 |
-| `just coverage` | 运行相同测试并生成 MoonBit 原生 Cobertura 覆盖率 |
+| `just coverage` | 运行相同测试和归约演示，生成 MoonBit 原生 Cobertura 覆盖率 |
 | `just benchmark` | 对固定种子的生成与归约候选运行原生性能基准 |
 | `just build-historical` | 用开发工具链构建历史编译器异常检查程序与 CLI |
+| `just test-historical-guard` | 验证历史检查拒绝当前开发工具链 |
 | `just test-historical` | 使用 PATH 中固定的旧版被测编译器执行预构建检查程序 |
 | `just coverage-historical` | 切回开发工具链后生成历史复现的执行覆盖率 |
 
@@ -28,7 +29,7 @@ MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准
 ## 变更与验证
 
 日常检查、构建和测试使用 MoonBit 与 core `0.10.18+6c83a7f62`。历史构建异常单独验证：先用该版本执行
-`just build-historical`，再在独立进程环境中将 `MOON_HOME` 和 `PATH` 指向 `0.10.14+7d59c7ec9`，
+`just build-historical` 和 `just test-historical-guard`，再在独立进程环境中将 `MOON_HOME` 和 `PATH` 指向 `0.10.14+7d59c7ec9`，
 执行 `just test-historical`。检查程序核对被测编译器版本，验证种子 1272、3745、6968 的自动归约、
 独立确认和重放，并保存完整材料；CLI 检查同时验证构建异常仍返回比较未完成的退出码 `3`。
 历史入口保留覆盖率插桩；执行后切回开发工具链运行 `just coverage-historical`，与产品测试的覆盖率共同提交。

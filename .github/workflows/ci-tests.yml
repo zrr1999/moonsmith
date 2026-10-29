@@ -42,7 +42,9 @@ jobs:
           core-version: "0.10.18+6c83a7f62"
       - run: moon update
       - name: Build checks with the development compiler
-        run: just build-historical
+        run: |
+          just build-historical
+          just test-historical-guard
       - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
         with:
           version: "0.10.14+7d59c7ec9"
@@ -70,6 +72,8 @@ jobs:
           path: |
             .artifacts/quality/historical-coverage.xml
             .artifacts/historical-coverage.log
+            .artifacts/historical-rejection.log
+            .artifacts/historical-rejection.err
           include-hidden-files: true
           if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -140,8 +144,6 @@ jobs:
         run: just coverage
       - name: Run differential compiler testing
         run: moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run
-      - name: Demonstrate reduction and replay
-        run: moon run modules/cli/src/examples/reduction --target native --deny-warn
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

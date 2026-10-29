@@ -1,5 +1,6 @@
 ///|
 async fn main {
+  defer @coverage.end()
   let run = @app.run_differential(
     seed=7,
     generator=@moonbit.ScalarV1,
