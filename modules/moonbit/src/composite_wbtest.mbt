@@ -1,5 +1,5 @@
 ///|
-fn composite_program(tag : Int) -> CompleteProgram raise {
+fn composite_program(tag : Int32) -> CompleteProgram raise {
   Template::{
     enums: [{ variants: [[Int, Tuple([Bool, Int])], []], }],
     functions: [

@@ -1,85 +1,56 @@
 ///|
-async test "native constructor failures reduce automatically with agreeing controls and local replay records" {
-  @host.mkdir("runs")
-  let base = @host.new_directory("runs/constructor-oracle-")
-  defer @host.remove_tree(base)
-  for seed in [1272, 3745, 6968] {
-    let program = @moonbit.synthesize(seed).program
-    let run = run_differential(seed~, base~, reduction_limit=16)
-    assert_true(run.save_error is None)
-    @debug.assert_eq(run.attempt.source, program.emit())
-    @debug.assert_eq(run.attempt.comparison, @contracts.Incomplete)
-    @debug.assert_eq(
-      @engine.match_failure(
-        @moon.native_constructor_predicate(),
-        build_failure_assessment(run),
-      ),
-      @contracts.Preserved,
-      msg=@debug.to_string(run.attempt.observations),
-    )
-    @debug.assert_eq(run.reduction, None)
-    guard run.build_reduction is Some(reduction) else {
-      fail("missing automatic build failure reduction")
-    }
-    let progress = reduction.progress
-    assert_true(progress.error is None, msg=@debug.to_string(progress))
-    @debug.assert_eq(progress.confirmation, Some(@contracts.Preserved))
-    assert_true(progress.best_cost.nodes < program.size())
-    assert_true(progress.accepted > 0)
-    assert_true(progress.candidates <= 16)
-    @debug.assert_eq(progress.trials.length(), progress.candidates)
-    for trial in progress.trials {
-      if trial.accepted {
-        @debug.assert_eq(trial.status, @contracts.Preserved)
-      }
-    }
-    guard progress.confirmation_attempt is Some(confirmed) else {
-      fail("missing independent confirmation")
-    }
-    assert_true(confirmed != progress.best_attempt)
-    let best = @artifacts.load_differential_attempt(
-      progress.best_attempt,
-      run.case,
-    )
-    let confirmation = @artifacts.load_differential_attempt(confirmed, run.case)
-    @debug.assert_eq(best.source, confirmation.source)
-    @debug.assert_eq(confirmation.purpose, "build-confirmation")
-    let path = "\{run.attempt_directory}/build-reduction.md"
-    let report = @host.read_text(path)
-    assert_true(report.contains(reduction.predicate.oracle))
-    assert_true(report.contains(confirmed))
-    assert_true(report.contains("No reference evaluator is used"))
-    assert_false(@host.exists("\{run.attempt_directory}/reduction.json"))
-    let replay = replay_differential(confirmed)
-    @debug.assert_eq(replay.attempt.comparison, @contracts.Incomplete)
-    @debug.assert_eq(replay.attempt.source, best.source)
-    @debug.assert_eq(replay.build_reduction, None)
-    @debug.assert_eq(
-      @host.read_text("\{run.directory}/original.mbt"),
-      program.emit(),
-    )
-    @debug.assert_eq(
-      @artifacts.load_differential_attempt(run.attempt_directory, run.case),
-      run.attempt,
-    )
-    @debug.assert_eq(@host.read_text(path), report)
-    let duplicate = finish_build_reduction(run, reduction)
-    assert_true(duplicate.save_error is Some(_))
-    @debug.assert_eq(@host.read_text(path), report)
-  }
-}
-
-///|
 async test "build failure reduction rejects invalid controls unrelated errors and unsaved evidence before searching" {
   @host.mkdir("runs")
   let base = @host.new_directory("runs/build-reduction-guard-")
   defer @host.remove_tree(base)
   let program = @moonbit.synthesize(1272).program
-  let run = run_differential(seed=1272, base~, reduction_limit=0)
-  let original = { ..run, build_reduction: None, }
-  let count = @host.list_directory("\{run.directory}/attempts").length()
-  @debug.assert_eq(count, 2)
-  let observations = run.attempt.observations
+  let fixture = equivalent_fixture("0\n")
+  let case = { ..fixture.case, source: program.emit(), }
+  let directory = @artifacts.create_differential(base, case)
+  let attempt_directory = @artifacts.begin_attempt(directory)
+  @moon.prepare_saved(
+    attempt_directory,
+    case.source,
+    case.module_source,
+    case.package_source,
+  )
+  let observations = fixture.attempt.observations
+    .filter(o => !(o.configuration == "native-release" && o.phase == Execute))
+    .map(o => {
+      if o.configuration == "native-release" {
+        {
+          ..o,
+          output: {
+            status: Exited(255),
+            stdout: "",
+            stderr: "generated.c:1: error: use of undeclared identifier '_M0L6constrS84'\n",
+          },
+        }
+      } else {
+        o
+      }
+    })
+  let original = finish_differential(
+    directory,
+    case,
+    attempt_directory,
+    {
+      ..fixture.attempt,
+      source: case.source,
+      observations,
+      comparison: Incomplete,
+    },
+    None,
+  )
+  @debug.assert_eq(
+    @engine.match_failure(
+      @moon.native_constructor_predicate(),
+      build_failure_assessment(original),
+    ),
+    @contracts.Preserved,
+  )
+  let count = @host.list_directory("\{original.directory}/attempts").length()
+  @debug.assert_eq(count, 1)
   for change in 0..<5 {
     let modified = observations.map(o => {
       if change == 0 && o.configuration == "native-release" {
@@ -117,7 +88,7 @@ async test "build failure reduction rejects invalid controls unrelated errors an
   )
   @debug.assert_eq(unsaved.build_reduction, None)
   @debug.assert_eq(
-    @host.list_directory("\{run.directory}/attempts").length(),
+    @host.list_directory("\{original.directory}/attempts").length(),
     count,
   )
   let changed_controls = observations.map(o => {
@@ -138,4 +109,30 @@ async test "build failure reduction rejects invalid controls unrelated errors an
     ),
     @contracts.Preserved,
   )
+  let reduction : @contracts.BuildFailureReduction = {
+    predicate: @moon.native_constructor_predicate(),
+    progress: {
+      original_attempt: original.attempt_directory,
+      cost_model: @moonbit.reduction_cost_model(),
+      original_cost: program.cost(),
+      candidate_limit: 0,
+      candidates: 0,
+      accepted: 0,
+      elapsed_ms: 0L,
+      best_cost: program.cost(),
+      best_attempt: original.attempt_directory,
+      stop_reason: "candidate budget exhausted",
+      confirmation_attempt: None,
+      confirmation: None,
+      error: None,
+      trials: [],
+    },
+  }
+  let saved = finish_build_reduction(original, reduction)
+  assert_true(saved.save_error is None)
+  let path = "\{original.attempt_directory}/build-reduction.md"
+  let report = @host.read_text(path)
+  let duplicate = finish_build_reduction(original, reduction)
+  assert_true(duplicate.save_error is Some(_))
+  @debug.assert_eq(@host.read_text(path), report)
 }

@@ -13,7 +13,7 @@ pub fn[P] Reducer::new(
   evidence : @contracts.Assessment,
   predicate : @contracts.FailurePredicate,
   id~ : String,
-  limit~ : Int,
+  limit~ : Int32,
   better~ : (P, P) -> Bool,
   valid~ : (P) -> Bool,
   operations~ : Array[(P) -> Array[P]],
@@ -83,7 +83,7 @@ pub fn[P] Reducer::result(self : Reducer[P]) -> P {
 }
 
 ///|
-pub fn[P] Reducer::attempts(self : Reducer[P]) -> Int {
+pub fn[P] Reducer::attempts(self : Reducer[P]) -> Int32 {
   self.session.attempts()
 }
 

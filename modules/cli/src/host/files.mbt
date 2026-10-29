@@ -52,7 +52,7 @@ pub fn current_directory() -> String {
 }
 
 ///|
-pub fn random_seed() -> Int raise {
+pub fn random_seed() -> Int32 raise {
   guard @env.rand(4) is Some(bytes) else { fail("system entropy unavailable") }
   bytes[0].to_int() |
   (bytes[1].to_int() << 8) |
@@ -73,4 +73,4 @@ pub async fn platform() -> @contracts.ProcessEvidence {
 }
 
 ///|
-pub extern "c" fn exit(code : Int) = "exit"
+pub extern "c" fn exit(code : Int32) = "exit"

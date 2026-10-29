@@ -1,5 +1,5 @@
 ///|
-fn gen_int(rng : @random.Rand, depth : Int, scope : Int) -> IntExpr {
+fn gen_int(rng : @random.Rand, depth : Int32, scope : Int32) -> IntExpr {
   if depth == 0 {
     if scope > 0 && rng.boolean() {
       Variable(rng.int(limit=scope))
@@ -23,7 +23,7 @@ fn gen_int(rng : @random.Rand, depth : Int, scope : Int) -> IntExpr {
 }
 
 ///|
-fn gen_bool(rng : @random.Rand, depth : Int, scope : Int) -> BoolExpr {
+fn gen_bool(rng : @random.Rand, depth : Int32, scope : Int32) -> BoolExpr {
   if depth == 0 {
     Boolean(rng.boolean())
   } else if rng.boolean() {
@@ -35,7 +35,7 @@ fn gen_bool(rng : @random.Rand, depth : Int, scope : Int) -> BoolExpr {
 
 ///|
 /// int-bool-v1: finite trees, three sequential bindings, no overflow or recursion.
-pub fn generate(seed : Int, depth? : Int = 3) -> Program? {
+pub fn generate(seed : Int32, depth~ : Int32 = 3) -> Program? {
   guard depth >= 0 && depth <= 4 else { return None }
   let bytes = Bytes::makei(32, i => {
     if i < 4 {

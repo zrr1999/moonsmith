@@ -16,10 +16,10 @@ fn reduction_assessment(run : DifferentialRun) -> @contracts.Assessment {
 async fn reduce_program(
   original : DifferentialRun,
   program : @moonbit.CompleteProgram,
-  limit : Int,
+  limit : Int32,
   predicate : @contracts.FailurePredicate,
   assess : (DifferentialRun) -> @contracts.Assessment,
-  prefix? : String = "",
+  prefix~ : String = "",
 ) -> (DifferentialRun, @contracts.ReductionProgress) {
   let started = @host.monotonic_ms()
   let mut result = original
@@ -127,7 +127,7 @@ async fn reduce_program(
 async fn reduce_differential(
   original : DifferentialRun,
   program : @moonbit.CompleteProgram,
-  limit : Int,
+  limit : Int32,
 ) -> DifferentialRun {
   guard original.save_error is None &&
     original.attempt.comparison is Difference(first, second) else {

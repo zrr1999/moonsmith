@@ -2,7 +2,7 @@
 /// Fixed operation order; accepted programs restart the schedule.
 pub struct OperationSchedule[P] {
   priv operations : Array[(P) -> Array[P]]
-  priv mut index : Int
+  priv mut index : Int32
 }
 
 ///|

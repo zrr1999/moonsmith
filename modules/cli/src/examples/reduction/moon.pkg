@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/coverage",
   "zrr1999/moonsmith/app",
   "zrr1999/moonsmith-moonbit" @moonbit,
   "moonbitlang/async",

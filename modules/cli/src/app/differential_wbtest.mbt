@@ -1,8 +1,8 @@
 ///|
 fn saved_fixture(
   source : String,
-  protocol? : String = "moonbit-int32-line-v1",
-  injected? : Bool = false,
+  protocol~ : String = "moonbit-int32-line-v1",
+  injected~ : Bool = false,
 ) -> @contracts.DifferentialCase {
   {
     format_version: 2,

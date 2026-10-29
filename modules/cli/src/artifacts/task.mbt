@@ -22,7 +22,7 @@ pub async fn create_task(
 ///|
 pub async fn save_task_sample(
   directory : String,
-  index : Int,
+  index : Int32,
   sample : @contracts.TaskSample,
 ) -> Unit {
   @host.write_new(

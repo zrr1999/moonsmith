@@ -3,7 +3,7 @@ pub struct Run {
   directory : String
   original : @contracts.Attempt
   final_attempt : @contracts.Attempt
-  attempts : Int
+  attempts : Int32
 }
 
 ///|
@@ -12,7 +12,7 @@ async fn execute(
   compiler : String,
   source : String,
   expected : String,
-  nodes : Int,
+  nodes : Int32,
   purpose : String,
   injected : Bool,
 ) -> @contracts.Attempt {
@@ -39,11 +39,11 @@ async fn execute(
 
 ///|
 pub async fn run(
-  seed? : Int = 7,
-  depth? : Int = 3,
-  base? : String = "runs",
-  injected? : Bool = false,
-  reduction_limit? : Int = 16,
+  seed~ : Int32 = 7,
+  depth~ : Int32 = 3,
+  base~ : String = "runs",
+  injected~ : Bool = false,
+  reduction_limit~ : Int32 = 16,
 ) -> Run {
   guard @moonbit.generate(seed, depth~) is Some(program) else {
     fail("depth must be between 0 and 4")

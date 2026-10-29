@@ -227,7 +227,7 @@ async test "invalid tasks fail before output creation or progress" {
   let filename = "\{base}/task.toml"
   let source = task_fixture().replace(old="native-debug", new="unsupported")
   @host.write_new(filename, source)
-  let progress : Array[Int] = []
+  let progress : Array[Int32] = []
   let rejected = try {
     ignore(run_task(filename~, on_progress=(done, _) => progress.push(done)))
     false
@@ -250,7 +250,7 @@ async test "tasks execute their seed range and saved plan resolve output beside 
   let filename = "\{base}/task.toml"
   let source = task_fixture()
   @host.write_new(filename, source)
-  let progress : Array[(Int, Int)] = []
+  let progress : Array[(Int32, Int32)] = []
   let run = run_task(filename~, on_progress=(done, total) => {
     progress.push((done, total))
   })

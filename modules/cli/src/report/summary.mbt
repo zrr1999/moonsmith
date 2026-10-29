@@ -97,8 +97,8 @@ pub fn summarize_differential(
   attempt_directory~ : String,
   original_toolchain~ : @contracts.ProcessEvidence?,
   save_error~ : String?,
-  runtimes? : Array[@contracts.ProcessEvidence] = [],
-  original_runtimes? : Array[@contracts.ProcessEvidence]? = None,
+  runtimes~ : Array[@contracts.ProcessEvidence] = [],
+  original_runtimes~ : Array[@contracts.ProcessEvidence]? = None,
 ) -> String {
   let result = match attempt.comparison {
     Consistent => "consistent (no difference observed)"

@@ -1,15 +1,15 @@
 ///|
 priv struct TaskConfig {
   name : String
-  seed_start : Int
-  sample_count : Int
+  seed_start : Int32
+  sample_count : Int32
   generator : @moonbit.Generator
   limits : @moonbit.GenerationLimits
   configurations : Array[String]
   equivalent_variants : Bool
-  build_timeout_ms : Int
-  run_timeout_ms : Int
-  candidate_limit : Int
+  build_timeout_ms : Int32
+  run_timeout_ms : Int32
+  candidate_limit : Int32
   output_directory : String
 }
 
@@ -145,7 +145,7 @@ fn task_string(
 }
 
 ///|
-fn task_int(fields : Map[String, @toml.TomlValue], key : String) -> Int raise {
+fn task_int(fields : Map[String, @toml.TomlValue], key : String) -> Int32 raise {
   guard fields.get(key) is Some(TomlInteger(value)) &&
     value >= -2147483648L &&
     value <= 2147483647L else {
@@ -157,10 +157,10 @@ fn task_int(fields : Map[String, @toml.TomlValue], key : String) -> Int raise {
 ///|
 fn parse_task(
   source : String,
-  settings? : Array[String] = [],
-  directory? : String = "",
-  config_directory? : String = directory,
-  automatic? : () -> Int raise = @host.random_seed,
+  settings~ : Array[String] = [],
+  directory~ : String = "",
+  config_directory~ : String = directory,
+  automatic~ : () -> Int32 raise = @host.random_seed,
 ) -> TaskConfig raise {
   let fields = task_fields(default_task().document(), "defaults")
   let patch = task_fields(@toml.parse(source), "task")

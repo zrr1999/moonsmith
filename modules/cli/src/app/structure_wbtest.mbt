@@ -83,7 +83,7 @@ fn assert_planned_observations(
 }
 
 ///|
-fn composed_structure(input : Int) -> @moonbit.Template {
+fn composed_structure(input : Int32) -> @moonbit.Template {
   {
     enums: [],
     functions: [

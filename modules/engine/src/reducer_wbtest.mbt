@@ -25,7 +25,7 @@ test "operation changes restart enumeration without reusing stale candidates or 
       },
     ],
   ).unwrap()
-  let proposed : Array[Int] = []
+  let proposed : Array[Int32] = []
   let mut previous : CandidateId? = None
   while reducer.next() is Some(request) {
     proposed.push(request.program)

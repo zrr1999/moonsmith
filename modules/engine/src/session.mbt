@@ -1,7 +1,7 @@
 ///|
 pub(all) struct CandidateId {
   session : String
-  attempt : Int
+  attempt : Int32
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -56,8 +56,8 @@ pub struct ReductionSession[P] {
   priv mut current : P
   priv mut best : P
   priv mut evidence : @contracts.Assessment
-  priv limit : Int
-  priv mut tried : Int
+  priv limit : Int32
+  priv mut tried : Int32
   priv mut pending : ReductionRequest[P]?
   priv mut stopped : ReductionStop?
   priv events : Array[ReductionEvent[P]]
@@ -74,7 +74,7 @@ pub fn[P] ReductionSession::new(
   initial : P,
   evidence : @contracts.Assessment,
   id~ : String,
-  limit~ : Int,
+  limit~ : Int32,
   valid~ : (P) -> Bool,
   accepts~ : (P, P) -> Bool,
   better~ : (P, P) -> Bool,
@@ -230,7 +230,7 @@ pub fn[P] ReductionSession::evidence(
 }
 
 ///|
-pub fn[P] ReductionSession::attempts(self : ReductionSession[P]) -> Int {
+pub fn[P] ReductionSession::attempts(self : ReductionSession[P]) -> Int32 {
   self.tried
 }
 

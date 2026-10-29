@@ -1,7 +1,7 @@
 ///|
 pub(all) enum IntExpr {
-  Literal(Int)
-  Variable(Int)
+  Literal(Int32)
+  Variable(Int32)
   Add(IntExpr, IntExpr)
   Subtract(IntExpr, IntExpr)
   Choose(BoolExpr, IntExpr, IntExpr)
@@ -21,7 +21,7 @@ pub(all) struct Program {
 } derive(Eq, @debug.Debug)
 
 ///|
-fn IntExpr::evaluate(self : IntExpr, scope : Array[Int]) -> Int? {
+fn IntExpr::evaluate(self : IntExpr, scope : Array[Int32]) -> Int32? {
   let value : Int64 = match self {
     Literal(n) => n.to_int64()
     Variable(index) => {
@@ -54,7 +54,7 @@ fn IntExpr::evaluate(self : IntExpr, scope : Array[Int]) -> Int? {
 }
 
 ///|
-fn BoolExpr::evaluate(self : BoolExpr, scope : Array[Int]) -> Bool? {
+fn BoolExpr::evaluate(self : BoolExpr, scope : Array[Int32]) -> Bool? {
   match self {
     Boolean(b) => Some(b)
     Less(a, b) => {
@@ -67,8 +67,8 @@ fn BoolExpr::evaluate(self : BoolExpr, scope : Array[Int]) -> Bool? {
 }
 
 ///|
-pub fn Program::evaluate(self : Program) -> Int? {
-  let scope : Array[Int] = []
+pub fn Program::evaluate(self : Program) -> Int32? {
+  let scope : Array[Int32] = []
   for binding in self.bindings {
     guard binding.evaluate(scope) is Some(value) else { return None }
     scope.push(value)
@@ -82,7 +82,7 @@ pub fn Program::valid(self : Program) -> Bool {
 }
 
 ///|
-fn IntExpr::size(self : IntExpr) -> Int {
+fn IntExpr::size(self : IntExpr) -> Int32 {
   match self {
     Literal(_) | Variable(_) => 1
     Add(a, b) | Subtract(a, b) => 1 + a.size() + b.size()
@@ -91,7 +91,7 @@ fn IntExpr::size(self : IntExpr) -> Int {
 }
 
 ///|
-fn BoolExpr::size(self : BoolExpr) -> Int {
+fn BoolExpr::size(self : BoolExpr) -> Int32 {
   match self {
     Boolean(_) => 1
     Less(a, b) => 1 + a.size() + b.size()
@@ -100,7 +100,7 @@ fn BoolExpr::size(self : BoolExpr) -> Int {
 }
 
 ///|
-pub fn Program::size(self : Program) -> Int {
+pub fn Program::size(self : Program) -> Int32 {
   self.bindings.fold(init=self.result.size(), (n, e) => n + 1 + e.size())
 }
 

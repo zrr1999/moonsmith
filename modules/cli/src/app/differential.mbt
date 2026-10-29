@@ -24,7 +24,7 @@ pub fn generator_identifiers() -> Array[String] {
 }
 
 ///|
-fn choose_seed(seed : Int?, automatic : () -> Int raise) -> Int raise {
+fn choose_seed(seed : Int32?, automatic : () -> Int32 raise) -> Int32 raise {
   match seed {
     Some(value) => value
     None => automatic()
@@ -39,7 +39,7 @@ async fn execute_differential(
   source? : String,
   original_toolchain? : @contracts.ProcessEvidence,
   original_runtimes? : Array[@contracts.ProcessEvidence],
-  on_plan? : (Array[String]) -> Unit = _ => (),
+  on_plan~ : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
   let source = source.unwrap_or(case.source)
   guard @moonbit.parse_result_protocol(case.result_protocol) is Some(ty) else {
@@ -117,8 +117,8 @@ async fn finish_differential(
   attempt_directory : String,
   attempt : @contracts.DifferentialAttempt,
   original_toolchain : @contracts.ProcessEvidence?,
-  runtimes? : Array[@contracts.ProcessEvidence] = [],
-  original_runtimes? : Array[@contracts.ProcessEvidence]? = None,
+  runtimes~ : Array[@contracts.ProcessEvidence] = [],
+  original_runtimes~ : Array[@contracts.ProcessEvidence]? = None,
 ) -> DifferentialRun {
   let save_error = try {
     @artifacts.finish_attempt(
@@ -148,18 +148,18 @@ async fn finish_differential(
 
 ///|
 pub async fn run_differential(
-  seed? : Int,
-  base? : String = "runs",
-  generator? : @moonbit.Generator = @moonbit.Generator::default(),
-  limits? : @moonbit.GenerationLimits = @moonbit.GenerationLimits::default(),
-  build_timeout_ms? : Int = 30000,
-  run_timeout_ms? : Int = 2000,
-  injected? : Bool = false,
-  equivalent_variants? : Bool = false,
-  reduction_limit? : Int = 16,
-  planned? : Array[String] = @moon.configurations(),
-  on_plan? : (Array[String]) -> Unit = _ => (),
-  on_generated? : (@contracts.GenerationRecord) -> Unit = _ => (),
+  seed? : Int32,
+  base~ : String = "runs",
+  generator~ : @moonbit.Generator = @moonbit.Generator::default(),
+  limits~ : @moonbit.GenerationLimits = @moonbit.GenerationLimits::default(),
+  build_timeout_ms~ : Int32 = 30000,
+  run_timeout_ms~ : Int32 = 2000,
+  injected~ : Bool = false,
+  equivalent_variants~ : Bool = false,
+  reduction_limit~ : Int32 = 16,
+  planned~ : Array[String] = @moon.configurations(),
+  on_plan~ : (Array[String]) -> Unit = _ => (),
+  on_generated~ : (@contracts.GenerationRecord) -> Unit = _ => (),
 ) -> DifferentialRun {
   @moon.validate_plan(planned)
   @moon.validate_timeouts(build_timeout_ms, run_timeout_ms)
@@ -226,7 +226,7 @@ pub async fn run_differential(
 ///|
 pub async fn replay_differential(
   directory : String,
-  on_plan? : (Array[String]) -> Unit = _ => (),
+  on_plan~ : (Array[String]) -> Unit = _ => (),
 ) -> DifferentialRun {
   let input = @host.canonical(directory)
   let (directory, case, source, original_toolchain, original_runtimes) = try {

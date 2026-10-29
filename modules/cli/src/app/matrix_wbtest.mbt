@@ -1,6 +1,6 @@
 ///|
 priv struct RecordedRuntimes {
-  format_version : Int
+  format_version : Int32
   probes : Array[@contracts.ProcessEvidence]
 } derive(ToJson, @json.FromJson)
 

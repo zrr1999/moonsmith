@@ -23,7 +23,7 @@ fn build_failure_assessment(run : DifferentialRun) -> @contracts.Assessment {
 async fn reduce_build_failure(
   original : DifferentialRun,
   program : @moonbit.CompleteProgram,
-  limit : Int,
+  limit : Int32,
 ) -> DifferentialRun {
   let predicate = @moon.native_constructor_predicate()
   guard original.save_error is None &&

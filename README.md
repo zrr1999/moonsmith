@@ -17,7 +17,7 @@
 
 ## 安装
 
-支持 macOS、Linux；需 MoonBit `0.10.14+7d59c7ec9` 和 C 编译器。
+支持 macOS、Linux；需 MoonBit `0.10.18+6c83a7f62` 和 C 编译器。
 选择 JS 配置时还需 Node.js；Wasm 与 Wasm GC 由 MoonBit 工具链中的 `moonrun` 执行。
 Just 用于仓库开发检查。
 

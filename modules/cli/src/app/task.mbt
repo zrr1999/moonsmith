@@ -46,10 +46,10 @@ fn record_task_result(
 ///|
 pub async fn run_task(
   filename? : String,
-  settings? : Array[String] = [],
-  on_progress? : (Int, Int) -> Unit = (_, _) => (),
-  on_plan? : (Array[String]) -> Unit = _ => (),
-  on_sample? : (@contracts.TaskSample, DifferentialRun?) -> Unit = (_, _) => (),
+  settings~ : Array[String] = [],
+  on_progress~ : (Int32, Int32) -> Unit = (_, _) => (),
+  on_plan~ : (Array[String]) -> Unit = _ => (),
+  on_sample~ : (@contracts.TaskSample, DifferentialRun?) -> Unit = (_, _) => (),
 ) -> TaskRun {
   let directory = @host.current_directory()
   let (source, config_directory) = match filename {
@@ -214,7 +214,7 @@ pub fn describe_task(run : TaskRun) -> String {
 }
 
 ///|
-pub fn task_exit_code(run : TaskRun) -> Int {
+pub fn task_exit_code(run : TaskRun) -> Int32 {
   let summary = run.summary
   if summary.operation_errors > 0 || summary.attempted != summary.sample_count {
     1

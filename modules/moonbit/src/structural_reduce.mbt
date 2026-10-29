@@ -42,7 +42,7 @@ fn Expr::erase_binding(
 ///|
 fn Expr::erase_function(
   self : Expr,
-  removed : Int,
+  removed : Int32,
   returns : Ty,
   enums : Array[EnumDefinition],
 ) -> Expr {

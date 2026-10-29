@@ -1,8 +1,8 @@
 ///|
 pub fn render_differential(
   attempt : @contracts.DifferentialAttempt,
-  runtimes? : Array[@contracts.ProcessEvidence] = [],
-  original_runtimes? : Array[@contracts.ProcessEvidence]? = None,
+  runtimes~ : Array[@contracts.ProcessEvidence] = [],
+  original_runtimes~ : Array[@contracts.ProcessEvidence]? = None,
 ) -> String {
   let lines = [
     "# MoonSmith differential report",

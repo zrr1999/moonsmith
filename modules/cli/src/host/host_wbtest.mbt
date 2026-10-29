@@ -1,8 +1,8 @@
 ///|
 fn shell(
   script : String,
-  timeout_ms? : Int = 2000,
-  output_limit? : Int = 1024,
+  timeout_ms~ : Int32 = 2000,
+  output_limit~ : Int32 = 1024,
 ) -> @contracts.Command {
   {
     program: "sh",

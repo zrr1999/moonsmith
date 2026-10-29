@@ -4,7 +4,10 @@ fn require_type(actual : Ty, expected : Ty) -> Unit raise StructureError {
 }
 
 ///|
-fn Ty::dependencies(self : Ty, enums : Int) -> Array[Int] raise StructureError {
+fn Ty::dependencies(
+  self : Ty,
+  enums : Int32,
+) -> Array[Int32] raise StructureError {
   match self {
     Int | Bool => []
     Enum(id) => {
@@ -42,14 +45,14 @@ fn bind(
 priv struct Checking {
   enums : Array[EnumDefinition]
   functions : Array[Function]
-  calls : Array[Int]
+  calls : Array[Int32]
   allow_holes : Bool
 }
 
 ///|
 fn Checking::definition(
   self : Checking,
-  id : Int,
+  id : Int32,
 ) -> EnumDefinition raise StructureError {
   guard id >= 0 && id < self.enums.length() else { raise UnknownEnum(id) }
   self.enums[id]
@@ -186,10 +189,10 @@ fn Checking::infer(
 
 ///|
 fn visit_dependencies(
-  id : Int,
-  graph : Array[Array[Int]],
-  state : Array[Int],
-  cycle : (Int) -> StructureError,
+  id : Int32,
+  graph : Array[Array[Int32]],
+  state : Array[Int32],
+  cycle : (Int32) -> StructureError,
 ) -> Unit raise StructureError {
   if state[id] == 1 {
     raise cycle(id)
@@ -209,7 +212,7 @@ fn Template::check_structure(
   self : Template,
   allow_holes : Bool,
 ) -> Ty raise StructureError {
-  let types : Array[Array[Int]] = []
+  let types : Array[Array[Int32]] = []
   for id, definition in self.enums {
     guard !definition.variants.is_empty() else { raise EmptyEnum(id) }
     let dependencies = []
@@ -224,7 +227,7 @@ fn Template::check_structure(
   for id in 0..<types.length() {
     visit_dependencies(id, types, type_state, id => CyclicEnum(id))
   }
-  let graph : Array[Array[Int]] = []
+  let graph : Array[Array[Int32]] = []
   for function in self.functions {
     ignore(function.returns.dependencies(self.enums.length()))
     let mut scope = []
