@@ -18,6 +18,6 @@ import {
   "zrr1999/moonsmith-contracts@0.0.0",
   "zrr1999/moonsmith-engine@0.0.0",
   "zrr1999/moonsmith-moonbit@0.0.0",
-  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.6",
   "moonbit-community/toml@0.5.0",
 }

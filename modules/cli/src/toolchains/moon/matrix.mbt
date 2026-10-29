@@ -82,7 +82,7 @@ fn command(
   program : String,
   args : Array[String],
   cwd : String,
-  timeout_ms : Int,
+  timeout_ms : Int32,
 ) -> @contracts.Command {
   { program, args, cwd, timeout_ms, output_limit: 65536, }
 }
@@ -178,8 +178,8 @@ pub fn validate_plan(planned : Array[String]) -> Unit raise {
 
 ///|
 pub fn validate_timeouts(
-  build_timeout_ms : Int,
-  run_timeout_ms : Int,
+  build_timeout_ms : Int32,
+  run_timeout_ms : Int32,
 ) -> Unit raise {
   guard build_timeout_ms >= 1 && build_timeout_ms <= 600000 else {
     fail("build timeout must be between 1 and 600000 milliseconds")
@@ -192,10 +192,10 @@ pub fn validate_timeouts(
 ///|
 pub async fn observe(
   directory : String,
-  inject? : Bool = false,
-  build_timeout_ms? : Int = 30000,
-  run_timeout_ms? : Int = 2000,
-  planned? : Array[String] = configurations(),
+  inject~ : Bool = false,
+  build_timeout_ms~ : Int32 = 30000,
+  run_timeout_ms~ : Int32 = 2000,
+  planned~ : Array[String] = configurations(),
 ) -> Array[@contracts.Observation] {
   validate_timeouts(build_timeout_ms, run_timeout_ms)
   validate_plan(planned)

@@ -14,31 +14,31 @@ pub(all) enum TaskOutcome {
 
 ///|
 pub(all) struct TaskSample {
-  format_version : Int
-  seed : Int
+  format_version : Int32
+  seed : Int32
   generation : GenerationRecord?
   baseline_build : Bool?
-  comparable_results : Int
-  planned_results : Int
+  comparable_results : Int32
+  planned_results : Int32
   elapsed_ms : Int64
   outcome : TaskOutcome
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
 ///|
 pub(all) struct TaskSummary {
-  format_version : Int
+  format_version : Int32
   name : String
-  sample_count : Int
-  attempted : Int
-  consistent : Int
-  differences : Int
-  incomplete : Int
-  operation_errors : Int
-  generated_valid : Int
+  sample_count : Int32
+  attempted : Int32
+  consistent : Int32
+  differences : Int32
+  incomplete : Int32
+  operation_errors : Int32
+  generated_valid : Int32
   baseline_configuration : String?
-  baseline_attempted : Int
-  baseline_accepted : Int
-  comparisons_complete : Int
+  baseline_attempted : Int32
+  baseline_accepted : Int32
+  comparisons_complete : Int32
   elapsed_ms : Int64
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 

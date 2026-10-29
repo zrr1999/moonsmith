@@ -1,7 +1,7 @@
 ///|
 pub struct Enumeration[P] {
   priv candidates : Array[P]
-  priv mut index : Int
+  priv mut index : Int32
 }
 
 ///|

@@ -1,7 +1,7 @@
 ///|
 fn constructor_observations(
-  diagnostic? : String = "generated.c:10:2: error: use of undeclared identifier '_M0L6constrS84'\n",
-  expected? : String = "0\n",
+  diagnostic~ : String = "generated.c:10:2: error: use of undeclared identifier '_M0L6constrS84'\n",
+  expected~ : String = "0\n",
 ) -> Array[@contracts.Observation] {
   let observations : Array[@contracts.Observation] = []
   for configuration in configurations() {
@@ -41,7 +41,7 @@ fn constructor_observations(
 ///|
 fn constructor_result(
   observations : Array[@contracts.Observation],
-  expected? : String? = Some("0\n"),
+  expected~ : String? = Some("0\n"),
 ) -> @contracts.CheckOutcome {
   native_constructor_assessment(observations, expected).results()[0].outcome
 }

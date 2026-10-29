@@ -1,27 +1,27 @@
 ///|
 pub(all) struct GenerationRecord {
   generator : String
-  seed : Int
-  max_nodes : Int
-  max_depth : Int
-  max_attempts : Int
-  construction_attempts : Int
-  nodes : Int
-  depth : Int
+  seed : Int32
+  max_nodes : Int32
+  max_depth : Int32
+  max_attempts : Int32
+  construction_attempts : Int32
+  nodes : Int32
+  depth : Int32
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
 ///|
 /// Inputs are embedded in source; this format executes a closed program with empty stdin.
 pub(all) struct DifferentialCase {
-  format_version : Int
+  format_version : Int32
   generation : GenerationRecord
   source : String
   module_source : String
   package_source : String
   result_protocol : String
   configurations : Array[String]
-  build_timeout_ms : Int
-  run_timeout_ms : Int
+  build_timeout_ms : Int32
+  run_timeout_ms : Int32
   injected : Bool
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
@@ -33,7 +33,7 @@ pub(all) struct ProcessEvidence {
 
 ///|
 pub(all) struct DifferentialAttempt {
-  format_version : Int
+  format_version : Int32
   purpose : String
   source : String
   configurations : Array[String]

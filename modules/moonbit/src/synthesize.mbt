@@ -1,8 +1,8 @@
 ///|
 pub(all) struct GenerationLimits {
-  max_nodes : Int
-  max_depth : Int
-  max_attempts : Int
+  max_nodes : Int32
+  max_depth : Int32
+  max_attempts : Int32
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -13,7 +13,7 @@ pub fn GenerationLimits::default() -> GenerationLimits {
 ///|
 pub(all) suberror GenerationError {
   InvalidLimits(String)
-  AttemptsExhausted(Int)
+  AttemptsExhausted(Int32)
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -34,7 +34,7 @@ pub fn GenerationLimits::validate(
 ///|
 pub(all) struct GeneratedProgram {
   program : CompleteProgram
-  construction_attempts : Int
+  construction_attempts : Int32
   generator : Generator
 }
 
@@ -45,15 +45,15 @@ priv struct Construction {
   generator : Generator
   enums : Array[EnumDefinition]
   // Existing holes reserve a node, so closing them never needs more space.
-  mut nodes : Int
-  mut attempts : Int
+  mut nodes : Int32
+  mut attempts : Int32
 }
 
 ///|
 fn Construction::new(
-  seed : Int,
+  seed : Int32,
   limits : GenerationLimits,
-  generator? : Generator = Generator::default(),
+  generator~ : Generator = Generator::default(),
 ) -> Construction {
   let bytes = Bytes::makei(32, i => {
     if i < 4 {
@@ -94,7 +94,7 @@ priv enum Rule {
   Terminal
   Binding
   Branch
-  Invoke(Int)
+  Invoke(Int32)
   Plus
   Minus
   Compare
@@ -213,7 +213,7 @@ fn Construction::expand(
   ty : Ty,
   scope : Array[Binder],
   functions : Array[Function],
-  room : Int,
+  room : Int32,
   template : Bool,
 ) -> Expr raise GenerationError {
   self.attempt()
@@ -303,7 +303,7 @@ fn Construction::fill(
   expression : Expr,
   scope : Array[Binder],
   functions : Array[Function],
-  room : Int,
+  room : Int32,
   template : Bool,
 ) -> Expr raise GenerationError {
   match expression {
@@ -439,9 +439,9 @@ fn Construction::complete(
 ///|
 /// Deterministic, versioned template rules with one random stream and shared budgets.
 pub fn synthesize(
-  seed : Int,
-  limits? : GenerationLimits = GenerationLimits::default(),
-  generator? : Generator = Generator::default(),
+  seed : Int32,
+  limits~ : GenerationLimits = GenerationLimits::default(),
+  generator~ : Generator = Generator::default(),
 ) -> GeneratedProgram raise {
   limits.validate()
   let state = Construction::new(seed, limits, generator~)

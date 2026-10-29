@@ -1,5 +1,5 @@
 ///|
-fn[T] without_index(values : Array[T], removed : Int) -> Array[T] {
+fn[T] without_index(values : Array[T], removed : Int32) -> Array[T] {
   values[:removed].to_owned() + values[removed + 1:].to_owned()
 }
 
@@ -21,7 +21,11 @@ fn Template::rewrite_all(self : Template, rewrite : (Expr) -> Expr) -> Template 
 }
 
 ///|
-fn Expr::uses_variant(self : Expr, enum_id : Int, variant_tag : Int) -> Bool {
+fn Expr::uses_variant(
+  self : Expr,
+  enum_id : Int32,
+  variant_tag : Int32,
+) -> Bool {
   let mut used = false
   ignore(
     self.rewrite_tree(expr => {

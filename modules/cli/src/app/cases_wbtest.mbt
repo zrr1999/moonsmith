@@ -31,7 +31,7 @@ fn case_string(
 }
 
 ///|
-fn case_int(fields : Map[String, @toml.TomlValue], key : String) -> Int raise {
+fn case_int(fields : Map[String, @toml.TomlValue], key : String) -> Int32 raise {
   guard fields.get(key) is Some(TomlInteger(value)) &&
     value >= -2147483648L &&
     value <= 2147483647L else {

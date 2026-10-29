@@ -62,7 +62,7 @@ fn parse(args : Array[String]) -> Operation raise {
 }
 
 ///|
-fn present(run : @app.DifferentialRun, output : (String) -> Unit) -> Int {
+fn present(run : @app.DifferentialRun, output : (String) -> Unit) -> Int32 {
   output(@app.describe_differential(run))
   if run.save_error is Some(_) {
     return 1
@@ -87,8 +87,8 @@ fn present(run : @app.DifferentialRun, output : (String) -> Unit) -> Int {
 ///|
 async fn cli(
   args : Array[String],
-  output? : (String) -> Unit = line => println(line),
-) -> Int {
+  output~ : (String) -> Unit = line => println(line),
+) -> Int32 {
   try {
     match parse(args) {
       Help => {

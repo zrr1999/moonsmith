@@ -5,7 +5,7 @@ priv suberror OutputExceeded
 async fn collect(
   reader : @process.ReadFromProcess,
   buffer : @buffer.Buffer,
-  limit : Int,
+  limit : Int32,
 ) -> Unit {
   while reader.read_some(max_len=4096) is Some(chunk) {
     let remaining = limit - buffer.length()

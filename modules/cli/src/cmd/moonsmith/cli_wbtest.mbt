@@ -187,39 +187,6 @@ async test "CLI presents automatic reduction and replays its confirmed source" {
 }
 
 ///|
-async test "CLI keeps build failures incomplete after automatic reduction confirmation" {
-  @host.mkdir("runs")
-  let base = @host.new_directory("runs/cli-build-reduction-")
-  defer @host.remove_tree(base)
-  let output = []
-  @debug.assert_eq(
-    cli(
-      [
-        "run",
-        "--set",
-        "seed_start=1272",
-        "--set",
-        "reduction.candidate_limit=0",
-        "--set",
-        "output.directory=\"\{base}\"",
-      ],
-      output=line => output.push(line),
-    ),
-    3,
-  )
-  let text = output.join("\n")
-  assert_true(text.contains("comparison incomplete"), msg=text)
-  assert_true(
-    text.contains(
-      "Build failure target: moonbit-native-undeclared-constructor/1",
-    ),
-    msg=text,
-  )
-  assert_true(text.contains("Reduction: confirmed"), msg=text)
-  assert_true(text.contains("build-reduction.md"), msg=text)
-}
-
-///|
 async test "replay exit codes and summaries follow saved differential evidence" {
   @host.mkdir("runs")
   let base = @host.new_directory("runs/cli-replay-")

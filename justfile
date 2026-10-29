@@ -25,6 +25,22 @@ build:
 test:
     moon test --target native
 
+# Build the historical compiler checks with the development toolchain
+build-historical:
+    moon install ./modules/cli/src/examples/historical --bin .artifacts/historical-bin
+    moon install ./modules/cli/src/cmd/moonsmith --bin .artifacts/historical-bin
+
+# Run the prebuilt checks with MoonBit 0.10.14+7d59c7ec9 on PATH
+test-historical:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    .artifacts/historical-bin/historical
+    cli_exit=0
+    .artifacts/historical-bin/moonsmith run --set seed_start=1272 \
+      --set reduction.candidate_limit=0 \
+      --set 'output.directory="runs/historical-cli"' || cli_exit=$?
+    test "$cli_exit" -eq 3
+
 # Measure all workspace tests with the pinned MoonBit coverage reporter
 coverage:
     mkdir -p .artifacts/quality

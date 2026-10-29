@@ -6,7 +6,7 @@ pub(all) enum Phase {
 
 ///|
 pub(all) enum ProcessStatus {
-  Exited(Int)
+  Exited(Int32)
   TimedOut
   OutputLimit
   HostError(String)
@@ -17,8 +17,8 @@ pub(all) struct Command {
   program : String
   args : Array[String]
   cwd : String
-  timeout_ms : Int
-  output_limit : Int
+  timeout_ms : Int32
+  output_limit : Int32
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
 ///|
@@ -39,7 +39,7 @@ pub(all) struct Observation {
 
 ///|
 pub(all) enum FailureKind {
-  Exit(Int)
+  Exit(Int32)
   Mismatch
   Timeout
   OutputExceeded
@@ -63,13 +63,13 @@ pub(all) enum Verdict {
 
 ///|
 pub(all) struct Case {
-  format_version : Int
+  format_version : Int32
   generator : String
-  seed : Int
-  depth : Int
+  seed : Int32
+  depth : Int32
   source : String
   expected : String
-  nodes : Int
+  nodes : Int32
   injected : Bool
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
@@ -79,7 +79,7 @@ pub(all) struct Attempt {
   compiler : String
   source : String
   expected : String
-  nodes : Int
+  nodes : Int32
   observations : Array[Observation]
   verdict : Verdict
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)

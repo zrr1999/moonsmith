@@ -15,6 +15,8 @@
 | `just test` | 运行单元测试与真实工具链集成测试 |
 | `just coverage` | 运行相同测试并生成 MoonBit 原生 Cobertura 覆盖率 |
 | `just benchmark` | 对固定种子的生成与归约候选运行原生性能基准 |
+| `just build-historical` | 用开发工具链构建历史编译器异常检查程序与 CLI |
+| `just test-historical` | 使用 PATH 中固定的旧版被测编译器执行预构建检查程序 |
 
 命令行使用与实际入口验证见 [README](README.md#使用)。检查工具、版本和适用范围统一维护在 [prek.toml](prek.toml)，本地和 CI 使用同一门禁；不得为交付跳过或降低检查。新增文件需纳入 Git 索引后才能被 `--all-files` 检查；未准备暂存时可使用 `git add --intent-to-add <文件>`，或运行 `uvx prek run --files <文件>`。
 
@@ -23,6 +25,12 @@
 MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准运行器检查。SonarQube Cloud 与 CodeQL 仅分析它们支持的 GitHub Actions 和 C 时钟适配层；这些结果不代表 MoonBit 源码分析。ast-grep 的时钟规则有正反例，模块依赖边界继续由 alint 检查。当前 Semgrep、OSV、jscpd、Lizard 和变异工具不支持本仓库的 MoonBit 源码或依赖格式；CodSpeed 尚无可用的正式 MoonBit 集成，因此性能采集保留原生报告，不将未执行的扫描记为通过。
 
 ## 变更与验证
+
+日常检查、构建和测试使用 MoonBit 与 core `0.10.18+6c83a7f62`。历史构建异常单独验证：先用该版本执行
+`just build-historical`，再在独立进程环境中将 `MOON_HOME` 和 `PATH` 指向 `0.10.14+7d59c7ec9`，
+执行 `just test-historical`。检查程序核对被测编译器版本，验证种子 1272、3745、6968 的自动归约、
+独立确认和重放，并保存完整材料；CLI 检查同时验证构建异常仍返回比较未完成的退出码 `3`。
+新编译器修复历史问题时，不需要维持旧异常来通过日常测试。
 
 - 文档变更运行 `just check`；实现变更另运行 `just build`、`just test` 及相关行为测试。
 - 命令行入口变更通过实际入口验证。测试应观察对外结果和真实失败边界，不能只检查内部调用。

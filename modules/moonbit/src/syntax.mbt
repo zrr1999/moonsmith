@@ -3,7 +3,7 @@ pub(all) enum Ty {
   Int
   Bool
   Tuple(Array[Ty])
-  Enum(Int)
+  Enum(Int32)
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -13,7 +13,7 @@ pub(all) struct EnumDefinition {
 
 ///|
 pub(all) struct Binder {
-  id : Int
+  id : Int32
   ty : Ty
 } derive(Eq, @debug.Debug)
 
@@ -21,20 +21,20 @@ pub(all) struct Binder {
 /// Templates and complete programs share these structural nodes.
 pub(all) enum Expr {
   Hole(Ty)
-  IntLiteral(Int)
+  IntLiteral(Int32)
   BoolLiteral(Bool)
-  Ref(Int)
+  Ref(Int32)
   Let(Binder, Expr, Expr)
   Add(Expr, Expr)
   Subtract(Expr, Expr)
   Less(Expr, Expr)
   Not(Expr)
   If(Expr, Expr, Expr)
-  Call(Int, Array[Expr])
+  Call(Int32, Array[Expr])
   Tuple(Array[Expr])
-  Project(Expr, Int)
-  Variant(Int, Int, Array[Expr])
-  Match(Int, Expr, Array[MatchArm])
+  Project(Expr, Int32)
+  Variant(Int32, Int32, Array[Expr])
+  Match(Int32, Expr, Array[MatchArm])
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -69,23 +69,23 @@ pub struct CompleteProgram {
 ///|
 pub(all) suberror StructureError {
   UnfilledHole(Ty)
-  InvalidBinder(Int)
-  DuplicateBinding(Int)
-  UnknownBinding(Int)
+  InvalidBinder(Int32)
+  DuplicateBinding(Int32)
+  UnknownBinding(Int32)
   TypeMismatch(Ty, Ty)
-  UnknownFunction(Int)
-  ArgumentCount(Int, Int, Int)
-  CyclicCall(Int)
-  InvalidTupleArity(Int)
+  UnknownFunction(Int32)
+  ArgumentCount(Int32, Int32, Int32)
+  CyclicCall(Int32)
+  InvalidTupleArity(Int32)
   ExpectedTuple(Ty)
-  InvalidProjection(Int, Int)
-  UnknownEnum(Int)
-  EmptyEnum(Int)
-  CyclicEnum(Int)
-  UnknownVariant(Int, Int)
-  VariantArguments(Int, Int, Int, Int)
-  MatchArms(Int, Int, Int)
-  PatternArguments(Int, Int, Int, Int)
+  InvalidProjection(Int32, Int32)
+  UnknownEnum(Int32)
+  EmptyEnum(Int32)
+  CyclicEnum(Int32)
+  UnknownVariant(Int32, Int32)
+  VariantArguments(Int32, Int32, Int32, Int32)
+  MatchArms(Int32, Int32, Int32)
+  PatternArguments(Int32, Int32, Int32, Int32)
   UnsupportedResultType(Ty)
 } derive(Eq, @debug.Debug)
 
@@ -151,7 +151,7 @@ fn Template::snapshot(self : Template) -> Template {
 }
 
 ///|
-fn Expr::size(self : Expr) -> Int {
+fn Expr::size(self : Expr) -> Int32 {
   match self {
     Hole(_) | IntLiteral(_) | BoolLiteral(_) | Ref(_) => 1
     Let(_, value, body)
@@ -172,13 +172,13 @@ fn Expr::size(self : Expr) -> Int {
 }
 
 ///|
-fn EnumDefinition::size(self : EnumDefinition) -> Int {
+fn EnumDefinition::size(self : EnumDefinition) -> Int32 {
   self.variants.fold(init=1, (n, fields) => n + 1 + fields.length())
 }
 
 ///|
 /// Count expressions, definitions, constructors and parameters; a hole occupies one node.
-pub fn Template::size(self : Template) -> Int {
+pub fn Template::size(self : Template) -> Int32 {
   let declarations = self.enums.fold(init=0, (n, definition) => {
     n + definition.size()
   })
@@ -188,7 +188,7 @@ pub fn Template::size(self : Template) -> Int {
 }
 
 ///|
-fn Expr::depth(self : Expr) -> Int {
+fn Expr::depth(self : Expr) -> Int32 {
   match self {
     Hole(_) | IntLiteral(_) | BoolLiteral(_) | Ref(_) => 0
     Let(_, value, body)
@@ -213,17 +213,17 @@ fn Expr::depth(self : Expr) -> Int {
 
 ///|
 /// Maximum expression nesting, independent of the runtime call-stack depth.
-pub fn Template::depth(self : Template) -> Int {
+pub fn Template::depth(self : Template) -> Int32 {
   self.functions.fold(init=self.result.depth(), (n, f) => n.max(f.body.depth()))
 }
 
 ///|
-pub fn CompleteProgram::size(self : CompleteProgram) -> Int {
+pub fn CompleteProgram::size(self : CompleteProgram) -> Int32 {
   self.syntax.size()
 }
 
 ///|
-pub fn CompleteProgram::depth(self : CompleteProgram) -> Int {
+pub fn CompleteProgram::depth(self : CompleteProgram) -> Int32 {
   self.syntax.depth()
 }
 

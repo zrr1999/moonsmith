@@ -1,5 +1,5 @@
 ///|
-fn toy_evidence(n : Int) -> @contracts.Assessment {
+fn toy_evidence(n : Int32) -> @contracts.Assessment {
   @contracts.Assessment::new([
     {
       oracle: "reference",
@@ -23,7 +23,7 @@ fn toy_predicate() -> @contracts.FailurePredicate {
 }
 
 ///|
-fn toy_session(limit? : Int = 20) -> ReductionSession[Int] {
+fn toy_session(limit~ : Int32 = 20) -> ReductionSession[Int32] {
   ReductionSession::new(
     10,
     toy_evidence(10),

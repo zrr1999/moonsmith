@@ -27,7 +27,7 @@ pub async fn begin_attempt(directory : String) -> String {
 
 ///|
 priv struct RuntimeRecord {
-  format_version : Int
+  format_version : Int32
   probes : Array[@contracts.ProcessEvidence]
 } derive(ToJson, @json.FromJson)
 
@@ -61,7 +61,7 @@ pub async fn[T : ToJson] finish_attempt(
   directory : String,
   attempt : T,
   report : String,
-  runtimes? : Array[@contracts.ProcessEvidence] = [],
+  runtimes~ : Array[@contracts.ProcessEvidence] = [],
 ) -> Unit {
   if !runtimes.is_empty() {
     let record : RuntimeRecord = { format_version: 1, probes: runtimes, }

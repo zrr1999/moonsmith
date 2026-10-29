@@ -1,23 +1,23 @@
 ///|
 /// Components of the current MoonBit reduction cost; the adapter owns their ordering.
 pub(all) struct ReductionCost {
-  nodes : Int
+  nodes : Int32
   integer_magnitude : Int64
-  source_bytes : Int
+  source_bytes : Int32
 } derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
 ///|
 /// A reduction links immutable execution records; it does not replace the original case.
 pub(all) struct DifferentialReduction {
-  format_version : Int
+  format_version : Int32
   first_configuration : String
   second_configuration : String
   original_attempt : String
   cost_model : String
   original_cost : ReductionCost
-  candidate_limit : Int
-  candidates : Int
-  accepted : Int
+  candidate_limit : Int32
+  candidates : Int32
+  accepted : Int32
   elapsed_ms : Int64
   best_cost : ReductionCost
   best_attempt : String
@@ -41,9 +41,9 @@ pub(all) struct ReductionProgress {
   original_attempt : String
   cost_model : String
   original_cost : ReductionCost
-  candidate_limit : Int
-  candidates : Int
-  accepted : Int
+  candidate_limit : Int32
+  candidates : Int32
+  accepted : Int32
   elapsed_ms : Int64
   best_cost : ReductionCost
   best_attempt : String

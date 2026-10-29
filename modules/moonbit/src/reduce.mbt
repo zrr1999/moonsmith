@@ -1,5 +1,5 @@
 ///|
-fn IntExpr::without_binding(self : IntExpr, removed : Int) -> IntExpr {
+fn IntExpr::without_binding(self : IntExpr, removed : Int32) -> IntExpr {
   match self {
     Literal(_) => self
     Variable(i) =>
@@ -23,7 +23,7 @@ fn IntExpr::without_binding(self : IntExpr, removed : Int) -> IntExpr {
 }
 
 ///|
-fn BoolExpr::without_binding(self : BoolExpr, removed : Int) -> BoolExpr {
+fn BoolExpr::without_binding(self : BoolExpr, removed : Int32) -> BoolExpr {
   match self {
     Boolean(_) => self
     Less(a, b) => Less(a.without_binding(removed), b.without_binding(removed))

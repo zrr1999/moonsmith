@@ -1,5 +1,6 @@
 _build/
 .mooncakes/
+pkg.generated.mbti
 /.tools/
 /.agents/worktrees/
 /runs/

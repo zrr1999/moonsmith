@@ -1,5 +1,5 @@
 ///|
-fn literal_program(value : Int) -> CompleteProgram raise StructureError {
+fn literal_program(value : Int32) -> CompleteProgram raise StructureError {
   Template::{ enums: [], functions: [], result: IntLiteral(value), }.finish()
 }
 
