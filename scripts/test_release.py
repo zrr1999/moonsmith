@@ -4,6 +4,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -118,7 +119,7 @@ class ReleaseTests(unittest.TestCase):
     def test_missing_registry_version_is_distinct_from_service_failure(self):
         for status in [404, 403, 500]:
             failure = urllib.error.HTTPError(
-                "https://mooncakes.io", status, "error", None, None
+                "https://mooncakes.io", status, "error", None, io.BytesIO()
             )
             with patch.object(release.urllib.request, "urlopen", side_effect=failure):
                 if status == 404:
@@ -128,6 +129,45 @@ class ReleaseTests(unittest.TestCase):
                 else:
                     with self.assertRaises(urllib.error.HTTPError):
                         release.registry_metadata("owner/module", "1.0.0")
+
+    def test_registry_content_check_downloads_sources_before_comparing_them(self):
+        archive = self.root / "package.zip"
+        with zipfile.ZipFile(archive, "w") as package:
+            package.writestr("moon.mod", "expected manifest")
+            package.writestr("src/main.mbt", "expected source")
+        name, version = "owner/module", "0.0.1"
+        for source, accepted in [
+            ("expected source", True),
+            ("different source", False),
+        ]:
+
+            def execute(args, *, source=source, **kwargs):
+                if args[:2] == ["moon", "check"]:
+                    downloaded = kwargs["cwd"] / ".mooncakes" / name
+                    (downloaded / "src").mkdir(parents=True)
+                    (downloaded / "moon.mod").write_text("expected manifest")
+                    (downloaded / "src/main.mbt").write_text(source)
+                graph = {
+                    "modules": [
+                        {
+                            "name": name,
+                            "version": version,
+                            "source": {"kind": "registry"},
+                        }
+                    ]
+                }
+                return subprocess.CompletedProcess(
+                    args, 0, stdout=json.dumps(graph), stderr=""
+                )
+
+            with patch.object(release, "execute", side_effect=execute):
+                if accepted:
+                    release.verify_registry_module(name, version, archive)
+                else:
+                    with self.assertRaisesRegex(
+                        ValueError, "published content differs"
+                    ):
+                        release.verify_registry_module(name, version, archive)
 
     def test_publish_failure_stops_later_modules_and_cleans_credentials(self):
         packages = {}

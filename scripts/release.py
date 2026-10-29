@@ -125,6 +125,7 @@ def preflight(tag=None):
         "version": version,
         "commit": commit,
         "platform": platform_name(),
+        "host": platform.platform(),
         "toolchain": toolchain,
     }
 
@@ -195,7 +196,7 @@ def consumer(directory, version, module_names=None):
     )
     if module_names is not None:
         (directory / "moon.pkg").write_text("")
-        (directory / "main.mbt").write_text("fn probe() -> Int { 42 }\n")
+        (directory / "main.mbt").write_text("pub fn probe() -> Int { 42 }\n")
         return
     (directory / "moon.pkg").write_text("""import {
   "zrr1999/moonsmith-contracts" @contracts,
@@ -553,6 +554,7 @@ def registry_metadata(name, version):
         with urllib.request.urlopen(url, timeout=30) as response:
             return json.load(response)
     except urllib.error.HTTPError as error:
+        error.close()
         if error.code == 404:
             return None
         raise
@@ -563,6 +565,7 @@ def verify_registry_module(name, version, archive):
         root = Path(temporary) / "consumer"
         consumer(root, version, [name])
         execute(["moon", "update"], cwd=root)
+        execute(["moon", "check", "--target", "native", "--deny-warn"], cwd=root)
         graph = json.loads(execute(["moon", "tree", "--json"], cwd=root).stdout)
         found = [module for module in graph["modules"] if module["name"] == name]
         if (
@@ -638,6 +641,7 @@ def registry_validation(output):
     with tempfile.TemporaryDirectory(prefix="moonsmith-registry-") as temporary:
         root = Path(temporary)
         consumer(root / "consumer", version)
+        execute(["moon", "update"], cwd=root / "consumer")
         execute(
             ["moon", "-C", "consumer", "run", ".", "--target", "native", "--deny-warn"],
             cwd=root,

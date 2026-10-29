@@ -1,7 +1,7 @@
 # 发行与验收
 
 MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的固定提交构建，工具链及宿主依赖见
-[安装要求](../README.md#安装)。预编译程序覆盖 macOS arm64 与 Linux x86_64。
+[安装要求](../README.md#安装)。预编译程序覆盖 macOS arm64 与 Linux x86_64，分别在 macOS 15 与 Ubuntu 24.04 的官方 runner 上构建和验证。
 
 ## 发布准备
 
