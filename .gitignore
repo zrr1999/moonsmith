@@ -6,3 +6,5 @@ pkg.generated.mbti
 /runs/
 /.artifacts/
 .DS_Store
+__pycache__/
+.ruff_cache/

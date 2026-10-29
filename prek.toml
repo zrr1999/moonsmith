@@ -108,3 +108,17 @@ hooks = [
   { id = "moon-fmt", name = "MoonBit format", entry = "moon fmt --check", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
   { id = "moon-check", name = "MoonBit type check", entry = "moon check --target native --deny-warn", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
 ]
+
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.17.3"
+hooks = [
+  { id = "ruff-check" },
+  { id = "ruff-format", args = ["--check"] },
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+  { id = "release-tests", name = "Release artifact and publication guards", entry = "python -m unittest discover -s scripts -p test_release.py", language = "python", pass_filenames = false, files = "^scripts/.*\\.py$" },
+]

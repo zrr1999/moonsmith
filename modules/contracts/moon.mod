@@ -1,6 +1,6 @@
 name = "zrr1999/moonsmith-contracts"
 
-version = "0.0.0"
+version = "0.0.1"
 
 readme = "README.md"
 
