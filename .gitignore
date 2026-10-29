@@ -3,4 +3,5 @@ _build/
 /.tools/
 /.agents/worktrees/
 /runs/
+/.artifacts/
 .DS_Store
