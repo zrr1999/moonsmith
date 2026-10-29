@@ -24,6 +24,7 @@ pub fn summarize_reduction(record : @contracts.DifferentialReduction) -> String 
 fn summarize_progress(
   record : @contracts.ReductionProgress,
   target : String,
+  group~ : Bool = false,
 ) -> String {
   let lines = [
     "Reduction nodes: \{record.original_cost.nodes} -> \{record.best_cost.nodes}",
@@ -50,7 +51,13 @@ fn summarize_progress(
         lines.push("Reduction made no cost improvement.")
       }
       if record.confirmation_attempt is Some(directory) {
-        lines.push("Reduced source: \{directory}/main.mbt")
+        lines.push(
+          if group {
+            "Reduced group: \{directory}/group.json"
+          } else {
+            "Reduced source: \{directory}/main.mbt"
+          },
+        )
         lines.push("Replay material: \{directory}")
       }
     }
@@ -65,6 +72,14 @@ fn summarize_progress(
     lines.push("Reduction error: \{error}")
   }
   lines.join("\n")
+}
+
+///|
+pub fn summarize_group_reduction(
+  record : @contracts.EquivalentGroupReduction,
+) -> String {
+  "Group reduction pair: \{record.first_configuration}, \{record.second_configuration}\n" +
+  summarize_progress(record.progress, "group difference", group=true)
 }
 
 ///|

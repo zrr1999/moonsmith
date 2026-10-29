@@ -60,6 +60,15 @@ FP-0002 的结构路径使用 `Template`、`Expr`、`Function` 和 `Binder` 表�
 留待后续实现。`run` 可通过 `execution.equivalent_variants` 开启原程序与变换程序的统一差分，
 配置、计数和存证见 [CLI 说明](../cli/README.md#差分执行与存证)。
 
+`CompleteProgram.equivalent_group` 将原程序及这些变换组成不可直接修改的
+[等价程序组](../../fps/FP-0002-moonbit-semantic-contract.md#term-equivalent-program-group)。
+`EquivalentGroup.members` 返回稳定身份、变换版本与完整程序，`relations` 返回相同顺序的关系：
+`original` 使用 `identity/v1`，`equivalent-1` 使用 `int-add-zero/v1` 或 `bool-double-not/v1`，
+`equivalent-2` 使用 `true-branch/v1`。原有 `equivalent_variants` API 保留。
+组的 `structural_candidates` 和 `integer_candidates` 仅缩减原程序，再重新应用既定变换并完整检查；
+不会各自缩减成员。`cost` 对各成员的三个成本分量分别求和，`is_smaller_than` 沿用字典序，
+成本标识为 `moonbit-group-sum-nodes-int-magnitude-utf8-v1`。组自身不执行搜索或编译器。
+
 `synthesize(seed, limits?, generator?)` 先随机组合带空洞的结构模板，再用同一套
 规则补全。模板组合与补全共享一个 ChaCha8 随机流和预算；函数只能调用此前的函数定义，
 引用从当前位置的可见绑定中选择。模板不来自固定示例列表，也不需要求值后筛除程序。

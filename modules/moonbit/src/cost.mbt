@@ -55,6 +55,14 @@ pub fn CompleteProgram::is_smaller_than(
 ) -> Bool {
   let candidate = self.cost()
   let incumbent = other.cost()
+  cost_is_smaller(candidate, incumbent)
+}
+
+///|
+fn cost_is_smaller(
+  candidate : @contracts.ReductionCost,
+  incumbent : @contracts.ReductionCost,
+) -> Bool {
   if candidate.nodes != incumbent.nodes {
     candidate.nodes < incumbent.nodes
   } else if candidate.integer_magnitude != incumbent.integer_magnitude {

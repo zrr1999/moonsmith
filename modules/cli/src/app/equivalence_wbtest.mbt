@@ -52,6 +52,8 @@ fn equivalent_fixture(value : String) -> DifferentialRun {
     reduction: None,
     build_reduction: None,
     equivalents: None,
+    group: None,
+    group_reduction: None,
   }
 }
 
@@ -77,7 +79,7 @@ test "equivalent programs detect shared output differences even when each progra
   assert_true(text.contains("Valid equivalent results: 6/9"))
   assert_true(text.contains("equivalent-2/native-debug: not executed"))
   assert_true(
-    text.contains("Cross-program differences are not automatically reduced"),
+    text.contains("Group reduction regenerates the same transformations"),
   )
   @debug.assert_eq(
     original.attempt.observations[0].configuration,

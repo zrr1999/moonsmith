@@ -46,44 +46,6 @@ fn compare_equivalents(
 }
 
 ///|
-async fn check_equivalents(
-  original : DifferentialRun,
-  variants : Array[@moonbit.CompleteProgram],
-) -> DifferentialRun {
-  let labels = ["original"]
-  let runs = [("original", original)]
-  let errors = []
-  for index, variant in variants {
-    let label = "equivalent-\{index + 1}"
-    labels.push(label)
-    try {
-      let run = execute_differential(
-        original.directory,
-        original.case,
-        label,
-        source=variant.emit(),
-      )
-      runs.push((label, run))
-    } catch {
-      error => errors.push("\{label}: \{error}")
-    }
-  }
-  let mut comparison = compare_equivalents(original, labels, runs)
-  if comparison.error is Some(error) {
-    errors.push(error)
-  }
-  comparison = {
-    ..comparison,
-    error: if errors.is_empty() {
-      None
-    } else {
-      Some(errors.join("\n"))
-    },
-  }
-  finish_equivalents(original, comparison)
-}
-
-///|
 fn equivalent_values(
   run : DifferentialRun,
   comparison : @contracts.EquivalentComparison,
@@ -111,6 +73,7 @@ async fn finish_equivalents(
       @report.render_equivalents(
         comparison,
         equivalent_values(original, comparison),
+        group_directory=original.group.map(group => group.directory),
       ),
     )
     comparison

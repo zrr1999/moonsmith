@@ -33,10 +33,10 @@ pub(all) struct ReductionTrial {
   cost : ReductionCost
   status : PredicateStatus
   accepted : Bool
-} derive(Eq, @debug.Debug)
+} derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
 ///|
-/// Runtime search results; local reports do not establish an archive format.
+/// Search results linking the original material, candidates, and independent confirmation.
 pub(all) struct ReductionProgress {
   original_attempt : String
   cost_model : String
@@ -52,7 +52,7 @@ pub(all) struct ReductionProgress {
   confirmation : PredicateStatus?
   error : String?
   trials : Array[ReductionTrial]
-} derive(Eq, @debug.Debug)
+} derive(Eq, @debug.Debug, ToJson, @json.FromJson)
 
 ///|
 pub(all) struct BuildFailureReduction {
@@ -71,6 +71,18 @@ pub extend ReductionProgress with Eq::{equal, not_equal}
 
 ///|
 pub extend ReductionProgress with @debug.Debug::{to_repr}
+
+///|
+pub extend ReductionProgress with ToJson::{to_json}
+
+///|
+pub extend ReductionProgress with @json.FromJson::{from_json}
+
+///|
+pub extend ReductionTrial with ToJson::{to_json}
+
+///|
+pub extend ReductionTrial with @json.FromJson::{from_json}
 
 ///|
 pub extend BuildFailureReduction with Eq::{equal, not_equal}

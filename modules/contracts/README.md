@@ -35,19 +35,26 @@
 摘要升版不改变版本 2 的案例、尝试或原始生成记录，也不表示搜索可以恢复。
 
 `ReductionProgress` 与 `ReductionTrial` 表达运行时搜索摘要和逐候选判定；
-`BuildFailureReduction` 关联专用 `FailurePredicate`。它们用于应用装配和本地报告，
-不提供独立 JSON 归档协议或迁移承诺。已有差分归约仍保存上述版本 3 格式。
+`BuildFailureReduction` 关联专用 `FailurePredicate`。构建异常继续使用本地报告，已有差分归约仍保存上述版本 3 格式。
+`ReductionProgress` 与 `ReductionTrial` 同时支持 JSON 编解码，供组归约记录保存搜索事实。
 
 `EquivalentComparison` 是应用和报告之间的运行时视图，以程序标签限定观察配置名，
 关联各份已保存尝试、总体 `Comparison` 与操作错误；各尝试的原始配置名和观察保持原样。
-它不提供独立 JSON 编解码或迁移协议，关联关系先保存在本地报告中。
+它本身不提供独立 JSON 编解码；本地报告和组记录关联各份执行材料。
+
+`EquivalentGroupRecord` 使用独立的 `format_version = 1`，保存
+[等价程序组](../../fps/FP-0002-moonbit-semantic-contract.md#term-equivalent-program-group)的
+成员身份、变换版本、源码、相对尝试路径，以及所属案例原源码、配置计划、观察协议、注入标记和总体比较。
+每个 `GroupMember` 关联既有版本 2 尝试；重放前检查材料一致性，不修改原尝试。
+`EquivalentGroupReduction` 的版本 1 记录固定的成员与配置对、变换关系和 `ReductionProgress`，
+其中原组、候选组、最佳组和确认组均以相对目录关联。记录不提供搜索恢复或通用格式迁移。
 
 ## 有限任务记录
 
 版本 2 的 `TaskSample` 关联显式种子与结果：`TaskOutcome` 区分取得比较结果和操作失败。
 取得结果时，`TaskObservation` 链接原始案例与尝试，并保留比较结论及可选操作错误。
 因此已经观察到分歧但保存失败时，两项事实可以同时记录。启用等价变换时，样本结论
-涵盖原程序和变换程序，具体关系由原始尝试旁的本地报告关联。
+涵盖原程序和变换程序，具体关系由原始尝试旁的本地报告和组记录关联。
 
 样本保留成功构造并完成内部检查的 `GenerationRecord`，生成失败时缺省；后续保存失败
 不会把已经完成的内部检查改记为失败。`baseline_build` 区分构建正常退出、未正常退出和没有基线构建观察，

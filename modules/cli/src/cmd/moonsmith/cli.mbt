@@ -74,6 +74,10 @@ fn present(run : @app.DifferentialRun, output : (String) -> Unit) -> Int32 {
     reduction.progress.error is Some(_) {
     return 1
   }
+  if run.group_reduction is Some(reduction) &&
+    reduction.progress.error is Some(_) {
+    return 1
+  }
   if run.equivalents is Some(comparison) && comparison.error is Some(_) {
     return 1
   }
@@ -97,7 +101,7 @@ async fn cli(
             "MoonSmith — differential compiler testing",
             "",
             "moonsmith run [--config FILE] [--set KEY=VALUE]...",
-            "moonsmith replay CASE_DIR_OR_ATTEMPT_DIR",
+            "moonsmith replay CASE_DIR_OR_ATTEMPT_DIR_OR_GROUP_DIR",
             "",
             "Run starts a finite testing task; the default task has one sample.",
             "Configuration: defaults < explicit TOML file < --set assignments (last value wins).",
@@ -118,7 +122,7 @@ async fn cli(
             "Configurations: \{@app.differential_configurations().join(", ")}",
             "Runs continue through all configurations and save their evidence.",
             "An original-program difference triggers bounded reduction and one fresh confirmation.",
-            "Equivalent program differences use the same exit code; cross-program reduction is not yet supported.",
+            "Equivalent groups reduce the same member/configuration pair and confirm the best group independently.",
             "Recognized constructor build failures also reduce with agreeing controls; their comparison stays incomplete.",
             "Replay uses saved material with the current toolchain and appends a new record.",
             "Pass a saved attempt directory to replay a reduced program without restarting reduction.",
