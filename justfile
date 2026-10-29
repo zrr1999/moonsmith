@@ -27,19 +27,26 @@ test:
 
 # Build the historical compiler checks with the development toolchain
 build-historical:
-    moon install ./modules/cli/src/examples/historical --bin .artifacts/historical-bin
+    mkdir -p .artifacts/historical-bin
+    moon build modules/cli/src/examples/historical --target native --enable-coverage --deny-warn --output-json > .artifacts/historical-build.jsonl
+    cp "$(jq -er 'select(."$message_type" == "artifact" and .package == "zrr1999/moonsmith/examples/historical") | .path' .artifacts/historical-build.jsonl)" .artifacts/historical-bin/historical
     moon install ./modules/cli/src/cmd/moonsmith --bin .artifacts/historical-bin
 
 # Run the prebuilt checks with MoonBit 0.10.14+7d59c7ec9 on PATH
 test-historical:
     #!/usr/bin/env bash
     set -euo pipefail
-    .artifacts/historical-bin/historical
+    .artifacts/historical-bin/historical | tee .artifacts/historical-coverage.log
     cli_exit=0
     .artifacts/historical-bin/moonsmith run --set seed_start=1272 \
       --set reduction.candidate_limit=0 \
       --set 'output.directory="runs/historical-cli"' || cli_exit=$?
     test "$cli_exit" -eq 3
+
+# Report historical coverage with the development toolchain after the old compiler run
+coverage-historical:
+    mkdir -p .artifacts/quality
+    moon coverage report -t .artifacts/historical-coverage.log -f cobertura -o .artifacts/quality/historical-coverage.xml
 
 # Measure all workspace tests with the pinned MoonBit coverage reporter
 coverage:

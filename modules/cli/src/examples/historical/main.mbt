@@ -1,5 +1,6 @@
 ///|
 async fn main {
+  defer @coverage.end()
   let toolchain = @moon.identify()
   guard toolchain.output.status == Exited(0) &&
     toolchain.output.stdout.contains("moonc v0.10.14+7d59c7ec9") else {
