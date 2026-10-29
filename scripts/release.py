@@ -301,38 +301,46 @@ def campaign(binary, directory, *, equivalent=False, seed=42, count=1, accepted=
 def validate_binary(binary, destination):
     with tempfile.TemporaryDirectory(prefix="moonsmith-installed-") as temporary:
         root = Path(temporary)
-        for equivalent, name in [(False, "ordinary"), (True, "equivalent")]:
-            task, summary = campaign(binary, root / name, equivalent=equivalent)
-            if summary["consistent"] != 1 or summary["comparisons_complete"] != 1:
-                raise ValueError(f"seed 42 did not complete consistently: {summary}")
-            sample = json.loads((task / "samples/0.json").read_text())
-            case = Path(sample["outcome"][1]["case_directory"])
-            material = next((case / "groups").glob("group-*")) if equivalent else case
-            relative_material, relative_case = (
-                material.relative_to(task),
-                case.relative_to(task),
-            )
-            before = snapshot(task)
-            attempts_before = len(list((case / "attempts").iterdir()))
-            moved = root / (name + "-relocated")
-            shutil.move(task, moved)
-            execute(
-                [str(binary), "replay", str(moved / relative_material)],
-                cwd=root,
-                log=root / name / "replay.log",
-            )
-            after = snapshot(moved)
-            if any(after.get(name) != sha for name, sha in before.items()):
-                raise ValueError("replay changed existing material")
-            attempts_after = len(list((moved / relative_case / "attempts").iterdir()))
-            if attempts_after != attempts_before + (3 if equivalent else 1):
-                raise ValueError("replay did not append every member")
-            if (
-                equivalent
-                and len(list((moved / relative_case / "groups").iterdir())) != 2
-            ):
-                raise ValueError("replay did not append a group record")
-        copy_evidence(root, destination)
+        try:
+            for equivalent, name in [(False, "ordinary"), (True, "equivalent")]:
+                task, summary = campaign(binary, root / name, equivalent=equivalent)
+                if summary["consistent"] != 1 or summary["comparisons_complete"] != 1:
+                    raise ValueError(
+                        f"seed 42 did not complete consistently: {summary}"
+                    )
+                sample = json.loads((task / "samples/0.json").read_text())
+                case = Path(sample["outcome"][1]["case_directory"])
+                material = (
+                    next((case / "groups").glob("group-*")) if equivalent else case
+                )
+                relative_material, relative_case = (
+                    material.relative_to(task),
+                    case.relative_to(task),
+                )
+                before = snapshot(task)
+                attempts_before = len(list((case / "attempts").iterdir()))
+                moved = root / (name + "-relocated")
+                shutil.move(task, moved)
+                execute(
+                    [str(binary), "replay", str(moved / relative_material)],
+                    cwd=root,
+                    log=root / name / "replay.log",
+                )
+                after = snapshot(moved)
+                if any(after.get(name) != sha for name, sha in before.items()):
+                    raise ValueError("replay changed existing material")
+                attempts_after = len(
+                    list((moved / relative_case / "attempts").iterdir())
+                )
+                if attempts_after != attempts_before + (3 if equivalent else 1):
+                    raise ValueError("replay did not append every member")
+                if (
+                    equivalent
+                    and len(list((moved / relative_case / "groups").iterdir())) != 2
+                ):
+                    raise ValueError("replay did not append a group record")
+        finally:
+            copy_evidence(root, destination)
 
 
 def copy_evidence(source, destination):
@@ -495,18 +503,23 @@ def prepare(output, full=False):
     validate_binary(installed, output / "evidence" / "installed-cli")
     with tempfile.TemporaryDirectory(prefix="moonsmith-release-cases-") as temporary:
         root = Path(temporary)
-        validate_current_cases(installed, root)
-        if full:
-            _, summary = campaign(
-                installed,
-                root / "five-configuration-equivalents",
-                seed=0,
-                count=100,
-                equivalent=True,
-            )
-            if summary["consistent"] != 100 or summary["comparisons_complete"] != 100:
-                raise ValueError(f"release acceptance did not complete: {summary}")
-        copy_evidence(root, output / "evidence" / "current-product")
+        try:
+            validate_current_cases(installed, root)
+            if full:
+                _, summary = campaign(
+                    installed,
+                    root / "five-configuration-equivalents",
+                    seed=0,
+                    count=100,
+                    equivalent=True,
+                )
+                if (
+                    summary["consistent"] != 100
+                    or summary["comparisons_complete"] != 100
+                ):
+                    raise ValueError(f"release acceptance did not complete: {summary}")
+        finally:
+            copy_evidence(root, output / "evidence" / "current-product")
     make_archive(staging, output / f"moonsmith-{version}-{host}.tar.gz")
     print(json.dumps(metadata, indent=2))
 
@@ -517,22 +530,24 @@ def historical(output):
         shutil.copytree(
             ROOT / ".artifacts/historical-bin", root / ".artifacts/historical-bin"
         )
-        execute(
-            [
-                "just",
-                "--justfile",
-                str(ROOT / "justfile"),
-                "--working-directory",
-                str(root),
-                "test-historical",
-            ],
-            log=output / "evidence" / "historical.log",
-        )
-        copy_evidence(root / "runs", output / "evidence" / "historical")
-        shutil.copy2(
-            root / ".artifacts/historical-coverage.log",
-            output / "evidence" / "historical-coverage.log",
-        )
+        try:
+            execute(
+                [
+                    "just",
+                    "--justfile",
+                    str(ROOT / "justfile"),
+                    "--working-directory",
+                    str(root),
+                    "test-historical",
+                ],
+                log=output / "evidence" / "historical.log",
+            )
+        finally:
+            if (root / "runs").exists():
+                copy_evidence(root / "runs", output / "evidence" / "historical")
+            coverage = root / ".artifacts/historical-coverage.log"
+            if coverage.exists():
+                shutil.copy2(coverage, output / "evidence" / "historical-coverage.log")
 
 
 def archive_evidence(output):

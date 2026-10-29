@@ -63,6 +63,7 @@ jobs:
           just install
           just check
           just build
+          just test
           just coverage
           just benchmark
       - name: Validate packages and installed release executable
@@ -101,6 +102,6 @@ jobs:
         with:
           name: release-diagnostics-${{ matrix.platform }}
           path: |
-            .artifacts/release/evidence/**/*.log
-            .artifacts/release/evidence/**/*.json
+            .artifacts/release/evidence
+            .artifacts/quality
           include-hidden-files: true

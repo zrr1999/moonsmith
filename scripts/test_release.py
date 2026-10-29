@@ -116,6 +116,27 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "checksum mismatch"):
             release.verify_archive(archive)
 
+    def test_failed_installed_validation_keeps_partial_original_material(self):
+        destination = self.root / "evidence"
+
+        def campaign(binary, directory, **kwargs):
+            directory.mkdir()
+            (directory / "main.mbt").write_text("failing original source")
+            (directory / "run.log").write_text("compiler failed")
+            raise RuntimeError("validation failed")
+
+        with (
+            patch.object(release, "campaign", side_effect=campaign),
+            self.assertRaisesRegex(RuntimeError, "validation failed"),
+        ):
+            release.validate_binary(Path("binary"), destination)
+        self.assertEqual(
+            (destination / "ordinary/main.mbt").read_text(), "failing original source"
+        )
+        self.assertEqual(
+            (destination / "ordinary/run.log").read_text(), "compiler failed"
+        )
+
     def test_missing_registry_version_is_distinct_from_service_failure(self):
         for status in [404, 403, 500]:
             failure = urllib.error.HTTPError(
