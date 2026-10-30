@@ -59,6 +59,8 @@ jobs:
           node-version: "26.3.1"
           package-manager-cache: false
       - name: Check and build the product
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           just install
           just check

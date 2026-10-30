@@ -38,8 +38,12 @@ jobs:
           version: "0.10.18+6c83a7f62"
           core-version: "0.10.18+6c83a7f62"
       - name: Prepare development environment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: just install
       - name: Run repository checks
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: just check
     if: github.event_name != 'pull_request' || github.base_ref == 'main'
   codeql:
