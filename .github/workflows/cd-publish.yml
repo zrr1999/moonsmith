@@ -41,16 +41,7 @@ jobs:
           python scripts/release.py preflight --tag "$RELEASE_TAG"
           test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
           gh release download "$RELEASE_TAG" --pattern '*-historical-evidence.tar.gz' --dir .artifacts/historical
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          from scripts.release import digest, verify_archive
-          expected = json.loads(Path('.github/release-evidence.json').read_text())
-          archive = Path('.artifacts/historical') / expected['file']
-          if digest(archive.read_bytes()) != expected['sha256']:
-              raise ValueError('historical evidence differs from the reviewed manifest')
-          verify_archive(archive)
-          PY
+          python scripts/release.py verify-historical --source .artifacts/historical
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: historical-evidence
@@ -151,25 +142,7 @@ jobs:
         with:
           path: .artifacts/downloads
       - name: Collect and verify all release assets
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import shutil
-          from scripts.release import digest, verify_archive
-          destination = Path('.artifacts/final')
-          destination.mkdir()
-          sums = []
-          for archive in sorted(Path('.artifacts/downloads').rglob('*.tar.gz')):
-              verify_archive(archive)
-              target = destination / archive.name
-              if target.exists():
-                  raise ValueError('duplicate release asset')
-              shutil.copy2(archive, target)
-              sums.append(f'{digest(target.read_bytes())}  {target.name}\n')
-          if len(sums) != 7:
-              raise ValueError('missing binary, evidence, historical or registry assets')
-          (destination / 'SHA256SUMS').write_text(''.join(sums))
-          PY
+        run: python scripts/release.py collect-assets --source .artifacts/downloads --output .artifacts/final
       - name: Upload draft assets and validate their download before publication
         env:
           GH_TOKEN: ${{ github.token }}

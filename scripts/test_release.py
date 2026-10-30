@@ -1,10 +1,12 @@
 """Release guards at the package, artifact, and publication boundaries."""
 
+import hashlib
 import io
 import json
 import os
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -115,6 +117,104 @@ class ReleaseTests(unittest.TestCase):
                 packed.addfile(item, io.BytesIO(data))
         with self.assertRaisesRegex(ValueError, "checksum mismatch"):
             release.verify_archive(archive)
+
+    def checked_archive(self):
+        source = self.root / "content"
+        source.mkdir()
+        (source / "payload.txt").write_text("release evidence")
+        archive = self.root / "checked.tar.gz"
+        release.make_archive(source, archive)
+        return archive
+
+    def corrupt_archive(self, archive):
+        with tarfile.open(archive) as packed:
+            files = {
+                member.name: packed.extractfile(member).read() for member in packed
+            }
+        files["payload.txt"] = b"changed evidence"
+        with tarfile.open(archive, "w:gz") as packed:
+            for name, data in files.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(data)
+                packed.addfile(member, io.BytesIO(data))
+
+    def test_historical_evidence_requires_reviewed_digest_and_valid_contents(self):
+        archive = self.checked_archive()
+        manifest = self.root / "release-evidence.json"
+        expected = {
+            "file": archive.name,
+            "sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+        }
+        manifest.write_text(json.dumps(expected))
+        release.verify_historical_evidence(self.root, manifest)
+
+        self.corrupt_archive(archive)
+        with self.assertRaisesRegex(ValueError, "reviewed manifest"):
+            release.verify_historical_evidence(self.root, manifest)
+        expected["sha256"] = hashlib.sha256(archive.read_bytes()).hexdigest()
+        manifest.write_text(json.dumps(expected))
+        with self.assertRaisesRegex(ValueError, "archive checksum mismatch"):
+            release.verify_historical_evidence(self.root, manifest)
+
+    def test_asset_collection_command_preserves_archives_and_writes_checksums(self):
+        archive = self.checked_archive()
+        source = self.root / "downloads"
+        expected = {}
+        for index in range(7):
+            folder = source / f"artifact-{index}"
+            folder.mkdir(parents=True)
+            name = f"asset-{index}.tar.gz"
+            shutil.copy2(archive, folder / name)
+            expected[name] = hashlib.sha256(archive.read_bytes()).hexdigest()
+        destination = self.root / "final"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(release.ROOT / "scripts/release.py"),
+                "collect-assets",
+                "--source",
+                str(source),
+                "--output",
+                str(destination),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            {path.name for path in destination.iterdir()},
+            set(expected) | {"SHA256SUMS"},
+        )
+        actual = {}
+        for line in (destination / "SHA256SUMS").read_text().splitlines():
+            checksum, name = line.split("  ", 1)
+            actual[name] = checksum
+            self.assertEqual((destination / name).read_bytes(), archive.read_bytes())
+        self.assertEqual(actual, expected)
+
+    def test_asset_collection_rejects_wrong_count_duplicates_and_corrupt_archives(self):
+        archive = self.checked_archive()
+        for case, count, error in [
+            ("missing", 6, "missing binary"),
+            ("extra", 8, "missing binary"),
+            ("duplicate", 7, "duplicate release asset"),
+            ("corrupt", 7, "archive checksum mismatch"),
+        ]:
+            with self.subTest(case=case):
+                source = self.root / case
+                source.mkdir()
+                for index in range(count):
+                    shutil.copy2(archive, source / f"asset-{index}.tar.gz")
+                if case == "duplicate":
+                    (source / "nested").mkdir()
+                    shutil.copy2(archive, source / "nested/asset-0.tar.gz")
+                elif case == "corrupt":
+                    self.corrupt_archive(source / "asset-0.tar.gz")
+                destination = self.root / f"{case}-final"
+                with self.assertRaisesRegex(ValueError, error):
+                    release.collect_release_assets(source, destination)
+                self.assertFalse((destination / "SHA256SUMS").exists())
 
     def test_failed_installed_validation_keeps_partial_original_material(self):
         destination = self.root / "evidence"

@@ -56,8 +56,7 @@ hooks = [
 repo = "https://github.com/jdx/jactionlint"
 rev = "v2.3.0"
 hooks = [
-  # The upstream hook installs jactionlint and ShellCheck; uvx supplies isolated Ruff.
-  { id = "jactionlint-shellcheck", name = "GitHub Actions correctness and security", entry = "uvx --from ruff==0.17.3 jactionlint", args = ["--no-online", "--shellcheck=shellcheck", "--ruff=ruff"], pass_filenames = false, types = ["file"], files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)' },
+  { id = "jactionlint-shellcheck", name = "GitHub Actions correctness and security", args = ["--no-online", "--shellcheck=shellcheck", "--pyflakes="], pass_filenames = false, types = ["file"], files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)' },
 ]
 
 [[repos]]
@@ -81,9 +80,15 @@ hooks = [
 ]
 
 [[repos]]
+repo = "https://github.com/vale-cli/vale"
+rev = "v3.25.1"
+hooks = [
+  { id = "vale", name = "Documentation terminology", types = ["markdown"], require_serial = true },
+]
+
+[[repos]]
 repo = "local"
 hooks = [
-  { id = "vale", name = "Documentation terminology", entry = "vale", language = "python", additional_dependencies = ["vale==3.25.1.0"], types = ["markdown"], require_serial = true },
   { id = "ast-grep", name = "Host monotonic clock contract", entry = "ast-grep scan", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "(\\.c$|^quality/ast-grep/|^sgconfig\\.yml$)" },
   { id = "ast-grep-tests", name = "Clock rule examples", entry = "ast-grep test --skip-snapshot-tests", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "^quality/ast-grep" },
 ]

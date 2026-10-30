@@ -456,6 +456,29 @@ def verify_archive(path):
                 raise ValueError(f"archive checksum mismatch: {name}")
 
 
+def verify_historical_evidence(directory, manifest):
+    expected = json.loads(manifest.read_text())
+    archive = directory / expected["file"]
+    if digest(archive.read_bytes()) != expected["sha256"]:
+        raise ValueError("historical evidence differs from the reviewed manifest")
+    verify_archive(archive)
+
+
+def collect_release_assets(source, destination):
+    destination.mkdir()
+    sums = []
+    for archive in sorted(source.rglob("*.tar.gz")):
+        verify_archive(archive)
+        target = destination / archive.name
+        if target.exists():
+            raise ValueError("duplicate release asset")
+        shutil.copy2(archive, target)
+        sums.append(f"{digest(target.read_bytes())}  {target.name}\n")
+    if len(sums) != 7:
+        raise ValueError("missing binary, evidence, historical or registry assets")
+    (destination / "SHA256SUMS").write_text("".join(sums))
+
+
 def prepare(output, full=False):
     metadata = preflight()
     version, host = metadata["version"], metadata["platform"]
@@ -755,13 +778,18 @@ def main():
             "verify-registry",
             "verify-archive",
             "verify-download",
+            "verify-historical",
+            "collect-assets",
         ],
     )
     parser.add_argument("--output", type=Path, default=ROOT / ".artifacts/release")
     parser.add_argument("--tag")
     parser.add_argument("--full", action="store_true")
     parser.add_argument("--archive", type=Path)
+    parser.add_argument("--source", type=Path)
     args = parser.parse_args()
+    if args.command in {"verify-historical", "collect-assets"} and args.source is None:
+        parser.error(f"{args.command} requires --source")
     output = args.output.resolve()
     if args.command == "preflight":
         print(json.dumps(preflight(args.tag), indent=2))
@@ -779,6 +807,10 @@ def main():
         registry_validation(output)
     elif args.command == "verify-download":
         verify_download(output)
+    elif args.command == "verify-historical":
+        verify_historical_evidence(args.source, ROOT / ".github/release-evidence.json")
+    elif args.command == "collect-assets":
+        collect_release_assets(args.source, output)
     else:
         if args.archive is None:
             parser.error("verify-archive requires --archive")
