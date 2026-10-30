@@ -56,8 +56,8 @@ hooks = [
 repo = "https://github.com/jdx/jactionlint"
 rev = "v2.3.0"
 hooks = [
-  # The upstream hook installs jactionlint and ShellCheck; uvx supplies isolated Pyflakes.
-  { id = "jactionlint-shellcheck", name = "GitHub Actions correctness and security", entry = "uvx --from pyflakes==3.4.0 jactionlint", args = ["--no-online", "--shellcheck=shellcheck", "--pyflakes=pyflakes"], pass_filenames = false, types = ["file"], files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)' },
+  # The upstream hook installs jactionlint and ShellCheck; uvx supplies isolated Ruff.
+  { id = "jactionlint-shellcheck", name = "GitHub Actions correctness and security", entry = "uvx --from ruff==0.17.3 jactionlint", args = ["--no-online", "--shellcheck=shellcheck", "--ruff=ruff"], pass_filenames = false, types = ["file"], files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)' },
 ]
 
 [[repos]]

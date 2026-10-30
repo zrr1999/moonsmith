@@ -95,8 +95,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          uvx --no-build --from jactionlint==2.3.0 --with shellcheck-py==0.11.0.1 --with pyflakes==3.4.0
-          jactionlint --online=strict --shellcheck=shellcheck --pyflakes=pyflakes --online-report=workflow-audit.json
+          uvx --no-build --from jactionlint==2.3.0 --with shellcheck-py==0.11.0.1 --with ruff==0.17.3
+          jactionlint --online=strict --shellcheck=shellcheck --ruff=ruff --online-report=workflow-audit.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
