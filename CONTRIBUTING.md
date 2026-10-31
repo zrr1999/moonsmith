@@ -18,7 +18,6 @@
 | `just build-historical` | 用开发工具链构建历史编译器异常检查程序与 CLI |
 | `just test-historical-guard` | 验证历史检查拒绝当前开发工具链 |
 | `just test-historical` | 使用 PATH 中固定的旧版被测编译器执行预构建检查程序 |
-| `just coverage-historical` | 切回开发工具链后生成历史复现的执行覆盖率 |
 
 命令行使用与实际入口验证见 [README](README.md#使用)。检查工具、版本和适用范围统一维护在 [prek.toml](prek.toml)，本地和 CI 使用同一门禁；不得为交付跳过或降低检查。新增文件需纳入 Git 索引后才能被 `--all-files` 检查；未准备暂存时可使用 `git add --intent-to-add <文件>`，或运行 `uvx prek run --files <文件>`。
 
@@ -36,7 +35,7 @@ MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准
 `just build-historical` 和 `just test-historical-guard`，再在独立进程环境中将 `MOON_HOME` 和 `PATH` 指向 `0.10.14+7d59c7ec9`，
 执行 `just test-historical`。检查程序核对被测编译器版本，验证种子 1272、3745、6968 的自动归约、
 独立确认和重放，并保存完整材料；CLI 检查同时验证构建异常仍返回比较未完成的退出码 `3`。
-历史入口保留覆盖率插桩；执行后切回开发工具链运行 `just coverage-historical`，与产品测试的覆盖率共同提交。项目覆盖率状态和评论在这两份报告都到达后才发送。
+覆盖率只统计开发工具链上的产品测试。历史复现核对旧编译器上的构建异常，不采集覆盖率。
 新编译器修复历史问题时，不需要维持旧异常来通过日常测试。
 
 - 文档变更运行 `just check`；实现变更另运行 `just build`、`just test` 及相关行为测试。
