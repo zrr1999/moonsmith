@@ -83,3 +83,29 @@ coverage:
 benchmark:
     mkdir -p .artifacts/quality
     moon bench modules/moonbit/src --target native --release --deny-warn 2>&1 | tee .artifacts/quality/benchmarks.log
+
+# Build the documentation site, or preview it with `just docs serve [PORT]`
+[positional-arguments]
+docs *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "${1:-build}" in
+      build)
+        if [[ $# -gt 1 ]]; then
+          echo "Usage: just docs [serve [PORT]]" >&2
+          exit 2
+        fi
+        uv run --locked --script scripts/docs.py build
+        ;;
+      serve)
+        if [[ $# -gt 2 ]]; then
+          echo "Usage: just docs [serve [PORT]]" >&2
+          exit 2
+        fi
+        uv run --locked --script scripts/docs.py serve --port "${2:-8000}"
+        ;;
+      *)
+        echo "Usage: just docs [serve [PORT]]" >&2
+        exit 2
+        ;;
+    esac

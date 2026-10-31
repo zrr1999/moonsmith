@@ -1,0 +1,81 @@
+[project]
+site_name = "MoonSmith"
+site_description = "MoonBit 编译器语义测试与失败用例归约"
+site_url = "https://docs.moonsmith.zrr.dev/"
+repo_url = "https://github.com/zrr1999/moonsmith"
+repo_name = "zrr1999/moonsmith"
+edit_uri = "edit/main/docs/"
+docs_dir = ".artifacts/docs/source"
+site_dir = ".artifacts/docs/site"
+strict = true
+
+nav = [
+  { "首页" = "index.md" },
+  { "项目申报书" = "project-proposal.md" },
+  { "术语" = "glossary.md" },
+  { "验收" = [
+    { "规模验收" = "acceptance-validation.md" },
+    { "五配置矩阵" = "five-configuration-pilot.md" },
+    { "归约演示" = "reduction-demonstration.md" },
+    { "CLI 安装验收" = "cli-installation-validation.md" },
+    { "历史回归" = "historical-regressions.md" },
+    { "构建异常分析" = "native-release-analysis.md" },
+  ] },
+  { "发行" = [
+    { "发行与验收" = "releasing.md" },
+    { "0.0.1" = "releases/0.0.1.md" },
+  ] },
+  { "文档站" = "documentation.md" },
+]
+
+[project.theme]
+language = "zh"
+font = false
+features = [
+  "content.action.edit",
+  "content.action.view",
+  "content.code.copy",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.path",
+  "navigation.top",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "切换至深色模式"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "切换至浅色模式"
+
+[project.markdown_extensions]
+toc.permalink = true
+toc.slugify.object = "pymdownx.slugs.slugify"
+toc.slugify.kwds.case = "lower"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+
+[project.plugins.llmstxt]
+markdown_description = "MoonSmith 保存 MoonBit 编译器差分测试的可重放异常证据，并归约失败程序。"
+
+[project.plugins.llmstxt.sections]
+"说明" = ["index.md", "project-proposal.md", "glossary.md", "documentation.md"]
+"验收" = [
+  "acceptance-validation.md",
+  "five-configuration-pilot.md",
+  "reduction-demonstration.md",
+  "cli-installation-validation.md",
+  "historical-regressions.md",
+  "native-release-analysis.md",
+]
+"发行" = ["releasing.md", "releases/0.0.1.md"]
