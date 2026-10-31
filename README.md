@@ -36,6 +36,18 @@ macOS arm64、Linux x86_64 预编译 CLI 和 `SHA256SUMS`。
 按[校验说明](docs/releasing.md#产物与材料)验证后解包，将 `moonsmith` 加入 `PATH`。
 预编译程序仍使用宿主已安装的 MoonBit、C 编译器和运行时。
 
+后续附有 `packslip.sigstore.json` 的发行还支持通过
+[packslip](https://packslip.dev/docs/install/) 验证来源并安装精确版本：
+
+```shell
+packslip install github.com/zrr1999/moonsmith --version VERSION
+```
+
+将 `VERSION` 替换为该发行版本。packslip 按当前平台选择压缩包、验证签名和摘要，
+并导出 `moonsmith` 命令；它不会安装 MoonBit 或运行时。
+已发布的 `0.0.1` 没有签名清单，仍使用上面的下载或 Mooncakes 安装方式。
+签名身份、校验和与首次发行指纹的说明见[发行与验收](docs/releasing.md#产物与材料)。
+
 也可从完整仓库源码安装：
 
 ```shell
