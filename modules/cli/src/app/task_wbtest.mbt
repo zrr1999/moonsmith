@@ -220,6 +220,41 @@ test "task configuration rejects unknown fields invalid plans budgets and overfl
 }
 
 ///|
+test "task configuration names five installed moon directories" {
+  let roots = [
+    "/opt/moon-0", "/opt/moon-1", "/opt/moon-2", "/opt/moon-3", "/opt/moon-4",
+  ]
+  let task = parse_task(
+    "name = \"five\"\n",
+    settings=[
+      "execution.toolchains=[\"/opt/moon-0\",\"/opt/moon-1\",\"/opt/moon-2\",\"/opt/moon-3\",\"/opt/moon-4\"]",
+      "seed_start=1",
+    ],
+    directory="/work",
+    automatic=() => 0,
+  )
+  @debug.assert_eq(task.toolchains, roots)
+  @debug.assert_eq(roots.map(root => @moon.MoonToolchain::at(root).moon), [
+    "/opt/moon-0/bin/moon", "/opt/moon-1/bin/moon", "/opt/moon-2/bin/moon", "/opt/moon-3/bin/moon",
+    "/opt/moon-4/bin/moon",
+  ])
+  let rejected = try {
+    ignore(
+      parse_task(
+        "name = \"five\"\n",
+        settings=["execution.toolchains=[\"\"]", "seed_start=1"],
+        directory="/work",
+        automatic=() => 0,
+      ),
+    )
+    false
+  } catch {
+    _ => true
+  }
+  assert_true(rejected)
+}
+
+///|
 async test "invalid tasks fail before output creation or progress" {
   @host.mkdir("runs")
   let base = @host.new_directory("runs/invalid-task-")

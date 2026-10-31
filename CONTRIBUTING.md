@@ -17,8 +17,8 @@
 | `just benchmark` | 对固定种子的生成与归约候选运行原生性能基准 |
 | `just build-historical` | 用开发工具链构建历史编译器异常检查程序与 CLI |
 | `just test-historical-guard` | 验证历史检查拒绝当前开发工具链 |
-| `just test-historical` | 使用 PATH 中固定的旧版被测编译器执行预构建检查程序 |
-| `just coverage-historical` | 切回开发工具链后生成历史复现的执行覆盖率 |
+| `just test-historical` | 把 moon 安装目录传给预构建检查程序，核对该目录中的 moonc |
+| `just test-compiler` | 用 `execution.toolchains` 指定 moon 安装目录，运行已经构建的 MoonSmith |
 | `just docs` | 严格构建文档站 |
 | `just docs serve` | 在本机预览文档站 |
 
@@ -35,10 +35,10 @@ MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准
 ## 变更与验证
 
 日常检查、构建和测试使用 MoonBit 与 core `0.10.18+6c83a7f62`。历史构建异常单独验证：先用该版本执行
-`just build-historical` 和 `just test-historical-guard`，再在独立进程环境中将 `MOON_HOME` 和 `PATH` 指向 `0.10.14+7d59c7ec9`，
-执行 `just test-historical`。检查程序核对被测编译器版本，验证种子 1272、3745、6968 的自动归约、
-独立确认和重放，并保存完整材料；CLI 检查同时验证构建异常仍返回比较未完成的退出码 `3`。
-历史入口保留覆盖率插桩；执行后切回开发工具链运行 `just coverage-historical`，与产品测试的覆盖率共同提交。
+`just build-historical` 和 `just test-historical-guard`，再把 `0.10.14+7d59c7ec9` 的安装目录传给预构建检查程序。
+检查程序核对被测编译器版本，验证种子 1272、3745、6968 的自动归约、独立确认和重放，并保存完整材料；
+CLI 检查同时验证构建异常仍返回比较未完成的退出码 `3`。
+覆盖率只来自开发工具链上的单元测试，不运行被测 moonc。MoonSmith 用 `0.10.18` 构建完成后，再分别调用 `0.10.14+7d59c7ec9` 和 `0.10.11+6ff76a5f9`。其中 `0.10.14` 仍核对三例构建异常的归约、确认和重放。
 新编译器修复历史问题时，不需要维持旧异常来通过日常测试。
 
 - 文档变更运行 `just check`；`docs/`、文档站配置或 MoonBit lexer 变更再运行 `just docs`。实现变更另运行 `just build`、`just test` 及相关行为测试。
