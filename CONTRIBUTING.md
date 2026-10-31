@@ -69,8 +69,10 @@ CLI 检查同时验证构建异常仍返回比较未完成的退出码 `3`。
 
 ## 发行
 
-CD 负责版本核对、构建打包、Mooncakes 包发布与 GitHub Release。测试、历史复现、包内容和重放验收
-由独立 CI 负责，执行入口及证据位置见[发行与验收](docs/releasing.md)。包验收使用 `moon package`、
+CD 负责版本核对、构建打包和包内容验收，并在推送版本标签后、公开发布前完成种子 0–99 的完整五配置验收，
+再执行 Mooncakes 包发布与 GitHub Release，然后核对已发布二进制和 registry 安装。
+测试和历史复现由 CI 负责。
+执行入口及证据位置见[发行与验收](docs/releasing.md)。包验收使用 `moon package`、
 `moon check`、`moon test` 和 `moon install`，发布直接使用 `moon publish` 和 `gh release`。
 
 ## 提交与 PR

@@ -21,7 +21,22 @@
 选择 JS 配置时还需 Node.js；Wasm 与 Wasm GC 由 MoonBit 工具链中的 `moonrun` 执行。
 Just 用于仓库开发检查。
 
-从完整仓库检出安装 native 命令：
+从 [Mooncakes](https://mooncakes.io/docs/zrr1999/moonsmith) 安装已发布的 `0.0.1`：
+
+```shell
+moon install zrr1999/moonsmith/cmd/moonsmith@0.0.1
+moonsmith --help
+```
+
+`moon install` 默认将可执行文件放入 `~/.moon/bin`，需将该目录加入 `PATH`；
+可用 `--bin /absolute/bin` 选择安装位置。安装后的命令可从其他工作目录启动。
+
+[GitHub Release](https://github.com/zrr1999/moonsmith/releases/tag/v0.0.1) 同时提供
+macOS arm64、Linux x86_64 预编译 CLI 和 `SHA256SUMS`。
+按[校验说明](docs/releasing.md#产物与材料)验证后解包，将 `moonsmith` 加入 `PATH`。
+预编译程序仍使用宿主已安装的 MoonBit、C 编译器和运行时。
+
+也可从完整仓库源码安装：
 
 ```shell
 git clone https://github.com/zrr1999/moonsmith.git
@@ -30,15 +45,23 @@ moon install ./modules/cli/src/cmd/moonsmith
 moonsmith --help
 ```
 
-`moon install` 默认将可执行文件放入 `~/.moon/bin`，需将该目录加入 `PATH`；
-可用 `--bin /absolute/bin` 选择安装位置。安装从仓库根目录执行，以 `moon.work` 解析本仓库的库，
-外部依赖使用声明的正式版本。当前内部库尚未发布到 registry，使用完整源码安装。
-安装后的命令可从其他工作目录启动，使用宿主已安装的 MoonBit 与运行时。
+源码安装从仓库根目录执行，以 `moon.work` 解析本仓库的库，外部依赖使用声明的正式版本。
 
 ## 使用
 
-安装后使用 `moonsmith run`、`moonsmith run --set seed_start=42` 和
-`moonsmith replay <保存材料目录>`。仓库开发可以直接运行源码：
+安装后可在任意工作目录执行一个固定种子的五配置任务：
+
+```shell
+moonsmith run --set seed_start=42 \
+  --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]'
+moonsmith replay runs/task-<id>/cases/case-<id>
+```
+
+将第二条命令中的案例目录替换为本次摘要给出的实际路径。成功时返回 `0`，一个样本的五配置
+输出一致；重放追加执行记录。[可运行示例](examples/README.md)提供相同任务的配置文件、
+等价组重放和独立库调用，预期输出与异常退出码也在那里说明。
+
+仓库开发可以直接运行源码：
 
 ```shell
 just install   # 准备包索引并安装 Git hooks
@@ -64,7 +87,8 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay run
 | [五配置矩阵验证](docs/five-configuration-pilot.md) | 固定输入、判定标准、复现方法与 100 例验证结果 |
 | [归约演示](docs/reduction-demonstration.md) | 受控输出差异与真实构建异常的产品归约、独立确认和重放 |
 | [发行与验收](docs/releasing.md) | 两平台产物、独立 CI 验收与正式发布顺序 |
-| [CLI 安装验收](docs/cli-installation-validation.md) | 完整源码安装、仓库外执行和工具链依赖边界 |
+| [CLI 安装验收](docs/cli-installation-validation.md) | 源码安装、0.0.1 双平台发行安装与仓库外重放 |
+| [可运行示例](examples/README.md) | 单样本五配置、等价组重放、独立库调用与归约入口 |
 | [任务配置示例](acceptance.toml)与[命令行配置](modules/cli/README.md#任务配置) | 有限种子任务、统一覆盖、逐样本存证和汇总 |
 | [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 当前提案阶段、设计决定、概念定义及引用规则 |
 | [Engine 设计提案](fps/FP-0004-engine-execution-contract.md) | 职责、协作模型、策略扩展和验收条件 |
