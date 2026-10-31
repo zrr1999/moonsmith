@@ -20,7 +20,7 @@ permissions:
   contents: read
 jobs:
   pre-commit:
-    name: Repository checks
+    name: Pre-commit Checks
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -84,7 +84,7 @@ jobs:
   # A skipped required check counts as a pass. always() keeps this job running
   # when a dependency fails, so the ruleset sees the result below.
   required:
-    name: Pre-commit Checks
+    name: static checks
     needs: [pre-commit, codeql]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
