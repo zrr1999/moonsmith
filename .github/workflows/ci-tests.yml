@@ -201,7 +201,5 @@ jobs:
     steps:
       - name: Validate job results
         env:
-          PRODUCT_RESULT: ${{ needs.test.result }}
-          HISTORICAL_RESULT: ${{ needs.historical.result }}
-        run: |
-          [[ "$PRODUCT_RESULT" != "failure" && "$HISTORICAL_RESULT" != "failure" ]]
+          FAILED: ${{ contains(needs.*.result, 'failure') }}
+        run: '[[ "$FAILED" != "true" ]]'

@@ -92,7 +92,5 @@ jobs:
     steps:
       - name: Validate job results
         env:
-          REPOSITORY_RESULT: ${{ needs.pre-commit.result }}
-          CODEQL_RESULT: ${{ needs.codeql.result }}
-        run: |
-          [[ "$REPOSITORY_RESULT" != "failure" && "$CODEQL_RESULT" != "failure" ]]
+          FAILED: ${{ contains(needs.*.result, 'failure') }}
+        run: '[[ "$FAILED" != "true" ]]'
