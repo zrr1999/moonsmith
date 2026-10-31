@@ -28,7 +28,7 @@ test:
 # Build the historical compiler checks with the development toolchain
 build-historical:
     mkdir -p .artifacts/historical-bin
-    moon build modules/cli/src/examples/historical --target native --deny-warn --output-json > .artifacts/historical-build.jsonl
+    moon build modules/cli/src/examples/historical --target native --enable-coverage --deny-warn --output-json > .artifacts/historical-build.jsonl
     cp "$(jq -er 'select(."$message_type" == "artifact" and .package == "zrr1999/moonsmith/examples/historical") | .path' .artifacts/historical-build.jsonl)" .artifacts/historical-bin/historical
     moon install ./modules/cli/src/cmd/moonsmith --bin .artifacts/historical-bin
 
@@ -46,7 +46,7 @@ test-historical-guard:
 test-historical:
     #!/usr/bin/env bash
     set -euo pipefail
-    .artifacts/historical-bin/historical
+    .artifacts/historical-bin/historical | tee .artifacts/historical-coverage.log
     cli_exit=0
     .artifacts/historical-bin/moonsmith run --set seed_start=1272 \
       --set reduction.candidate_limit=0 \

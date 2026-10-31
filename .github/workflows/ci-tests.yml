@@ -63,6 +63,12 @@ jobs:
       - name: Reproduce historical compiler failures
         run: just --justfile "$GITHUB_WORKSPACE/justfile" --working-directory "$HISTORICAL_ROOT" test-historical
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: matrix.platform == 'linux-x86_64'
+        with:
+          name: historical-runtime-log
+          path: ${{ env.HISTORICAL_ROOT }}/.artifacts/historical-coverage.log
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
           name: historical-guard-${{ matrix.platform }}
@@ -86,6 +92,7 @@ jobs:
             ${{ env.HISTORICAL_ROOT }}/runs/**/native/release/build/generated.c
   test:
     name: Tests
+    needs: historical
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -136,8 +143,16 @@ jobs:
           sha256sum --check before.sha256
       - name: Build workspace modules
         run: just build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: historical-runtime-log
+          path: .artifacts/sut-coverage
       - name: Run tests with native coverage
         run: just coverage
+      - name: Build the instrumented historical check
+        run: just build-historical
+      - name: Report the compiler-under-test run
+        run: moon coverage report -t .artifacts/sut-coverage/historical-coverage.log -f cobertura -o .artifacts/quality/sut-coverage.xml
       - name: Run differential compiler testing
         run: moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- run
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -162,7 +177,7 @@ jobs:
       - name: Upload native coverage
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
-          files: .artifacts/quality/coverage.xml
+          files: .artifacts/quality/coverage.xml,.artifacts/quality/sut-coverage.xml
           disable_search: true
           use_oidc: true
           fail_ci_if_error: true
