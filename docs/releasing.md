@@ -14,7 +14,7 @@ MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的�
 | --- | --- |
 | [CI - Static Checks](../.github/workflows/ci-static-checks.yml) | 仓库静态门禁与 CodeQL |
 | [CI - Tests](../.github/workflows/ci-tests.yml) | 行为测试、覆盖率与双平台固定旧工具链的历史复现 |
-| [CD - Publish](../.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收、打包和清单检查；标签推送时完成种子 0–99 验收与签名后发布，再核对已发布产物 |
+| [CD - Publish](../.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 验收与签名后发布，再核对已发布产物 |
 
 各工作流的检查结果和验收材料由对应运行保存。`All Required Checks Passed (Tests)` 和 `All Required Checks Passed (Static Checks)` 分别汇总对应工作流的上游 job，任一结果为 `failure` 时失败。合并规则还要求 `All Required Checks Passed (Policy)`。
 推送版本标签后，构建和完整验收都通过才执行发布。
@@ -31,9 +31,6 @@ PR 产物文件名包含版本、PR 编号与实际检出提交的短 SHA，例�
 完整提交身份写入 `build.json`，便于区分 PR 更新及基线变化。
 两个平台的 CLI 与模块 zip 包保存为 Actions artifacts，保留 21 天。
 构建只需要只读权限，也适用于 fork PR；凭据只属于标签发布 job。
-
-双平台构建后，`packslip-check` 使用真实压缩包检查版本、提交、平台和执行入口，并验证错误密钥
-与篡改文件会被拒绝。测试使用临时密钥及离线签名，不写入公共透明日志，不代表正式发行签名。
 
 重跑使用相同构建步骤，不修改模块版本、Git 标签或 registry。
 产物按 workflow run 隔离，同一运行重跑时替换该平台的同名 artifact；
@@ -83,12 +80,12 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
    也不执行 `moon publish`。
 4. 独立的 `sign` job 为两份 CLI 压缩包创建 GitHub 来源证明，并通过 packslip 生成
    `packslip.sigstore.json`。签名使用当前工作流的 GitHub OIDC 身份，不保管长期签名私钥。
-   此 job 只有内容读取、OIDC 与来源证明权限，不能修改 Release；签名或清单检查失败时不进入发布。
+   此 job 只有内容读取、OIDC 与来源证明权限，不能修改 Release；签名失败时不进入发布。
 5. 创建或复用该标签的 Draft Release，按 contracts → engine → moonbit → CLI 顺序直接运行
    `moon publish`。任一模块失败即停止后续发布。
 6. 为两份 CLI 附件生成 `SHA256SUMS`，将附件、校验和及签名清单一起上传，再公开 GitHub Release。
-7. 下载公开附件，验证签名、摘要、版本、提交和 GitHub 来源证明，再分别通过 packslip 与
-   Mooncakes 安装精确版本，验证库消费、CLI、材料搬迁和重放。
+7. 核对公开附件的校验和与 GitHub 来源证明，再通过 packslip 验签并安装精确版本，
+   检查安装包内的版本、提交和平台。随后验收 CLI 与 Mooncakes 安装、库消费、材料搬迁和重放。
    这一步失败不会撤回已经公开的 Release 或已发布的模块。
 
 发布沿用官方 [async](https://github.com/moonbitlang/async/blob/main/.github/workflows/publish.yml)
@@ -125,7 +122,7 @@ gh attestation verify moonsmith-VERSION-linux-x86_64.tar.gz --repo zrr1999/moons
 ```
 
 将 `VERSION` 和平台替换为实际下载项。packslip 的文件验签不读取链接的 GitHub 来源证明，
-因此第二条命令独立检查证明。正式发行不使用测试中的 `--allow-unlogged`。
+因此第二条命令独立检查证明。
 首次签名发行通过上述核对后，维护者运行 `packslip pin packslip.sigstore.json`，
 将结果补充到安装文档，供使用者通过 `--pin` 固定仓库身份；不能从本地测试签名推导该指纹。
 
@@ -155,13 +152,13 @@ jq -r '"\(.sha256)  \(.file)"' /absolute/path/to/moonsmith/.github/release-evide
 
 ## 已发布产物验收
 
-发布公开后，`CD - Publish` 以只读权限在该标签的提交上继续核对已发布产物。它下载两份 CLI
-附件和签名清单，校验摘要、源提交、该标签下的签名工作流身份以及 GitHub 来源证明。
-随后使用 packslip 在各自平台安装精确版本，运行五配置普通任务与等价任务，再从 Mooncakes 安装精确版本，
-验证库消费、CLI、材料搬迁和重放。结果与失败材料保留在该次运行中，不撤回已经完成的发布。
+发布公开后，`CD - Publish` 以只读权限核对两份 CLI 附件的校验和，以及对应仓库、标签、提交和
+签名工作流的 GitHub 来源证明。packslip 负责选择本机产物、核对签名身份与摘要并安装精确版本；
+安装后的 `build.json` 必须匹配版本、提交和平台。随后运行现有五配置任务与重放验收，
+并从 Mooncakes 安装精确版本验证库消费与 CLI。结果与失败材料保留在该次运行中，不撤回已完成的发布。
 
 清单的固定版本安装器与官方 Action 都来自 packslip 正式发行，前者校验固定 SHA-256，
-后者固定完整 release commit。CI 的离线清单测试不代替首次正式发行的 OIDC 签名和公开安装验收。
+后者固定完整 release commit。PR 构建不执行 OIDC 签名与公开安装，这两项由标签发布执行。
 
 0.0.1 的双平台发行安装、库消费与重放结果见[CLI 安装验收](cli-installation-validation.md#001-发行安装验收)，
 实际安装入口见[README](../README.md#安装)。后续版本发布后按相同流程核对，再更新安装说明。

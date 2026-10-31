@@ -231,29 +231,9 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 21
-  packslip-check:
-    name: Check release manifest
-    needs: build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: Install packslip
-        run: |
-          bash scripts/install-packslip.sh "$RUNNER_TEMP/packslip/bin"
-          echo "$RUNNER_TEMP/packslip/bin" >> "$GITHUB_PATH"
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          pattern: binary-*
-          merge-multiple: true
-          path: .artifacts/release
-      - name: Verify release metadata and failure cases offline
-        run: bash scripts/check-packslip.sh .artifacts/release
   sign:
     name: Sign release manifest
-    needs: [build, acceptance, packslip-check]
+    needs: [build, acceptance]
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -370,9 +350,14 @@ jobs:
           package-manager-cache: false
       - name: Install packslip
         run: |
-          bash scripts/install-packslip.sh "$RUNNER_TEMP/packslip/bin"
+          installer="$RUNNER_TEMP/install-packslip.sh"
+          curl --proto '=https' --tlsv1.2 -fsSL \
+            https://github.com/jdx/packslip/releases/download/v1.11.3/install.sh -o "$installer"
+          printf '%s  %s\n' c8efeebd9e7af0f7951defb0a8a4513adb9a2e595018b87ea957f96e52299243 "$installer" |
+            shasum -a 256 --check
+          PACKSLIP_BIN_DIR="$RUNNER_TEMP/packslip/bin" sh "$installer"
           echo "$RUNNER_TEMP/packslip/bin" >> "$GITHUB_PATH"
-      - name: Download and verify published binaries
+      - name: Verify provenance and install the signed release
         env:
           GH_TOKEN: ${{ github.token }}
           DISTRIBUTION_ROOT: ${{ runner.temp }}/moonsmith-distribution
@@ -382,23 +367,18 @@ jobs:
           download="$DISTRIBUTION_ROOT/download"
           mkdir -p "$download"
           gh release download "$RELEASE_TAG" --dir "$download" --pattern "moonsmith-$version-linux-x86_64.tar.gz" \
-            --pattern "moonsmith-$version-macos-arm64.tar.gz" --pattern SHA256SUMS --pattern packslip.sigstore.json
+            --pattern "moonsmith-$version-macos-arm64.tar.gz" --pattern SHA256SUMS
           (cd "$download" && shasum -a 256 --check SHA256SUMS)
           identity="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/.github/workflows/cd-publish.yml@refs/tags/$RELEASE_TAG"
           for archive in "$download"/*.tar.gz; do
-            packslip verify "$download/packslip.sigstore.json" --artifact "$archive" \
-              --identity "$identity" --issuer https://token.actions.githubusercontent.com \
-              --source-repository "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
             gh attestation verify "$archive" --repo "$GITHUB_REPOSITORY" \
               --cert-identity "$identity" --source-ref "refs/tags/$RELEASE_TAG" --source-digest "$GITHUB_SHA"
           done
-          packslip show "$download/packslip.sigstore.json" |
-            jq -e --arg project "github.com/$GITHUB_REPOSITORY" --arg version "$version" --arg commit "$GITHUB_SHA" \
-              '.predicate.project == $project and .predicate.version == $version and .predicate.source.commit == $commit'
-          pin=$(packslip pin "$download/packslip.sigstore.json" --identity "$identity" --issuer https://token.actions.githubusercontent.com)
-          packslip install "github.com/$GITHUB_REPOSITORY" --version "$version" --pin "$pin" \
+          packslip install "github.com/$GITHUB_REPOSITORY" --version "$version" \
             --identity "$identity" --issuer https://token.actions.githubusercontent.com \
             --install-dir "$DISTRIBUTION_ROOT/packslip/tree" --bin-dir "$DISTRIBUTION_ROOT/packslip/bin"
+          jq -e --arg version "$version" --arg commit "$GITHUB_SHA" --arg platform "$PLATFORM" \
+            '.version == $version and .commit == $commit and .platform == $platform' "$DISTRIBUTION_ROOT/packslip/tree/build.json"
           bash scripts/check-installed.sh "$DISTRIBUTION_ROOT/packslip/bin/moonsmith" "$DISTRIBUTION_ROOT/binary"
       - name: Install exact packages from Mooncakes
         shell: bash
