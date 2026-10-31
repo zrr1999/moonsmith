@@ -1,4 +1,4 @@
-name = "tests/consumer"
+name = "examples/moonsmith-library"
 
 version = "0.0.0"
 
