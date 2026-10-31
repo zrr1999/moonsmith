@@ -28,7 +28,7 @@ test:
 # Build the historical compiler checks with the development toolchain
 build-historical:
     mkdir -p .artifacts/historical-bin
-    moon build modules/cli/src/examples/historical --target native --enable-coverage --deny-warn --output-json > .artifacts/historical-build.jsonl
+    moon build modules/cli/src/examples/historical --target native --deny-warn --output-json > .artifacts/historical-build.jsonl
     cp "$(jq -er 'select(."$message_type" == "artifact" and .package == "zrr1999/moonsmith/examples/historical") | .path' .artifacts/historical-build.jsonl)" .artifacts/historical-bin/historical
     moon install ./modules/cli/src/cmd/moonsmith --bin .artifacts/historical-bin
 
@@ -46,21 +46,28 @@ test-historical-guard:
 test-historical:
     #!/usr/bin/env bash
     set -euo pipefail
-    .artifacts/historical-bin/historical | tee .artifacts/historical-coverage.log
+    .artifacts/historical-bin/historical
     cli_exit=0
     .artifacts/historical-bin/moonsmith run --set seed_start=1272 \
       --set reduction.candidate_limit=0 \
       --set 'output.directory="runs/historical-cli"' || cli_exit=$?
     test "$cli_exit" -eq 3
 
-# Measure all workspace tests with the pinned MoonBit coverage reporter
+# Measure workspace tests with the development compiler.
+# MOONSMITH_SUT_BIN, when set, is the compiler under test seen by those tests.
 coverage:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    dev="${MOONSMITH_DEV_MOON:-moon}"
+    if [ -n "${MOONSMITH_SUT_BIN:-}" ]; then
+      export PATH="${MOONSMITH_SUT_BIN}:$PATH"
+    fi
     mkdir -p .artifacts/quality
-    moon coverage clean
-    moon test --target native --enable-coverage
-    moon run modules/cli/src/examples/reduction --target native --enable-coverage --deny-warn | tee _build/moonbit_coverage_demo.txt
-    moon coverage report -f cobertura -o .artifacts/quality/coverage.xml
-    moon coverage report -f summary > .artifacts/quality/coverage-summary.txt
+    "$dev" coverage clean
+    "$dev" test --target native --enable-coverage
+    "$dev" run modules/cli/src/examples/reduction --target native --enable-coverage --deny-warn | tee _build/moonbit_coverage_demo.txt
+    "$dev" coverage report -f cobertura -o .artifacts/quality/coverage.xml
+    "$dev" coverage report -f summary > .artifacts/quality/coverage-summary.txt
 
 # Measure generation and reduction on fixed seeds using the native benchmark runner
 benchmark:
