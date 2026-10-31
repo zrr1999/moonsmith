@@ -19,6 +19,8 @@
 | `just test-historical-guard` | 验证历史检查拒绝当前开发工具链 |
 | `just test-historical` | 使用 PATH 中固定的旧版被测编译器执行预构建检查程序 |
 | `just coverage-historical` | 切回开发工具链后生成历史复现的执行覆盖率 |
+| `just docs` | 严格构建文档站 |
+| `just docs serve` | 在本机预览文档站 |
 
 命令行使用与实际入口验证见 [README](README.md#使用)。检查工具、版本和适用范围统一维护在 [prek.toml](prek.toml)，本地和 CI 使用同一门禁；不得为交付跳过或降低检查。新增文件需纳入 Git 索引后才能被 `--all-files` 检查；未准备暂存时可使用 `git add --intent-to-add <文件>`，或运行 `uvx prek run --files <文件>`。
 
@@ -39,7 +41,7 @@ MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准
 历史入口保留覆盖率插桩；执行后切回开发工具链运行 `just coverage-historical`，与产品测试的覆盖率共同提交。
 新编译器修复历史问题时，不需要维持旧异常来通过日常测试。
 
-- 文档变更运行 `just check`；实现变更另运行 `just build`、`just test` 及相关行为测试。
+- 文档变更运行 `just check`；`docs/`、文档站配置或 MoonBit lexer 变更再运行 `just docs`。实现变更另运行 `just build`、`just test` 及相关行为测试。
 - 命令行入口变更通过实际入口验证。测试应观察对外结果和真实失败边界，不能只检查内部调用。
 - 模块、依赖或打包规则变更按 [FP-0001](fps/FP-0001-workspace-modules.md#验证)进行专项验收。
 - 实现与所属文档同步更新，记录实际执行的检查、结果和未验证范围。区分设计目标、已有能力
@@ -55,6 +57,7 @@ MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准
 | 内容 | 维护位置 |
 | --- | --- |
 | 使用入口与文档导航 | [README](README.md) |
+| 文档站构建与 Cloudflare 托管 | [文档站维护](docs/documentation.md) |
 | 产品范围与验收目标 | [项目申报书](docs/project-proposal.md) |
 | 设计、职责与约束 | 所属 [FP](fps/README.md)，术语由[索引](docs/glossary.md)定位 |
 | 当前 API、执行行为与实现限制 | 各[模块 README](README.md#架构) |

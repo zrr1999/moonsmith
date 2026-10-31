@@ -81,11 +81,30 @@ jobs:
         with:
           category: "/language:${{ matrix.language }}"
     if: github.event_name != 'merge_group'
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.13.5"
+          python-version: "3.13"
+      - name: Build documentation
+        run: uv run --locked --script scripts/docs.py build
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Validate Cloudflare static assets without deploying
+        run: npx --yes --ignore-scripts wrangler@4.156.0 deploy --dry-run
   # A skipped required check counts as a pass. always() keeps this job running
   # when a dependency fails, so the ruleset sees the result below.
   required:
     name: All Required Checks Passed (Static Checks)
-    needs: [pre-commit, codeql]
+    needs: [pre-commit, codeql, documentation]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5

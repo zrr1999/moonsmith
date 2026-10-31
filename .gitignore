@@ -5,4 +5,5 @@ pkg.generated.mbti
 /.agents/worktrees/
 /runs/
 /.artifacts/
+.wrangler/
 .DS_Store
