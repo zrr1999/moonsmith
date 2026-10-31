@@ -1,0 +1,9 @@
+# CI uploads two reports for each commit: native product coverage, then the
+# Linux historical report. The default sends a project status after the first
+# upload, which compares a partial result with the merged base.
+codecov:
+  notify:
+    after_n_builds: 2
+
+comment:
+  after_n_builds: 2
