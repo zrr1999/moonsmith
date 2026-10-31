@@ -1,4 +1,4 @@
-"""Build and validate MoonSmith release material; publishing is a separate command."""
+"""Validate MoonSmith packages, installed programs, and replay evidence in CI."""
 
 import argparse
 import hashlib
@@ -11,9 +11,6 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
-import time
-import urllib.error
-import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -80,7 +77,7 @@ def manifest_value(source, key):
     return values[0]
 
 
-def validate_versions(root=ROOT, tag=None):
+def validate_versions(root=ROOT):
     versions = {}
     for folder, name in MODULES.items():
         source = (root / "modules" / folder / "moon.mod").read_text()
@@ -100,27 +97,16 @@ def validate_versions(root=ROOT, tag=None):
     version = versions["cli"]
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version):
         raise ValueError("release version must be MAJOR.MINOR.PATCH")
-    if tag is not None and tag != f"v{version}":
-        raise ValueError("release tag does not match module versions")
     return version
 
 
-def preflight(tag=None):
-    version = validate_versions(tag=tag)
+def preflight():
+    version = validate_versions()
     toolchain = execute(["moon", "version", "--all"]).stdout
     if f"moonc v{COMPILER}" not in toolchain:
         raise ValueError(f"release builds require MoonBit {COMPILER}")
     execute(["moon", "check", "--target", "native", "--deny-warn"])
     commit = execute(["git", "rev-parse", "HEAD"]).stdout.strip()
-    if tag is not None:
-        resolved = execute(
-            ["git", "rev-parse", f"refs/tags/{tag}^{{commit}}"]
-        ).stdout.strip()
-        if resolved != commit:
-            raise ValueError("release tag must identify the checked-out commit")
-        execute(["git", "merge-base", "--is-ancestor", commit, "origin/main"])
-        if execute(["git", "status", "--porcelain"]).stdout:
-            raise ValueError("release checkout must be clean")
     return {
         "version": version,
         "commit": commit,
@@ -187,17 +173,13 @@ def package_modules(output, version):
     return packages
 
 
-def consumer(directory, version, module_names=None):
+def consumer(directory, version):
     directory.mkdir(parents=True)
-    names = module_names if module_names is not None else list(MODULES.values())[:3]
+    names = list(MODULES.values())[:3]
     imports = ",\n".join(f'  "{name}@{version}"' for name in names)
     (directory / "moon.mod").write_text(
         f'name = "release/consumer"\nversion = "0.0.0"\nimport {{\n{imports},\n}}\n'
     )
-    if module_names is not None:
-        (directory / "moon.pkg").write_text("")
-        (directory / "main.mbt").write_text("pub fn probe() -> Int { 42 }\n")
-        return
     (directory / "moon.pkg").write_text("""import {
   "zrr1999/moonsmith-contracts" @contracts,
   "zrr1999/moonsmith-engine" @engine,
@@ -464,21 +446,6 @@ def verify_historical_evidence(directory, manifest):
     verify_archive(archive)
 
 
-def collect_release_assets(source, destination):
-    destination.mkdir()
-    sums = []
-    for archive in sorted(source.rglob("*.tar.gz")):
-        verify_archive(archive)
-        target = destination / archive.name
-        if target.exists():
-            raise ValueError("duplicate release asset")
-        shutil.copy2(archive, target)
-        sums.append(f"{digest(target.read_bytes())}  {target.name}\n")
-    if len(sums) != 7:
-        raise ValueError("missing binary, evidence, historical or registry assets")
-    (destination / "SHA256SUMS").write_text("".join(sums))
-
-
 def prepare(output, full=False):
     metadata = preflight()
     version, host = metadata["version"], metadata["platform"]
@@ -586,94 +553,6 @@ def archive_evidence(output):
     print(json.dumps(checksums, indent=2))
 
 
-def registry_metadata(name, version):
-    url = f"https://mooncakes.io/api/v0/manifest/{name}@{version}"
-    try:
-        with urllib.request.urlopen(url, timeout=30) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as error:
-        error.close()
-        if error.code == 404:
-            return None
-        raise
-
-
-def verify_registry_module(name, version, archive):
-    with tempfile.TemporaryDirectory(prefix="moonsmith-registry-probe-") as temporary:
-        root = Path(temporary) / "consumer"
-        consumer(root, version, [name])
-        execute(["moon", "update"], cwd=root)
-        execute(["moon", "check", "--target", "native", "--deny-warn"], cwd=root)
-        graph = json.loads(execute(["moon", "tree", "--json"], cwd=root).stdout)
-        found = [module for module in graph["modules"] if module["name"] == name]
-        if (
-            len(found) != 1
-            or found[0]["version"] != version
-            or found[0]["source"]["kind"] != "registry"
-        ):
-            raise ValueError(
-                f"exact registry dependency did not resolve: {name}@{version}"
-            )
-        with zipfile.ZipFile(archive) as package:
-            for filename in package.namelist():
-                if (
-                    not filename.endswith("/")
-                    and package.read(filename)
-                    != (root / ".mooncakes" / name / filename).read_bytes()
-                ):
-                    raise ValueError(f"published content differs: {name}/{filename}")
-
-
-def publish(output, tag):
-    metadata = preflight(tag)
-    version = metadata["version"]
-    packages = package_modules(output, version)
-    existing = {
-        name: registry_metadata(name, version) is not None for name in MODULES.values()
-    }
-    for folder, name in MODULES.items():
-        if existing[name]:
-            verify_registry_module(name, version, packages[folder])
-    credential = (
-        Path(os.environ.get("MOON_HOME", str(Path.home() / ".moon")))
-        / "credentials.json"
-    )
-    secret = os.environ.get("MOONCAKES_CREDENTIALS", "")
-    if not secret:
-        raise ValueError("MOONCAKES_CREDENTIALS is required")
-    json.loads(secret)
-    descriptor = os.open(credential, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    try:
-        with os.fdopen(descriptor, "w") as stream:
-            stream.write(secret)
-        for folder, name in MODULES.items():
-            if not existing[name]:
-                with tempfile.TemporaryDirectory(
-                    prefix="moonsmith-publish-"
-                ) as temporary:
-                    root = Path(temporary)
-                    with zipfile.ZipFile(packages[folder]) as package:
-                        package.extractall(root)
-                    execute(["moon", "update"], cwd=root)
-                    execute(
-                        ["moon", "publish"],
-                        cwd=root,
-                        log=output / "evidence" / f"publish-{folder}.log",
-                    )
-                for attempt in range(12):
-                    if registry_metadata(name, version) is not None:
-                        break
-                    if attempt == 11:
-                        raise ValueError(
-                            f"published module is not visible: {name}@{version}"
-                        )
-                    time.sleep(5)
-            verify_registry_module(name, version, packages[folder])
-            print(f"Verified published module {name}@{version}", flush=True)
-    finally:
-        credential.unlink()
-
-
 def registry_validation(output):
     version = validate_versions()
     with tempfile.TemporaryDirectory(prefix="moonsmith-registry-") as temporary:
@@ -724,93 +603,43 @@ def registry_validation(output):
     )
 
 
-def verify_download(directory):
-    verified = set()
-    for line in (directory / "SHA256SUMS").read_text().splitlines():
-        sha, name = line.split("  ", 1)
-        if (
-            Path(name).name != name
-            or name in verified
-            or digest((directory / name).read_bytes()) != sha
-        ):
-            raise ValueError("downloaded release checksum mismatch")
-        verify_archive(directory / name)
-        verified.add(name)
-    if verified != {path.name for path in directory.glob("*.tar.gz")}:
-        raise ValueError("downloaded release inventory does not match checksums")
-    version = validate_versions()
-    with tempfile.TemporaryDirectory(prefix="moonsmith-downloaded-") as temporary:
-        root = Path(temporary)
-        binary_archive = directory / f"moonsmith-{version}-{platform_name()}.tar.gz"
-        evidence_archive = (
-            directory / f"moonsmith-{version}-evidence-{platform_name()}.tar.gz"
-        )
-        with tarfile.open(binary_archive) as archive:
-            archive.extractall(root / "binary", filter="data")
-        with tarfile.open(evidence_archive) as archive:
-            archive.extractall(root / "evidence", filter="data")
-        groups = list(
-            (root / "evidence/installed-cli/equivalent-relocated/cases").glob(
-                "case-*/groups/group-*"
-            )
-        )
-        if not groups:
-            raise ValueError(
-                "downloaded evidence is missing whole-group replay material"
-            )
-        execute(
-            [str(root / "binary/moonsmith"), "replay", str(groups[0])],
-            cwd=root,
-            log=directory / "download-replay.log",
-        )
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "command",
         choices=[
-            "preflight",
             "prepare",
             "historical",
             "archive",
-            "publish",
             "verify-registry",
+            "verify-binary",
             "verify-archive",
-            "verify-download",
             "verify-historical",
-            "collect-assets",
         ],
     )
-    parser.add_argument("--output", type=Path, default=ROOT / ".artifacts/release")
-    parser.add_argument("--tag")
+    parser.add_argument("--output", type=Path, default=ROOT / ".artifacts/acceptance")
     parser.add_argument("--full", action="store_true")
     parser.add_argument("--archive", type=Path)
     parser.add_argument("--source", type=Path)
+    parser.add_argument("--binary", type=Path)
     args = parser.parse_args()
-    if args.command in {"verify-historical", "collect-assets"} and args.source is None:
-        parser.error(f"{args.command} requires --source")
     output = args.output.resolve()
-    if args.command == "preflight":
-        print(json.dumps(preflight(args.tag), indent=2))
-    elif args.command == "prepare":
+    if args.command == "prepare":
         prepare(output, args.full)
     elif args.command == "historical":
         historical(output)
     elif args.command == "archive":
         archive_evidence(output)
-    elif args.command == "publish":
-        if not args.tag:
-            parser.error("publish requires --tag")
-        publish(output, args.tag)
     elif args.command == "verify-registry":
         registry_validation(output)
-    elif args.command == "verify-download":
-        verify_download(output)
+    elif args.command == "verify-binary":
+        if args.binary is None:
+            parser.error("verify-binary requires --binary")
+        validate_binary(args.binary.resolve(), output)
     elif args.command == "verify-historical":
+        if args.source is None:
+            parser.error("verify-historical requires --source")
         verify_historical_evidence(args.source, ROOT / ".github/release-evidence.json")
-    elif args.command == "collect-assets":
-        collect_release_assets(args.source, output)
     else:
         if args.archive is None:
             parser.error("verify-archive requires --archive")
