@@ -109,7 +109,7 @@ jobs:
             ${{ env.HISTORICAL_ROOT }}/runs/**/*.md
             ${{ env.HISTORICAL_ROOT }}/runs/**/native/release/build/generated.c
   test:
-    name: Tests
+    name: Product tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -190,3 +190,22 @@ jobs:
           disable_search: true
           use_oidc: true
           fail_ci_if_error: true
+  # GitHub treats a skipped required check as a pass. always() runs this job
+  # when a dependency fails or is skipped, so the ruleset sees its real result.
+  required:
+    name: Tests
+    needs: [test, historical]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate job results
+        env:
+          PRODUCT_RESULT: ${{ needs.test.result }}
+          HISTORICAL_RESULT: ${{ needs.historical.result }}
+        run: bash scripts/check-required-jobs.sh tests
