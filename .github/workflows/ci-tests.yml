@@ -109,7 +109,7 @@ jobs:
             ${{ env.HISTORICAL_ROOT }}/runs/**/*.md
             ${{ env.HISTORICAL_ROOT }}/runs/**/native/release/build/generated.c
   test:
-    name: Tests
+    name: Behavior Tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -190,3 +190,16 @@ jobs:
           disable_search: true
           use_oidc: true
           fail_ci_if_error: true
+  # A skipped required check counts as a pass. always() keeps this job running
+  # when a dependency fails, so the ruleset sees the result below.
+  required:
+    name: All Required Checks Passed (Tests)
+    needs: [test, historical]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Validate job results
+        env:
+          FAILED: ${{ contains(needs.*.result, 'failure') }}
+        run: '[[ "$FAILED" != "true" ]]'
