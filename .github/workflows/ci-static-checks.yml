@@ -81,23 +81,24 @@ jobs:
         with:
           category: "/language:${{ matrix.language }}"
     if: github.event_name != 'merge_group'
-  # GitHub treats a skipped required check as a pass. always() runs this job
-  # when a dependency fails or is skipped, so the ruleset sees its real result.
+  # A skipped required check counts as a pass. always() keeps this job running
+  # when a dependency fails, so the ruleset sees the result below.
   required:
     name: Pre-commit Checks
     needs: [pre-commit, codeql]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
-    permissions:
-      contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
       - name: Validate job results
         env:
           REPOSITORY_RESULT: ${{ needs.pre-commit.result }}
           CODEQL_RESULT: ${{ needs.codeql.result }}
           EVENT_NAME: ${{ github.event_name }}
-        run: bash scripts/check-required-jobs.sh static
+        run: |
+          [[ "$REPOSITORY_RESULT" == "success" ]] &&
+          if [[ "$EVENT_NAME" == "merge_group" ]]; then
+            [[ "$CODEQL_RESULT" == "success" || "$CODEQL_RESULT" == "skipped" ]]
+          else
+            [[ "$CODEQL_RESULT" == "success" ]]
+          fi

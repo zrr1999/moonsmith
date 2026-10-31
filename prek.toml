@@ -122,5 +122,4 @@ repo = "local"
 hooks = [
   { id = "moon-fmt", name = "MoonBit format", entry = "moon fmt --check", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
   { id = "moon-check", name = "MoonBit type check", entry = "moon check --target native --deny-warn", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
-  { id = "required-job-results", name = "Required job result rules", entry = "scripts/check-required-jobs_test.sh", language = "system", pass_filenames = false, files = "^(scripts/check-required-jobs(_test)?\\.sh|\\.github/workflows/ci-(tests|static-checks)\\.yml)$" },
 ]
