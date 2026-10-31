@@ -96,6 +96,8 @@ jobs:
           tar -xzf ".artifacts/release/moonsmith-$ARTIFACT_VERSION-$PLATFORM.tar.gz" -C "$unpacked"
           cmp .artifacts/staging/moonsmith "$unpacked/moonsmith"
           (cd "$unpacked" && ./moonsmith --help)
+          moon work sync
+          git diff --exit-code -- modules
           for module in contracts engine moonbit cli; do
             moon -C "modules/$module" package --list
           done

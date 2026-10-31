@@ -57,6 +57,7 @@ repo = "https://github.com/jdx/jactionlint"
 rev = "v2.3.0"
 hooks = [
   { id = "jactionlint-shellcheck", name = "GitHub Actions correctness and security", args = ["--no-online", "--shellcheck=shellcheck", "--pyflakes="], pass_filenames = false, types = ["file"], files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)' },
+  { id = "jactionlint-shellcheck", alias = "shellcheck", name = "Shell script correctness", entry = "shellcheck", types = ["shell"], files = '\.sh$' },
 ]
 
 [[repos]]
@@ -121,18 +122,4 @@ repo = "local"
 hooks = [
   { id = "moon-fmt", name = "MoonBit format", entry = "moon fmt --check", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
   { id = "moon-check", name = "MoonBit type check", entry = "moon check --target native --deny-warn", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
-]
-
-[[repos]]
-repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.17.3"
-hooks = [
-  { id = "ruff-check" },
-  { id = "ruff-format", args = ["--check"] },
-]
-
-[[repos]]
-repo = "local"
-hooks = [
-  { id = "acceptance-tests", name = "Package and replay acceptance checks", entry = "python -m unittest discover -s scripts -p test_acceptance.py", language = "python", pass_filenames = false, files = "^scripts/.*\\.py$" },
 ]

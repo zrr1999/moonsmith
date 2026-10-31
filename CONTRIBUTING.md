@@ -24,9 +24,11 @@
 
 覆盖率和性能报告写入 `.artifacts/quality/`。PR 通过[测试工作流](.github/workflows/ci-tests.yml) 运行原生覆盖率并上传到 Codecov。[静态 CI](.github/workflows/ci-static-checks.yml) 在指向 `main` 的 PR 和 `main` 分支推送时运行 CodeQL。[持续评估工作流](.github/workflows/ce-quality.yml) 独立维护每周性能、外部链接、完整 Git 历史密钥扫描和在线审计，也可手动触发，具体低频检查命令保留在对应 job。本地 hooks 检查仓库内链接和锚点。严格在线 workflow 审计仅由受信任主分支的 CE 执行，查询失败或跳过视为失败。
 
-jactionlint、Lychee 和 Vale 使用上游正式发布的 hooks；工作流离线检查统一通过 prek 执行。包内容与重放验收维护在 `scripts/acceptance.py`，由独立 Ruff hooks 检查。ast-grep 的固定版本尚未提供官方 hook；它与 MoonBit 命令、验收脚本测试保留本地入口。
+jactionlint、Lychee 和 Vale 使用上游正式发布的 hooks；工作流离线检查统一通过 prek 执行。
+Shell 脚本使用 jactionlint hook 环境提供的 ShellCheck。ast-grep 的固定版本尚未提供官方 hook；
+它与 MoonBit 命令保留本地入口。
 
-MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准运行器检查。SonarQube Cloud 与 CodeQL 分析它们支持的 GitHub Actions、Python 验收脚本和 C 时钟适配层；这些结果不代表 MoonBit 源码分析。ast-grep 的时钟规则有正反例，模块依赖边界继续由 alint 检查。当前 Semgrep、OSV、jscpd、Lizard 和变异工具不支持本仓库的 MoonBit 源码或依赖格式；CodSpeed 尚无可用的正式 MoonBit 集成，因此性能采集保留原生报告，不将未执行的扫描记为通过。
+MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准运行器检查。SonarQube Cloud 与 CodeQL 分析它们支持的 GitHub Actions 和 C 时钟适配层；这些结果不代表 MoonBit 源码分析。ast-grep 的时钟规则有正反例，模块依赖边界继续由 alint 检查。当前 Semgrep、OSV、jscpd、Lizard 和变异工具不支持本仓库的 MoonBit 源码或依赖格式；CodSpeed 尚无可用的正式 MoonBit 集成，因此性能采集保留原生报告，不将未执行的扫描记为通过。
 
 ## 变更与验证
 
@@ -68,8 +70,8 @@ MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准
 ## 发行
 
 CD 负责版本核对、构建打包、Mooncakes 包发布与 GitHub Release。测试、历史复现、包内容和重放验收
-由独立 CI 负责，执行入口及证据位置见[发行与验收](docs/releasing.md)。验收脚本使用 Python 3.13
-或更新版本，Ruff 和验收脚本测试纳入同一 Prek 门禁；发布直接使用 `moon publish` 和 `gh release`。
+由独立 CI 负责，执行入口及证据位置见[发行与验收](docs/releasing.md)。包验收使用 `moon package`、
+`moon check`、`moon test` 和 `moon install`，发布直接使用 `moon publish` 和 `gh release`。
 
 ## 提交与 PR
 
