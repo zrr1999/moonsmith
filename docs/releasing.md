@@ -14,7 +14,7 @@ MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的�
 | --- | --- |
 | [CI - Static Checks](../.github/workflows/ci-static-checks.yml) | 仓库静态门禁与 CodeQL |
 | [CI - Tests](../.github/workflows/ci-tests.yml) | 行为测试、覆盖率与双平台固定旧工具链的历史复现 |
-| [CD - Publish](../.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 的完整验收后发布，再核对已发布产物 |
+| [CD - Publish](../.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收、打包和清单检查；标签推送时完成种子 0–99 验收与签名后发布，再核对已发布产物 |
 
 各工作流的检查结果和验收材料由对应运行保存。推送版本标签后，构建和完整验收都通过才执行发布。
 CD 不调用测试或历史复现工作流。
@@ -30,6 +30,9 @@ PR 产物文件名包含版本、PR 编号与实际检出提交的短 SHA，例�
 完整提交身份写入 `build.json`，便于区分 PR 更新及基线变化。
 两个平台的 CLI 与模块 zip 包保存为 Actions artifacts，保留 21 天。
 构建只需要只读权限，也适用于 fork PR；凭据只属于标签发布 job。
+
+双平台构建后，`packslip-check` 使用真实压缩包检查版本、提交、平台和执行入口，并验证错误密钥
+与篡改文件会被拒绝。测试使用临时密钥及离线签名，不写入公共透明日志，不代表正式发行签名。
 
 重跑使用相同构建步骤，不修改模块版本、Git 标签或 registry。
 产物按 workflow run 隔离，同一运行重跑时替换该平台的同名 artifact；
@@ -77,10 +80,14 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 2. 在两个平台执行与 PR 相同的 native release 构建、打包、解包启动和模块归档检查。
 3. 在两个平台执行包检查、历史种子重放和种子 0–99 的五配置等价验收。任一平台失败则不创建 Release，
    也不执行 `moon publish`。
-4. 创建或复用该标签的 Draft Release，按 contracts → engine → moonbit → CLI 顺序直接运行
+4. 独立的 `sign` job 为两份 CLI 压缩包创建 GitHub 来源证明，并通过 packslip 生成
+   `packslip.sigstore.json`。签名使用当前工作流的 GitHub OIDC 身份，不保管长期签名私钥。
+   此 job 只有内容读取、OIDC 与来源证明权限，不能修改 Release；签名或清单检查失败时不进入发布。
+5. 创建或复用该标签的 Draft Release，按 contracts → engine → moonbit → CLI 顺序直接运行
    `moon publish`。任一模块失败即停止后续发布。
-5. 为两份 CLI 附件生成 `SHA256SUMS`，上传附件并公开 GitHub Release。
-6. 下载已公开的两份 CLI 附件并校验摘要，再从 Mooncakes 安装精确版本，验证库消费、CLI、材料搬迁和重放。
+6. 为两份 CLI 附件生成 `SHA256SUMS`，将附件、校验和及签名清单一起上传，再公开 GitHub Release。
+7. 下载公开附件，验证签名、摘要、版本、提交和 GitHub 来源证明，再分别通过 packslip 与
+   Mooncakes 安装精确版本，验证库消费、CLI、材料搬迁和重放。
    这一步失败不会撤回已经公开的 Release 或已发布的模块。
 
 发布沿用官方 [async](https://github.com/moonbitlang/async/blob/main/.github/workflows/publish.yml)
@@ -96,12 +103,30 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 | `moonsmith-VERSION-macos-arm64.tar.gz` | macOS arm64 CLI、许可证、README 及构建身份 |
 | `moonsmith-VERSION-linux-x86_64.tar.gz` | Linux x86_64 CLI、许可证、README 及构建身份 |
 | Release 中的 `SHA256SUMS` | 上述两份 CLI 附件的 SHA-256 |
+| Release 中的 `packslip.sigstore.json` | 两份 CLI 附件的签名摘要、平台、执行入口、源提交与来源证明链接；0.0.1 不提供 |
 | `CD - Publish` 的 `acceptance-PLATFORM` artifact | 模块包、解包测试、历史种子与安装重放；标签运行还包含种子 0–99 |
 | `CI - Tests` 的历史证据 artifact | 固定旧工具链的异常复现、归约、确认和重放记录 |
 | `CD - Publish` 的 `distribution-PLATFORM` artifact | 已发布二进制与 registry 安装的验收材料 |
 
 下载 CLI 附件后，macOS 使用 `shasum -a 256 -c SHA256SUMS`，Linux 使用
 `sha256sum -c SHA256SUMS` 校验。校验和列出两个平台附件，完整校验时应一并下载。
+
+packslip 清单通过 GitHub Actions 的 OIDC 身份签名。发行使用同一个
+`cd-publish.yml` 工作流；移动签名工作流可能需要使用者重新确认信任。
+清单声明必需的 `moon` 命令；C 编译器及按执行配置选择的运行时要求仍见[安装要求](../README.md#安装)。
+验证下载时同时指定预期仓库，不能仅以附件自身声明的项目作为身份依据：
+
+```shell
+packslip verify packslip.sigstore.json --artifact moonsmith-VERSION-linux-x86_64.tar.gz \
+  --source-repository https://github.com/zrr1999/moonsmith \
+  --issuer https://token.actions.githubusercontent.com
+gh attestation verify moonsmith-VERSION-linux-x86_64.tar.gz --repo zrr1999/moonsmith
+```
+
+将 `VERSION` 和平台替换为实际下载项。packslip 的文件验签不读取链接的 GitHub 来源证明，
+因此第二条命令独立检查证明。正式发行不使用测试中的 `--allow-unlogged`。
+首次签名发行通过上述核对后，维护者运行 `packslip pin packslip.sigstore.json`，
+将结果补充到安装文档，供使用者通过 `--pin` 固定仓库身份；不能从本地测试签名推导该指纹。
 
 验收材料使用标准 `tar` 归档并由 GitHub Actions artifact 保存，构建缓存不入包。
 历史异常的生成 C 文件随历史证据保存。执行记录可能包含当时的绝对路径，重放时使用实际解包位置。
@@ -130,8 +155,12 @@ jq -r '"\(.sha256)  \(.file)"' /absolute/path/to/moonsmith/.github/release-evide
 ## 已发布产物验收
 
 发布公开后，`CD - Publish` 以只读权限在该标签的提交上继续核对已发布产物。它下载两份 CLI
-附件并校验摘要，在各自平台解包运行五配置普通任务与等价任务，再从 Mooncakes 安装精确版本，
+附件和签名清单，校验摘要、源提交、该标签下的签名工作流身份以及 GitHub 来源证明。
+随后使用 packslip 在各自平台安装精确版本，运行五配置普通任务与等价任务，再从 Mooncakes 安装精确版本，
 验证库消费、CLI、材料搬迁和重放。结果与失败材料保留在该次运行中，不撤回已经完成的发布。
+
+清单的固定版本安装器与官方 Action 都来自 packslip 正式发行，前者校验固定 SHA-256，
+后者固定完整 release commit。CI 的离线清单测试不代替首次正式发行的 OIDC 签名和公开安装验收。
 
 0.0.1 的双平台发行安装、库消费与重放结果见[CLI 安装验收](cli-installation-validation.md#001-发行安装验收)，
 实际安装入口见[README](../README.md#安装)。后续版本发布后按相同流程核对，再更新安装说明。

@@ -231,9 +231,59 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 21
+  packslip-check:
+    name: Check release manifest
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install packslip
+        run: |
+          bash scripts/install-packslip.sh "$RUNNER_TEMP/packslip/bin"
+          echo "$RUNNER_TEMP/packslip/bin" >> "$GITHUB_PATH"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: binary-*
+          merge-multiple: true
+          path: .artifacts/release
+      - name: Verify release metadata and failure cases offline
+        run: bash scripts/check-packslip.sh .artifacts/release
+  sign:
+    name: Sign release manifest
+    needs: [build, acceptance, packslip-check]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: binary-*
+          merge-multiple: true
+          path: .artifacts/release
+      - uses: jdx/packslip@44e50e5f64551234b4a382d991bd7f7f7d021d06 # v1.11.3
+        id: packslip
+        with:
+          artifacts: .artifacts/release/*.tar.gz
+          bin: moonsmith
+          require: bin:moon
+          upload: false
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-manifest
+          path: ${{ steps.packslip.outputs.bundle }}
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 21
   publish:
     name: Publish packages and GitHub release
-    needs: [build, acceptance]
+    needs: [build, acceptance, sign]
     if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -251,6 +301,10 @@ jobs:
         with:
           pattern: binary-*
           merge-multiple: true
+          path: .artifacts/release
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-manifest
           path: .artifacts/release
       - name: Prepare GitHub release
         env:
@@ -283,7 +337,8 @@ jobs:
           cd .artifacts/release
           sha256sum "moonsmith-${RELEASE_TAG#v}-linux-x86_64.tar.gz" \
             "moonsmith-${RELEASE_TAG#v}-macos-arm64.tar.gz" > SHA256SUMS
-          gh release upload "$RELEASE_TAG" ./*.tar.gz SHA256SUMS --clobber
+          test -s packslip.sigstore.json
+          gh release upload "$RELEASE_TAG" ./*.tar.gz SHA256SUMS packslip.sigstore.json --clobber
           gh release edit "$RELEASE_TAG" --draft=false --title "MoonSmith $RELEASE_TAG" \
             --notes-file "../../docs/releases/${RELEASE_TAG#v}.md"
   distribution:
@@ -313,6 +368,10 @@ jobs:
         with:
           node-version: "26.3.1"
           package-manager-cache: false
+      - name: Install packslip
+        run: |
+          bash scripts/install-packslip.sh "$RUNNER_TEMP/packslip/bin"
+          echo "$RUNNER_TEMP/packslip/bin" >> "$GITHUB_PATH"
       - name: Download and verify published binaries
         env:
           GH_TOKEN: ${{ github.token }}
@@ -323,10 +382,24 @@ jobs:
           download="$DISTRIBUTION_ROOT/download"
           mkdir -p "$download"
           gh release download "$RELEASE_TAG" --dir "$download" --pattern "moonsmith-$version-linux-x86_64.tar.gz" \
-            --pattern "moonsmith-$version-macos-arm64.tar.gz" --pattern SHA256SUMS
+            --pattern "moonsmith-$version-macos-arm64.tar.gz" --pattern SHA256SUMS --pattern packslip.sigstore.json
           (cd "$download" && shasum -a 256 --check SHA256SUMS)
-          tar -xzf "$download/moonsmith-$version-$PLATFORM.tar.gz" -C "$download"
-          bash scripts/check-installed.sh "$download/moonsmith" "$DISTRIBUTION_ROOT/binary"
+          identity="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/.github/workflows/cd-publish.yml@refs/tags/$RELEASE_TAG"
+          for archive in "$download"/*.tar.gz; do
+            packslip verify "$download/packslip.sigstore.json" --artifact "$archive" \
+              --identity "$identity" --issuer https://token.actions.githubusercontent.com \
+              --source-repository "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
+            gh attestation verify "$archive" --repo "$GITHUB_REPOSITORY" \
+              --cert-identity "$identity" --source-ref "refs/tags/$RELEASE_TAG" --source-digest "$GITHUB_SHA"
+          done
+          packslip show "$download/packslip.sigstore.json" |
+            jq -e --arg project "github.com/$GITHUB_REPOSITORY" --arg version "$version" --arg commit "$GITHUB_SHA" \
+              '.predicate.project == $project and .predicate.version == $version and .predicate.source.commit == $commit'
+          pin=$(packslip pin "$download/packslip.sigstore.json" --identity "$identity" --issuer https://token.actions.githubusercontent.com)
+          packslip install "github.com/$GITHUB_REPOSITORY" --version "$version" --pin "$pin" \
+            --identity "$identity" --issuer https://token.actions.githubusercontent.com \
+            --install-dir "$DISTRIBUTION_ROOT/packslip/tree" --bin-dir "$DISTRIBUTION_ROOT/packslip/bin"
+          bash scripts/check-installed.sh "$DISTRIBUTION_ROOT/packslip/bin/moonsmith" "$DISTRIBUTION_ROOT/binary"
       - name: Install exact packages from Mooncakes
         shell: bash
         env:
