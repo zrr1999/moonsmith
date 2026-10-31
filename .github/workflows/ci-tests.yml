@@ -20,9 +20,17 @@ permissions:
   contents: read
 jobs:
   historical:
-    name: Historical Compiler Regressions
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    name: Historical Compiler Regressions (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x86_64
+          - runner: macos-15
+            platform: macos-arm64
     permissions:
       contents: read
       id-token: write
@@ -30,6 +38,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Set historical validation directory
+        run: echo "HISTORICAL_ROOT=$RUNNER_TEMP/moonsmith-historical" >> "$GITHUB_ENV"
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           version: "0.13.5"
@@ -45,12 +55,20 @@ jobs:
         run: |
           just build-historical
           just test-historical-guard
+          mkdir -p "$HISTORICAL_ROOT/.artifacts"
+          cp -R .artifacts/historical-bin "$HISTORICAL_ROOT/.artifacts/"
       - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
         with:
           version: "0.10.14+7d59c7ec9"
           core-version: "0.10.14+7d59c7ec9"
       - name: Reproduce historical compiler failures
-        run: just test-historical
+        run: just --justfile "$GITHUB_WORKSPACE/justfile" --working-directory "$HISTORICAL_ROOT" test-historical
+      - name: Collect historical execution coverage
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f "$HISTORICAL_ROOT/.artifacts/historical-coverage.log" ]; then
+            cp "$HISTORICAL_ROOT/.artifacts/historical-coverage.log" .artifacts/
+          fi
       - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
         with:
           version: "0.10.18+6c83a7f62"
@@ -58,6 +76,7 @@ jobs:
       - name: Report historical execution coverage
         run: just coverage-historical
       - name: Upload historical coverage
+        if: matrix.platform == 'linux-x86_64'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: .artifacts/quality/historical-coverage.xml
@@ -68,7 +87,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
-          name: historical-coverage
+          name: historical-coverage-${{ matrix.platform }}
           path: |
             .artifacts/quality/historical-coverage.xml
             .artifacts/historical-coverage.log
@@ -79,15 +98,16 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: historical-compiler-evidence
+          name: historical-compiler-evidence-${{ matrix.platform }}
           retention-days: 7
           path: |
-            runs/**/*.json
-            runs/**/*.toml
-            runs/**/*.mbt
-            runs/**/moon.mod
-            runs/**/moon.pkg
-            runs/**/*.md
+            ${{ env.HISTORICAL_ROOT }}/runs/**/*.json
+            ${{ env.HISTORICAL_ROOT }}/runs/**/*.toml
+            ${{ env.HISTORICAL_ROOT }}/runs/**/*.mbt
+            ${{ env.HISTORICAL_ROOT }}/runs/**/moon.mod
+            ${{ env.HISTORICAL_ROOT }}/runs/**/moon.pkg
+            ${{ env.HISTORICAL_ROOT }}/runs/**/*.md
+            ${{ env.HISTORICAL_ROOT }}/runs/**/native/release/build/generated.c
   test:
     name: Tests
     runs-on: ubuntu-24.04

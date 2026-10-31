@@ -63,7 +63,7 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay run
 | [固定验证案例](cases/README.md) | 可复用输入、预言机、执行入口与待验收边界 |
 | [五配置矩阵验证](docs/five-configuration-pilot.md) | 固定输入、判定标准、复现方法与 100 例验证结果 |
 | [归约演示](docs/reduction-demonstration.md) | 受控输出差异与真实构建异常的产品归约、独立确认和重放 |
-| [发行与验收](docs/releasing.md) | 两平台产物、证据校验、发布准备与正式发布顺序 |
+| [发行与验收](docs/releasing.md) | 两平台产物、独立 CI 验收与正式发布顺序 |
 | [CLI 安装验收](docs/cli-installation-validation.md) | 完整源码安装、仓库外执行和工具链依赖边界 |
 | [任务配置示例](acceptance.toml)与[命令行配置](modules/cli/README.md#任务配置) | 有限种子任务、统一覆盖、逐样本存证和汇总 |
 | [提案入口](fps/README.md)与[术语索引](docs/glossary.md) | 当前提案阶段、设计决定、概念定义及引用规则 |

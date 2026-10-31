@@ -11,6 +11,7 @@
 - [Engine 抽象骨架](research/engine-abstraction.md)：职责与组合约束、最小 Int 简化及成本记录。
 - [历史回归验收](../../docs/historical-regressions.md)：首批案例来源、当前工具链检查与旧版真实复现。
 - [验证材料目录](research/corpus-layout.md)：上游组织方式调研、固定案例与模块测试的边界、待取得的证据。
+- [CI 与发布职责](research/ci-release-boundary.md)：官方项目的发布入口、用户确定的职责边界与验收安排。
 
 公开的产品目标和使用说明保留在 [README](../../README.md)、[项目申报书](../../docs/project-proposal.md)
 和[贡献指南](../../CONTRIBUTING.md)；跨文档设计决定由 [FP](../../fps/README.md) 维护。

@@ -53,9 +53,11 @@ hooks = [
 ]
 
 [[repos]]
-repo = "local"
+repo = "https://github.com/jdx/jactionlint"
+rev = "v2.3.0"
 hooks = [
-  { id = "jactionlint", name = "GitHub Actions correctness and security", entry = "jactionlint --no-online --shellcheck=shellcheck --pyflakes=pyflakes", language = "python", additional_dependencies = ["jactionlint==2.3.0", "shellcheck-py==0.11.0.1", "pyflakes==3.4.0"], pass_filenames = false, files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)', stages = ["pre-commit"] },
+  { id = "jactionlint-shellcheck", name = "GitHub Actions correctness and security", args = ["--no-online", "--shellcheck=shellcheck", "--pyflakes="], pass_filenames = false, types = ["file"], files = '^(\.github/|(.*/)?action\.ya?ml$|prek\.toml$)' },
+  { id = "jactionlint-shellcheck", alias = "shellcheck", name = "Shell script correctness", entry = "shellcheck", types = ["shell"], files = '\.sh$' },
 ]
 
 [[repos]]
@@ -71,10 +73,23 @@ hooks = [
 ]
 
 [[repos]]
+repo = "https://github.com/lycheeverse/lychee"
+rev = "lychee-v0.24.2"
+hooks = [
+  # Remove LYCHEE_VERSION after upgrading to a release containing https://github.com/lycheeverse/lychee/pull/2293.
+  { id = "lychee", name = "Repository Markdown links", files = "\\.md$", args = ["LYCHEE_VERSION=0.24.2", "--offline", "--scheme", "file", "--include-fragments", "--no-progress"] },
+]
+
+[[repos]]
+repo = "https://github.com/vale-cli/vale"
+rev = "v3.25.1"
+hooks = [
+  { id = "vale", name = "Documentation terminology", types = ["markdown"], require_serial = true },
+]
+
+[[repos]]
 repo = "local"
 hooks = [
-  { id = "lychee", name = "Repository Markdown links", entry = "lychee", language = "python", additional_dependencies = ["lychee-bin==0.24.2"], files = "\\.md$", args = ["--offline", "--scheme", "file", "--include-fragments", "--no-progress"] },
-  { id = "vale", name = "Documentation terminology", entry = "vale", language = "python", additional_dependencies = ["vale==3.25.1.0"], types = ["markdown"], require_serial = true },
   { id = "ast-grep", name = "Host monotonic clock contract", entry = "ast-grep scan", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "(\\.c$|^quality/ast-grep/|^sgconfig\\.yml$)" },
   { id = "ast-grep-tests", name = "Clock rule examples", entry = "ast-grep test --skip-snapshot-tests", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "^quality/ast-grep" },
 ]
@@ -107,18 +122,4 @@ repo = "local"
 hooks = [
   { id = "moon-fmt", name = "MoonBit format", entry = "moon fmt --check", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
   { id = "moon-check", name = "MoonBit type check", entry = "moon check --target native --deny-warn", language = "system", files = "((^|/)moon\\.(work|mod|pkg)$|\\.mbt(i|x)?$)", pass_filenames = false },
-]
-
-[[repos]]
-repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.17.3"
-hooks = [
-  { id = "ruff-check" },
-  { id = "ruff-format", args = ["--check"] },
-]
-
-[[repos]]
-repo = "local"
-hooks = [
-  { id = "release-tests", name = "Release artifact and publication guards", entry = "python -m unittest discover -s scripts -p test_release.py", language = "python", pass_filenames = false, files = "^scripts/.*\\.py$" },
 ]

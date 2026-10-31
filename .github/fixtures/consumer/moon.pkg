@@ -1,0 +1,8 @@
+import {
+  "zrr1999/moonsmith-contracts" @contracts,
+  "zrr1999/moonsmith-engine" @engine,
+  "zrr1999/moonsmith-moonbit" @moonbit,
+  "moonbitlang/core/debug",
+}
+
+pkgtype(kind: "executable")
