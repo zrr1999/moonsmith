@@ -32,3 +32,16 @@ jobs:
         uses: zendev-lab/zendev/actions/validate-body@f3b5d8e7c55524e34be316c9824275ad43e8de56 # v0.5.0
         with:
           body: ${{ github.event.pull_request.body }}
+  # A skipped required check counts as a pass. always() keeps this job running
+  # when a dependency fails, so the ruleset sees the result below.
+  required:
+    name: required (${{ github.workflow }})
+    needs: [pr-message]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Validate job results
+        env:
+          FAILED: ${{ contains(needs.*.result, 'failure') }}
+        run: '[[ "$FAILED" != "true" ]]'

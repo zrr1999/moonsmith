@@ -192,8 +192,8 @@ jobs:
           fail_ci_if_error: true
   # A skipped required check counts as a pass. always() keeps this job running
   # when a dependency fails, so the ruleset sees the result below.
-  tests:
-    name: all required checks passed (tests)
+  required:
+    name: required (${{ github.workflow }})
     needs: [test, historical]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
