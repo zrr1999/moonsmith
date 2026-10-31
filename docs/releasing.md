@@ -16,7 +16,7 @@ MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的�
 | [CI - Tests](../.github/workflows/ci-tests.yml) | 行为测试、覆盖率与双平台固定旧工具链的历史复现 |
 | [CD - Publish](../.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 的完整验收后发布，再核对已发布产物 |
 
-各工作流的检查结果和验收材料由对应运行保存。每个工作流的 `required` job 汇总该文件的上游 job，任一结果为 `failure` 时失败。合并规则要求 `required (CI - Tests)`、`required (CI - Static Checks)` 和 `required (Policy - PR)`。
+各工作流的检查结果和验收材料由对应运行保存。`all required checks passed (tests)` 和 `all required checks passed (static checks)` 分别汇总对应工作流的上游 job，任一结果为 `failure` 时失败。合并规则还要求 `all required checks passed (policy)`。
 推送版本标签后，构建和完整验收都通过才执行发布。
 CD 不调用测试或历史复现工作流。
 

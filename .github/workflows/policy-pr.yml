@@ -35,7 +35,7 @@ jobs:
   # A skipped required check counts as a pass. always() keeps this job running
   # when a dependency fails, so the ruleset sees the result below.
   required:
-    name: required (${{ github.workflow }})
+    name: all required checks passed (policy)
     needs: [pr-message]
     if: ${{ always() }}
     runs-on: ubuntu-24.04

@@ -102,7 +102,7 @@ jobs:
           if-no-files-found: error
   # A skipped check counts as a pass. always() keeps this job running when a dependency fails.
   required:
-    name: required (${{ github.workflow }})
+    name: all required checks passed (quality)
     needs: [reports, workflow-audit, benchmark]
     if: ${{ always() }}
     runs-on: ubuntu-24.04

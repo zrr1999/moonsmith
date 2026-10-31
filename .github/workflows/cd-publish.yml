@@ -363,15 +363,3 @@ jobs:
           path: .artifacts/distribution
           include-hidden-files: true
           if-no-files-found: error
-  # A skipped check counts as a pass. always() keeps this job running when a dependency fails.
-  required:
-    name: required (${{ github.workflow }})
-    needs: [build, acceptance, publish, distribution]
-    if: ${{ always() }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    steps:
-      - name: Validate job results
-        env:
-          FAILED: ${{ contains(needs.*.result, 'failure') }}
-        run: '[[ "$FAILED" != "true" ]]'
