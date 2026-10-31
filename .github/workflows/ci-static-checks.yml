@@ -84,7 +84,7 @@ jobs:
   # A skipped required check counts as a pass. always() keeps this job running
   # when a dependency fails, so the ruleset sees the result below.
   required:
-    name: all required checks passed (static checks)
+    name: All Required Checks Passed (Static Checks)
     needs: [pre-commit, codeql]
     if: ${{ always() }}
     runs-on: ubuntu-24.04

@@ -22,7 +22,7 @@
 
 命令行使用与实际入口验证见 [README](README.md#使用)。检查工具、版本和适用范围统一维护在 [prek.toml](prek.toml)，本地和 CI 使用同一门禁；不得为交付跳过或降低检查。新增文件需纳入 Git 索引后才能被 `--all-files` 检查；未准备暂存时可使用 `git add --intent-to-add <文件>`，或运行 `uvx prek run --files <文件>`。
 
-覆盖率和性能报告写入 `.artifacts/quality/`。PR 通过[测试工作流](.github/workflows/ci-tests.yml) 运行原生覆盖率并上传到 Codecov。[静态 CI](.github/workflows/ci-static-checks.yml) 在指向 `main` 的 PR 和 `main` 分支推送时运行 CodeQL。测试、静态检查、PR policy 和持续评估各有一个 `required` job，名称是 `all required checks passed` 加括号中的短名。它使用 `always()` 汇总本文件的上游 job，任一结果为 `failure` 时失败。分支规则要求 `all required checks passed (tests)`、`all required checks passed (static checks)` 和 `all required checks passed (policy)`。[持续评估工作流](.github/workflows/ce-quality.yml) 独立维护每周性能、外部链接、完整 Git 历史密钥扫描和在线审计，也可手动触发，具体低频检查命令保留在对应 job。本地 hooks 检查仓库内链接和锚点。严格在线 workflow 审计仅由受信任主分支的 CE 执行，查询失败或跳过视为失败。
+覆盖率和性能报告写入 `.artifacts/quality/`。PR 通过[测试工作流](.github/workflows/ci-tests.yml) 运行原生覆盖率并上传到 Codecov。[静态 CI](.github/workflows/ci-static-checks.yml) 在指向 `main` 的 PR 和 `main` 分支推送时运行 CodeQL。测试、静态检查、PR policy 和持续评估各有一个 `required` job，名称是 `All Required Checks Passed` 加括号中的短名。它使用 `always()` 汇总本文件的上游 job，任一结果为 `failure` 时失败。分支规则要求 `All Required Checks Passed (Tests)`、`All Required Checks Passed (Static Checks)` 和 `All Required Checks Passed (Policy)`。[持续评估工作流](.github/workflows/ce-quality.yml) 独立维护每周性能、外部链接、完整 Git 历史密钥扫描和在线审计，也可手动触发，具体低频检查命令保留在对应 job。本地 hooks 检查仓库内链接和锚点。严格在线 workflow 审计仅由受信任主分支的 CE 执行，查询失败或跳过视为失败。
 
 jactionlint、Lychee 和 Vale 使用上游正式发布的 hooks；工作流离线检查统一通过 prek 执行。
 Shell 脚本使用 jactionlint hook 环境提供的 ShellCheck。ast-grep 的固定版本尚未提供官方 hook；
