@@ -109,7 +109,7 @@ async fn cli(
             "Keys: name (string), seed_start (Int32), sample_count (positive Int32).",
             "  generation.generator (string; supported: \{@app.generator_identifiers().join(", ")}).",
             "  generation.max_nodes (1..2048), generation.max_depth (0..16), generation.max_attempts (1..8192).",
-            "  execution.configurations (array of at least two distinct supported names).",
+            "  execution.toolchains (array of moon installation directories; default is moon on PATH).",
             "  execution.equivalent_variants (boolean, default false; compare two output-preserving variants).",
             "  execution.build_timeout_ms, execution.run_timeout_ms (1..600000 milliseconds).",
             "  reduction.candidate_limit (0..64), output.directory (string).",

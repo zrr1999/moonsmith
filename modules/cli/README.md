@@ -174,6 +174,7 @@ stdout/stderr 按 UTF-8 文本保存，无效编码使用替换字符，记录�
 | `generation` 预算 | `max_nodes`、`max_depth`、`max_attempts`，沿用[语言适配器预算](../moonbit/README.md)的校验 |
 | `execution` | 至少两个不同的已支持 `configurations`，保留用户顺序；`build_timeout_ms`、`run_timeout_ms` 均为 `1..600000` |
 | `execution.equivalent_variants` | 布尔值，默认 `false`；开启后比较原程序和两个等价变换程序，不增加样本数 |
+| `execution.toolchains` | 已安装的 moon 目录列表，默认空，表示调用 `PATH` 中的 `moon`。每项指向一个目录，使用其中的 `bin/moon` 及其旁边的 `moonc`。多项时每个目录各生成一个任务 |
 | `reduction.candidate_limit` | 每个发生分歧的样本的候选预算，范围 `0..64`，另外执行一次独立确认 |
 | `output.directory` | 非空输出位置，默认 `runs`；文件中的相对值以实际配置文件目录为基准，默认值与 `--set` 相对值以调用目录为基准；绝对路径直接使用 |
 
