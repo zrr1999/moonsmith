@@ -16,8 +16,7 @@ MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的�
 | [CI - Tests](../.github/workflows/ci-tests.yml) | 行为测试、覆盖率与双平台固定旧工具链的历史复现 |
 | [CD - Publish](../.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 的完整验收后发布，再核对已发布产物 |
 
-各工作流的检查结果和验收材料由对应运行保存。`Tests` 汇总测试工作流的产品测试与双平台历史复现，
-`Pre-commit Checks` 汇总静态检查工作流的仓库检查与 CodeQL；允许的结果见[贡献指南](../CONTRIBUTING.md#常用命令)。
+各工作流的检查结果和验收材料由对应运行保存。`Tests` 和 `Pre-commit Checks` 分别汇总对应工作流的上游 job，任一结果为 `failure` 时失败。
 推送版本标签后，构建和完整验收都通过才执行发布。
 CD 不调用测试或历史复现工作流。
 

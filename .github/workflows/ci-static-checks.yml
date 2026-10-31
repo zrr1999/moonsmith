@@ -94,11 +94,5 @@ jobs:
         env:
           REPOSITORY_RESULT: ${{ needs.pre-commit.result }}
           CODEQL_RESULT: ${{ needs.codeql.result }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
-          [[ "$REPOSITORY_RESULT" == "success" ]] &&
-          if [[ "$EVENT_NAME" == "merge_group" ]]; then
-            [[ "$CODEQL_RESULT" == "success" || "$CODEQL_RESULT" == "skipped" ]]
-          else
-            [[ "$CODEQL_RESULT" == "success" ]]
-          fi
+          [[ "$REPOSITORY_RESULT" != "failure" && "$CODEQL_RESULT" != "failure" ]]

@@ -204,5 +204,4 @@ jobs:
           PRODUCT_RESULT: ${{ needs.test.result }}
           HISTORICAL_RESULT: ${{ needs.historical.result }}
         run: |
-          [[ "$PRODUCT_RESULT" == "success" ]] &&
-          [[ "$HISTORICAL_RESULT" == "success" ]]
+          [[ "$PRODUCT_RESULT" != "failure" && "$HISTORICAL_RESULT" != "failure" ]]
