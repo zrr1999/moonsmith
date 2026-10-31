@@ -54,7 +54,7 @@ jobs:
           fi
           printf 'version=%s\nartifact_version=%s\ncommit=%s\n' "$version" "$artifact_version" "$commit" >> "$GITHUB_OUTPUT"
       - name: Check release tag
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'push'
         env:
           VERSION: ${{ steps.package.outputs.version }}
         shell: bash
@@ -120,10 +120,120 @@ jobs:
           if-no-files-found: error
           overwrite: true
           retention-days: 21
+  acceptance:
+    name: Acceptance (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x86_64
+          - runner: macos-15
+            platform: macos-arm64
+    env:
+      PLATFORM: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
+        with:
+          version: "0.10.18+6c83a7f62"
+          core-version: "0.10.18+6c83a7f62"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26.3.1"
+          package-manager-cache: false
+      - name: Package and unpack the four modules
+        shell: bash
+        env:
+          PACKAGE_ROOT: ${{ runner.temp }}/moonsmith-packages
+        run: |
+          moon update
+          moon work sync
+          git diff --exit-code -- modules
+          mkdir -p .artifacts/acceptance "$PACKAGE_ROOT/modules"
+          for module in contracts engine moonbit cli; do
+            moon -C "modules/$module" package --list | tee ".artifacts/acceptance/package-$module.log"
+            name=$(sed -nE 's/^name[[:space:]]*=[[:space:]]*"([^"]+)"[[:space:]]*$/\1/p' "modules/$module/moon.mod")
+            version=$(sed -nE 's/^version[[:space:]]*=[[:space:]]*"([^"]+)"[[:space:]]*$/\1/p' "modules/$module/moon.mod")
+            archive="_build/publish/${name//\//-}-$version.zip"
+            unzip -q "$archive" -d "$PACKAGE_ROOT/modules/$module"
+            for file in LICENSE README.md moon.mod; do
+              cmp "modules/$module/$file" "$PACKAGE_ROOT/modules/$module/$file"
+            done
+            cp "$archive" .artifacts/acceptance/
+          done
+          cp moon.work acceptance.toml "$PACKAGE_ROOT/"
+          cp -R cases .github/fixtures/consumer "$PACKAGE_ROOT/"
+          moon -C "$PACKAGE_ROOT" work use ./consumer
+          moon -C "$PACKAGE_ROOT" work sync
+      - name: Check and test the unpacked modules
+        working-directory: ${{ runner.temp }}/moonsmith-packages
+        run: |
+          moon check --target native --deny-warn
+          moon test --target native
+          moon -C consumer run . --target native --deny-warn
+      - name: Install and replay outside the workspace
+        working-directory: ${{ runner.temp }}/moonsmith-packages
+        env:
+          PACKAGE_ROOT: ${{ runner.temp }}/moonsmith-packages
+        run: |
+          moon install ./modules/cli/src/cmd/moonsmith --bin "$PACKAGE_ROOT/bin"
+          bash "$GITHUB_WORKSPACE/scripts/check-installed.sh" "$PACKAGE_ROOT/bin/moonsmith" "$PACKAGE_ROOT/installed"
+      - name: Check current results for the historical seeds
+        working-directory: ${{ runner.temp }}/moonsmith-packages
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for seed in 1272 3745 6968; do
+            result=0
+            bin/moonsmith run --set "seed_start=$seed" \
+              --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
+              --set "output.directory=\"current-$seed\"" || result=$?
+            test "$result" -eq 0 || test "$result" -eq 2 || test "$result" -eq 3
+            jq -e '.attempted == 1 and .operation_errors == 0' current-"$seed"/task-*/summary.json
+            attempts=(current-"$seed"/task-*/cases/case-*/attempts/run-*/attempt.json)
+            test "${#attempts[@]}" -gt 0
+            for attempt in "${attempts[@]}"; do
+              if jq -e '.purpose == "confirmation" or .purpose == "build-confirmation"' "$attempt" > /dev/null; then
+                result=0
+                bin/moonsmith replay "${attempt%/attempt.json}" || result=$?
+                test "$result" -eq 0 || test "$result" -eq 2 || test "$result" -eq 3
+              fi
+            done
+          done
+      - name: Run the full five-configuration campaign
+        if: github.event_name == 'push'
+        working-directory: ${{ runner.temp }}/moonsmith-packages
+        run: |
+          bin/moonsmith run --set seed_start=0 --set sample_count=100 \
+            --set execution.equivalent_variants=true \
+            --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
+            --set 'output.directory="full"'
+          jq -e '.attempted == 100 and .consistent == 100 and .comparisons_complete == 100 and
+            .operation_errors == 0' full/task-*/summary.json
+      - name: Archive package acceptance evidence
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          PACKAGE_ROOT: ${{ runner.temp }}/moonsmith-packages
+        run: |
+          tar --exclude=_build --exclude=.mooncakes -czf ".artifacts/acceptance/evidence-$PLATFORM.tar.gz" -C "$PACKAGE_ROOT" .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: acceptance-${{ matrix.platform }}
+          path: .artifacts/acceptance
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 21
   publish:
     name: Publish packages and GitHub release
-    needs: build
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [build, acceptance]
+    if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -175,3 +285,80 @@ jobs:
           gh release upload "$RELEASE_TAG" ./*.tar.gz SHA256SUMS --clobber
           gh release edit "$RELEASE_TAG" --draft=false --title "MoonSmith $RELEASE_TAG" \
             --notes-file "../../docs/releases/${RELEASE_TAG#v}.md"
+  distribution:
+    name: Install and replay (${{ matrix.platform }})
+    needs: publish
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x86_64
+          - runner: macos-15
+            platform: macos-arm64
+    env:
+      PLATFORM: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
+        with:
+          version: "0.10.18+6c83a7f62"
+          core-version: "0.10.18+6c83a7f62"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26.3.1"
+          package-manager-cache: false
+      - name: Download and verify published binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISTRIBUTION_ROOT: ${{ runner.temp }}/moonsmith-distribution
+        shell: bash
+        run: |
+          version=${RELEASE_TAG#v}
+          download="$DISTRIBUTION_ROOT/download"
+          mkdir -p "$download"
+          gh release download "$RELEASE_TAG" --dir "$download" --pattern "moonsmith-$version-linux-x86_64.tar.gz" \
+            --pattern "moonsmith-$version-macos-arm64.tar.gz" --pattern SHA256SUMS
+          (cd "$download" && shasum -a 256 --check SHA256SUMS)
+          tar -xzf "$download/moonsmith-$version-$PLATFORM.tar.gz" -C "$download"
+          bash scripts/check-installed.sh "$download/moonsmith" "$DISTRIBUTION_ROOT/binary"
+      - name: Install exact packages from Mooncakes
+        shell: bash
+        env:
+          DISTRIBUTION_ROOT: ${{ runner.temp }}/moonsmith-distribution
+        run: |
+          version=${RELEASE_TAG#v}
+          cp -R .github/fixtures/consumer "$DISTRIBUTION_ROOT/consumer"
+          cd "$DISTRIBUTION_ROOT"
+          moon -C consumer update
+          for name in zrr1999/moonsmith-contracts zrr1999/moonsmith-engine zrr1999/moonsmith-moonbit; do
+            moon -C consumer add --upgrade "$name@$version"
+          done
+          moon -C consumer run . --target native --deny-warn
+          moon -C consumer tree --json > dependencies.json
+          for name in zrr1999/moonsmith-contracts zrr1999/moonsmith-engine zrr1999/moonsmith-moonbit; do
+            jq -e --arg name "$name" --arg version "$version" \
+              '[.modules[] | select(.name == $name)] | length == 1 and
+                .[0].version == $version and .[0].source.kind == "registry"' dependencies.json
+          done
+          moon install "zrr1999/moonsmith/cmd/moonsmith@$version" --bin "$DISTRIBUTION_ROOT/bin"
+          bash "$GITHUB_WORKSPACE/scripts/check-installed.sh" "$DISTRIBUTION_ROOT/bin/moonsmith" "$DISTRIBUTION_ROOT/registry"
+      - name: Archive distribution evidence
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          DISTRIBUTION_ROOT: ${{ runner.temp }}/moonsmith-distribution
+        run: |
+          mkdir -p .artifacts/distribution
+          tar --exclude=_build --exclude=.mooncakes -czf ".artifacts/distribution/evidence-$PLATFORM.tar.gz" -C "$DISTRIBUTION_ROOT" .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: distribution-${{ matrix.platform }}
+          path: .artifacts/distribution
+          include-hidden-files: true
+          if-no-files-found: error
