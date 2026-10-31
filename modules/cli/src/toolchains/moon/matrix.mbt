@@ -78,6 +78,27 @@ pub fn available_configurations() -> Array[String] {
 }
 
 ///|
+pub struct MoonToolchain {
+  moon : String
+  moonrun : String
+}
+
+///|
+pub fn MoonToolchain::current() -> MoonToolchain {
+  { moon: "moon", moonrun: "moonrun", }
+}
+
+///|
+pub fn MoonToolchain::at(root : String) -> MoonToolchain {
+  let root = if root.has_suffix("/") {
+    root[:root.length() - 1].to_owned()
+  } else {
+    root
+  }
+  { moon: "\{root}/bin/moon", moonrun: "\{root}/bin/moonrun", }
+}
+
+///|
 fn command(
   program : String,
   args : Array[String],
@@ -97,9 +118,11 @@ pub async fn version() -> String {
 }
 
 ///|
-pub async fn identify() -> @contracts.ProcessEvidence {
+pub async fn identify(
+  toolchain~ : MoonToolchain = MoonToolchain::current(),
+) -> @contracts.ProcessEvidence {
   let command = command(
-    "moon",
+    toolchain.moon,
     ["version", "--all"],
     @host.current_directory(),
     10000,
@@ -110,6 +133,7 @@ pub async fn identify() -> @contracts.ProcessEvidence {
 ///|
 pub async fn identify_runtimes(
   planned : Array[String],
+  toolchain~ : MoonToolchain = MoonToolchain::current(),
 ) -> Array[@contracts.ProcessEvidence] {
   validate_plan(planned)
   let programs : Array[String] = []
@@ -125,8 +149,13 @@ pub async fn identify_runtimes(
   }
   let evidence : Array[@contracts.ProcessEvidence] = []
   for program in programs {
+    let executable = if program == "moonrun" {
+      toolchain.moonrun
+    } else {
+      program
+    }
     let command = command(
-      program,
+      executable,
       ["--version"],
       @host.current_directory(),
       10000,
@@ -196,6 +225,7 @@ pub async fn observe(
   build_timeout_ms~ : Int32 = 30000,
   run_timeout_ms~ : Int32 = 2000,
   planned~ : Array[String] = configurations(),
+  toolchain~ : MoonToolchain = MoonToolchain::current(),
 ) -> Array[@contracts.Observation] {
   validate_timeouts(build_timeout_ms, run_timeout_ms)
   validate_plan(planned)
@@ -203,7 +233,7 @@ pub async fn observe(
   for configuration in planned {
     let spec = select_configuration(configuration)
     let build = command(
-      "moon",
+      toolchain.moon,
       ["build", "--target", spec.target, "--\{spec.mode}"],
       directory,
       build_timeout_ms,
@@ -224,7 +254,12 @@ pub async fn observe(
     let run = match spec.runner {
       Native => command("\{artifact}.exe", [], directory, run_timeout_ms)
       Moonrun =>
-        command("moonrun", ["\{artifact}.wasm"], directory, run_timeout_ms)
+        command(
+          toolchain.moonrun,
+          ["\{artifact}.wasm"],
+          directory,
+          run_timeout_ms,
+        )
       Node => command("node", ["\{artifact}.js"], directory, run_timeout_ms)
     }
     let output = @host.execute(run)

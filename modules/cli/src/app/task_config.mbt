@@ -11,6 +11,7 @@ priv struct TaskConfig {
   run_timeout_ms : Int32
   candidate_limit : Int32
   output_directory : String
+  toolchains : Array[String]
 }
 
 ///|
@@ -47,6 +48,7 @@ fn default_task() -> TaskConfig {
     run_timeout_ms: 2000,
     candidate_limit: 16,
     output_directory: "runs",
+    toolchains: [],
   }
 }
 
@@ -69,6 +71,7 @@ fn TaskConfig::document(self : TaskConfig) -> @toml.TomlValue {
       ),
       "build_timeout_ms": TomlInteger(self.build_timeout_ms.to_int64()),
       "run_timeout_ms": TomlInteger(self.run_timeout_ms.to_int64()),
+      "toolchains": TomlArray(self.toolchains.map(root => TomlString(root))),
     }),
     "reduction": TomlTable({
       "candidate_limit": TomlInteger(self.candidate_limit.to_int64()),
@@ -214,6 +217,16 @@ fn parse_task(
     run_timeout_ms: task_int(execution, "run_timeout_ms"),
     candidate_limit: task_int(reduction, "candidate_limit"),
     output_directory: task_string(output, "directory"),
+    toolchains: match execution.get("toolchains") {
+      Some(TomlArray(values)) =>
+        values.map(value => {
+          guard value is TomlString(root) && !root.trim().is_empty() else {
+            fail("execution.toolchains entries must be nonempty directories")
+          }
+          root
+        })
+      _ => fail("execution.toolchains must be an array")
+    },
   }
   guard task.sample_count > 0 &&
     task.seed_start.to_int64() + task.sample_count.to_int64() - 1L <=

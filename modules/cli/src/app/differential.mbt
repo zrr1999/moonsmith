@@ -42,6 +42,7 @@ async fn execute_differential(
   original_toolchain? : @contracts.ProcessEvidence,
   original_runtimes? : Array[@contracts.ProcessEvidence],
   on_plan~ : (Array[String]) -> Unit = _ => (),
+  moon_toolchain~ : @moon.MoonToolchain = @moon.MoonToolchain::current(),
 ) -> DifferentialRun {
   let source = source.unwrap_or(case.source)
   guard @moonbit.parse_result_protocol(case.result_protocol) is Some(ty) else {
@@ -57,14 +58,18 @@ async fn execute_differential(
     case.module_source,
     case.package_source,
   )
-  let toolchain = @moon.identify()
+  let toolchain = @moon.identify(toolchain=moon_toolchain)
   let platform = @host.platform()
-  let runtimes = @moon.identify_runtimes(case.configurations)
+  let runtimes = @moon.identify_runtimes(
+    case.configurations,
+    toolchain=moon_toolchain,
+  )
   let observations = @moon.observe(
     attempt_directory,
     build_timeout_ms=case.build_timeout_ms,
     run_timeout_ms=case.run_timeout_ms,
     planned=case.configurations,
+    toolchain=moon_toolchain,
   ).map(observation => {
     if case.injected &&
       observation.configuration == "native-release" &&
@@ -164,6 +169,7 @@ pub async fn run_differential(
   planned~ : Array[String] = @moon.configurations(),
   on_plan~ : (Array[String]) -> Unit = _ => (),
   on_generated~ : (@contracts.GenerationRecord) -> Unit = _ => (),
+  moon_toolchain~ : @moon.MoonToolchain = @moon.MoonToolchain::current(),
 ) -> DifferentialRun {
   @moon.validate_plan(planned)
   @moon.validate_timeouts(build_timeout_ms, run_timeout_ms)
@@ -207,7 +213,13 @@ pub async fn run_differential(
   let directory = @artifacts.create_differential(base, case) catch {
     error => fail("case storage failed for seed \{seed}: \{error}")
   }
-  let run = execute_differential(directory, case, "original", on_plan~) catch {
+  let run = execute_differential(
+    directory,
+    case,
+    "original",
+    on_plan~,
+    moon_toolchain~,
+  ) catch {
     error => fail("execution failed for seed \{seed} at \{directory}: \{error}")
   }
   let run = if equivalent_variants {
