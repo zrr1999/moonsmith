@@ -28,7 +28,7 @@ test:
 # Build the historical compiler checks with the development toolchain
 build-historical:
     mkdir -p .artifacts/historical-bin
-    moon build modules/cli/src/examples/historical --target native --enable-coverage --deny-warn --output-json > .artifacts/historical-build.jsonl
+    moon build modules/cli/src/examples/historical --target native --deny-warn --output-json > .artifacts/historical-build.jsonl
     cp "$(jq -er 'select(."$message_type" == "artifact" and .package == "zrr1999/moonsmith/examples/historical") | .path' .artifacts/historical-build.jsonl)" .artifacts/historical-bin/historical
     moon install ./modules/cli/src/cmd/moonsmith --bin .artifacts/historical-bin
 
@@ -40,24 +40,35 @@ test-historical-guard:
       cat .artifacts/historical-rejection.log
       exit 1
     fi
-    grep -F 'historical validation requires MoonBit 0.10.14+7d59c7ec9 on PATH' .artifacts/historical-rejection.err
+    grep -F 'historical validation requires MoonBit 0.10.14+7d59c7ec9' .artifacts/historical-rejection.err
 
 # Run the prebuilt checks with MoonBit 0.10.14+7d59c7ec9 on PATH
 test-historical:
     #!/usr/bin/env bash
     set -euo pipefail
-    .artifacts/historical-bin/historical | tee .artifacts/historical-coverage.log
+    .artifacts/historical-bin/historical "${COMPILER_HOME:-}"
     cli_exit=0
     .artifacts/historical-bin/moonsmith run --set seed_start=1272 \
       --set reduction.candidate_limit=0 \
       --set 'output.directory="runs/historical-cli"' || cli_exit=$?
     test "$cli_exit" -eq 3
 
-# Report historical coverage with the development toolchain after the old compiler run
-coverage-historical:
-    mkdir -p .artifacts/quality
-    cat .artifacts/historical-rejection.log .artifacts/historical-coverage.log > .artifacts/historical-combined.log
-    moon coverage report -t .artifacts/historical-combined.log -f cobertura -o .artifacts/quality/historical-coverage.xml
+# Run the built MoonSmith against the moonc currently on PATH.
+test-compiler:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    home="${COMPILER_HOME:?compiler directory is required}"
+    output="${COMPILER_OUTPUT:-runs/compiler}"
+    "$home/bin/moon" version --all
+    result=0
+    .artifacts/historical-bin/moonsmith run --set seed_start=1272 --set sample_count=1 \
+      --set "execution.toolchains=[\"$home\"]" \
+      --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
+      --set "output.directory=\"$output\"" || result=$?
+    test "$result" -eq 0 || test "$result" -eq 2 || test "$result" -eq 3
+    summary=("$output"/task-*/summary.json)
+    test "${#summary[@]}" -eq 1
+    jq -e '.attempted == 1 and .operation_errors == 0' "${summary[0]}"
 
 # Measure all workspace tests with the pinned MoonBit coverage reporter
 coverage:

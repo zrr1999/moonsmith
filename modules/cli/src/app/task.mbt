@@ -75,6 +75,48 @@ pub async fn run_task(
     directory~,
     config_directory~,
   )
+  if task.toolchains.length() > 1 {
+    let mut chosen : TaskRun? = None
+    let mut rank = -1
+    for index, root in task.toolchains {
+      let run = run_one_toolchain(
+        {
+          ..task,
+          toolchains: [root],
+          output_directory: "\{task.output_directory}/toolchain-\{index}",
+        },
+        None,
+        on_progress~,
+        on_plan~,
+        on_sample~,
+      )
+      let severity = match task_exit_code(run) {
+        1 => 4
+        2 => 3
+        3 => 2
+        _ => 1
+      }
+      if severity > rank {
+        rank = severity
+        chosen = Some(run)
+      }
+    }
+    return match chosen {
+      Some(run) => run
+      None => fail("at least one moon toolchain is required")
+    }
+  }
+  run_one_toolchain(task, source, on_progress~, on_plan~, on_sample~)
+}
+
+///|
+async fn run_one_toolchain(
+  task : TaskConfig,
+  source : String?,
+  on_progress~ : (Int32, Int32) -> Unit,
+  on_plan~ : (Array[String]) -> Unit,
+  on_sample~ : (@contracts.TaskSample, DifferentialRun?) -> Unit,
+) -> TaskRun {
   on_plan(task.configurations.copy())
   let directory = @artifacts.create_task(
     task.output_directory,
@@ -128,6 +170,11 @@ pub async fn run_task(
           run_timeout_ms=task.run_timeout_ms,
           reduction_limit=task.candidate_limit,
           equivalent_variants=task.equivalent_variants,
+          moon_toolchain=if task.toolchains.is_empty() {
+            @moon.MoonToolchain::current()
+          } else {
+            @moon.MoonToolchain::at(task.toolchains[0])
+          },
           on_generated=record => generation = Some(record),
         )
         let errors : Array[String] = []

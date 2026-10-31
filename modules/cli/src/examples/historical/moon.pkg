@@ -7,7 +7,6 @@ import {
   "zrr1999/moonsmith/toolchains/moon",
   "moonbitlang/async",
   "moonbitlang/core/debug",
-  "moonbitlang/core/coverage",
 }
 
 pkgtype(kind: "executable")

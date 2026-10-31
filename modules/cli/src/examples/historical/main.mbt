@@ -1,16 +1,26 @@
 ///|
 async fn main {
-  defer @coverage.end()
-  let toolchain = @moon.identify()
+  let arguments = @host.arguments()
+  let moon_toolchain = if arguments.length() > 1 && !arguments[1].is_empty() {
+    @moon.MoonToolchain::at(arguments[1])
+  } else {
+    @moon.MoonToolchain::current()
+  }
+  let toolchain = @moon.identify(toolchain=moon_toolchain)
   guard toolchain.output.status == Exited(0) &&
     toolchain.output.stdout.contains("moonc v0.10.14+7d59c7ec9") else {
-    fail("historical validation requires MoonBit 0.10.14+7d59c7ec9 on PATH")
+    fail("historical validation requires MoonBit 0.10.14+7d59c7ec9")
   }
   @host.mkdir("runs")
   let base = @host.new_directory("runs/historical-build-failures-")
   for seed in [1272, 3745, 6968] {
     let program = @moonbit.synthesize(seed).program
-    let run = @app.run_differential(seed~, base~, reduction_limit=16)
+    let run = @app.run_differential(
+      seed~,
+      base~,
+      reduction_limit=16,
+      moon_toolchain~,
+    )
     println(@app.describe_differential(run))
     assert_true(run.save_error is None)
     @debug.assert_eq(run.attempt.source, program.emit())
