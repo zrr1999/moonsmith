@@ -167,7 +167,8 @@ jobs:
             cp "$archive" .artifacts/acceptance/
           done
           cp moon.work acceptance.toml "$PACKAGE_ROOT/"
-          cp -R cases .github/fixtures/consumer "$PACKAGE_ROOT/"
+          cp -R cases "$PACKAGE_ROOT/"
+          cp -R examples/library "$PACKAGE_ROOT/consumer"
           moon -C "$PACKAGE_ROOT" work use ./consumer
           moon -C "$PACKAGE_ROOT" work sync
       - name: Check and test the unpacked modules
@@ -332,7 +333,7 @@ jobs:
           DISTRIBUTION_ROOT: ${{ runner.temp }}/moonsmith-distribution
         run: |
           version=${RELEASE_TAG#v}
-          cp -R .github/fixtures/consumer "$DISTRIBUTION_ROOT/consumer"
+          cp -R examples/library "$DISTRIBUTION_ROOT/consumer"
           cd "$DISTRIBUTION_ROOT"
           moon -C consumer update
           for name in zrr1999/moonsmith-contracts zrr1999/moonsmith-engine zrr1999/moonsmith-moonbit; do

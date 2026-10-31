@@ -2,6 +2,7 @@
 set -euo pipefail
 
 binary=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
+example=$(cd "$(dirname "${BASH_SOURCE[0]}")/../examples" && pwd)/quickstart.toml
 mkdir "$2"
 cd "$2"
 "$binary" --help
@@ -9,9 +10,8 @@ cd "$2"
 for equivalent in false true; do
   mkdir "$equivalent"
   cd "$equivalent"
-  "$binary" run --set seed_start=42 \
+  "$binary" run --config "$example" \
     --set "execution.equivalent_variants=$equivalent" \
-    --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
     --set 'output.directory="runs"' | tee run.log
   tasks=(runs/task-*)
   test "${#tasks[@]}" -eq 1

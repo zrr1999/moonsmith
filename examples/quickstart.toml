@@ -1,0 +1,9 @@
+name = "quickstart"
+seed_start = 42
+sample_count = 1
+
+[execution]
+configurations = ["native-debug", "native-release", "wasm-gc-debug", "wasm-debug", "js-debug"]
+
+[output]
+directory = "runs/quickstart"

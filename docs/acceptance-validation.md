@@ -124,7 +124,7 @@ moonsmith run --config acceptance.toml \
 | 有限语义保持变换 | [输出等价变体](../modules/moonbit/README.md)；检查原程序与变换程序的合法性并比较真实工具链输出 | 库入口已实现；被测构建的 `run` 仅比较原程序的配置间输出，现行接入见 CLI 模块说明 |
 | 合法且保持同一失败的归约 | [归约演示](reduction-demonstration.md)：128 → 1 节点、约 99.2% 移除、3419 毫秒，独立确认及源码重放 | 受控注入的配置间输出差异 |
 | 至少三个历史候选、至少一个实测复现 | [历史回归记录](historical-regressions.md)：#1006、#1070、#1266；旧版工具链实测复现 #1266 | 公开源码案例的旧版实测 |
-| 可安装命令、库、API 说明与示例 | [源码安装验收](cli-installation-validation.md)、四个模块 README、工作流和归约示例 | 完整源码安装；尚未发布 registry 包或预编译发行包 |
+| 可安装命令、库、API 说明与示例 | [源码安装验收](cli-installation-validation.md)、四个模块 README 和[可运行示例](../examples/README.md) | 本次实验验证完整源码安装；后续 0.0.1 已发布 registry 包与双平台 CLI，入口见[安装说明](../README.md#安装) |
 | Markdown / JSON 报告、环境及原始记录、追加式重放 | 任务、案例、尝试和归约材料；[存证说明](../modules/cli/README.md#差分执行与存证) | 重放使用当前宿主工具链，并提示已知版本变化 |
 
 ## 结论边界

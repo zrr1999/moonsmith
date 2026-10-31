@@ -46,7 +46,7 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
 - 通过 `moon work sync` 检查内部依赖版本，打包四模块后解包到仓库外。
   README、许可证和模块清单与原文件一致；类型检查和全部原生行为测试使用解包后的源码与 C 文件。
   测试所需固定案例和任务配置另行复制，不将仓库产品源码混入包验收。
-- 独立的库消费程序可以生成等价组并调用 Engine；CLI 可以从解包模块安装。
+- [公开库示例](../examples/library/main.mbt)可以生成等价组并调用 Engine；CLI 可以从解包模块安装。
 - 安装后的程序执行种子 42 的五配置普通任务和等价任务；搬迁材料后重放仍成功，
   原始文件保持不变，新执行及组记录追加。
 - 标签上的完整验收额外执行种子 0–99 的五配置等价检查，记录每份源码、配置、原始观察和任务汇总。
@@ -63,7 +63,8 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 ```
 
 输出目录必须尚不存在，用于保留执行日志、原始材料和重放结果。该入口由包验收与已发布产物验收共用，
-依赖 Bash、jq 和 SHA-256 工具。验收不维护自定义 Python 框架。
+读取[公开 CLI 配置](../examples/quickstart.toml)，依赖 Bash、jq 和 SHA-256 工具。
+验收不维护自定义 Python 框架。
 
 ## 正式发布
 
@@ -111,7 +112,8 @@ moonsmith replay /absolute/path/to/case-directory
 moonsmith replay /absolute/path/to/group-directory
 ```
 
-原万例实验与人工调查材料独立归档，其摘要见[历史材料清单](../.github/release-evidence.json)，
+原万例实验与人工调查材料已附于 [0.0.1 Release](https://github.com/zrr1999/moonsmith/releases/tag/v0.0.1)，
+其摘要见[历史材料清单](../.github/release-evidence.json)，
 可在历史压缩包所在目录使用 `jq` 和 `shasum` 校验：
 
 ```shell
@@ -119,7 +121,9 @@ jq -r '"\(.sha256)  \(.file)"' /absolute/path/to/moonsmith/.github/release-evide
   shasum -a 256 --check -
 ```
 
-需要长期公开的 CI 或历史材料由维护者单独附到 Release，不影响 CD 的发布职责。
+该 Release 还包含双平台历史编译器复现和发行安装材料；来源及范围见附件
+[`EVIDENCE.md`](https://github.com/zrr1999/moonsmith/releases/download/v0.0.1/EVIDENCE.md)，
+五个证据包使用 `SHA256SUMS-EVIDENCE` 校验。后续需要长期公开的材料由维护者附到对应 Release。
 适用版本与原始结果见[规模验收](acceptance-validation.md)、[归约演示](reduction-demonstration.md)
 和[构建异常分析](native-release-analysis.md)。
 
@@ -129,4 +133,5 @@ jq -r '"\(.sha256)  \(.file)"' /absolute/path/to/moonsmith/.github/release-evide
 附件并校验摘要，在各自平台解包运行五配置普通任务与等价任务，再从 Mooncakes 安装精确版本，
 验证库消费、CLI、材料搬迁和重放。结果与失败材料保留在该次运行中，不撤回已经完成的发布。
 
-正式安装方式和实测结果核对完成后，再更新根 README 的实际安装入口。
+0.0.1 的双平台发行安装、库消费与重放结果见[CLI 安装验收](cli-installation-validation.md#001-发行安装验收)，
+实际安装入口见[README](../README.md#安装)。后续版本发布后按相同流程核对，再更新安装说明。
