@@ -83,7 +83,7 @@ jobs:
     if: github.event_name != 'merge_group'
   # A skipped required check counts as a pass. always() keeps this job running
   # when a dependency fails, so the ruleset sees the result below.
-  required:
+  static-checks:
     name: static checks
     needs: [pre-commit, codeql]
     if: ${{ always() }}
