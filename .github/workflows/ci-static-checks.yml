@@ -81,3 +81,16 @@ jobs:
         with:
           category: "/language:${{ matrix.language }}"
     if: github.event_name != 'merge_group'
+  # A skipped required check counts as a pass. always() keeps this job running
+  # when a dependency fails, so the ruleset sees the result below.
+  required:
+    name: All Required Checks Passed (Static Checks)
+    needs: [pre-commit, codeql]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Validate job results
+        env:
+          FAILED: ${{ contains(needs.*.result, 'failure') }}
+        run: '[[ "$FAILED" != "true" ]]'
