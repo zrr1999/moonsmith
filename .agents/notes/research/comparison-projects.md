@@ -134,3 +134,19 @@ AST 节点数只在同一表示内比较；跨工具可采用统一格式化后�
 
 本清单中的仓库链接用于定位项目；[Engine 专题调研](engine-research.md)另外记录关键源码的固定提交。
 正式 benchmark 仍需固定工具源码、依赖和执行环境；项目介绍及 README 本身不足以复现执行。
+
+## 9 公开历史问题候选
+
+2026 年 10 月 9 日只核查了下列 issue 的公开描述和当时页面上的开关状态，没有在本项目中执行编译器复现。
+issue 状态不等于所有发布版本的行为。受影响版本和修复版本都要单独重跑；拿不到的旧工具链保留在清单里并写明排除原因。
+
+| 候选 | 公开描述与原报告环境 | 当时拟用的区分方式 |
+| --- | --- | --- |
+| [#1308](https://github.com/moonbitlang/moonbit-docs/issues/1308) | native 代码生成在循环 break 与标量尾表达式组合上 ICE；报告为 macOS arm64、moonc v0.10.11；核查时已关闭 | 小型历史重放；有界控制流的定向建模 |
+| [#1274](https://github.com/moonbitlang/moonbit-docs/issues/1274) | `#valtype`、Double 首字段、可 raise 函数组合产生无法通过验证的 Wasm；报告为 moonc v0.10.1；核查时开放 | 区分产物有效性失败与运行结果差异 |
+| [#1322](https://github.com/moonbitlang/moonbit-docs/issues/1322) | native debug 在 valtype 记录、枚举、Array::push 组合下 ICE；原报告为 Debian x86_64、moonc v0.10.14；核查时开放 | 模式差分和平台指纹；原报告亦注明语言支持契约需进一步确认 |
+
+[#1272](https://github.com/moonbitlang/moonbit-docs/issues/1272) 的提交者说明大型案例难以缩减，可作为后续源码导入归约的需求证据。
+历史评估分开计数：目录收录、在原环境复现、生成器独立发现、可归约、修复后回归通过。
+模板回放不计入随机生成发现；相同根因的变体不重复记作新缺陷。
+验收数量见[项目申报书](../../../docs/project-proposal.md)，是否排入下一轮见[路线图](../../../ROADMAP.md)。

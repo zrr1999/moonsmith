@@ -54,4 +54,5 @@ FP 保存 MoonSmith 影响重大的功能与治理设计。先读 [FP-0000](FP-0
 通过 lychee 检查文档链接及目标锚点。
 `status` 表示提案当前阶段；[EVOLUTION.md](../EVOLUTION.md)记录过去的方向变化，
 [ROADMAP.md](../ROADMAP.md)维护未来目标与推进条件。完整分工见
-[FP-0000](FP-0000-governance.md#文档分工)。架构说明维护整体设计，测试和原始记录提供实现证据。
+[FP-0000](FP-0000-governance.md#文档分工)。整体设计写在所属提案，现有 API 与实现限制写在模块 README
+和[贡献指南](../CONTRIBUTING.md)；测试和原始记录提供实现证据。
