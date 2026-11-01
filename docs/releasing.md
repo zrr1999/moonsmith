@@ -157,8 +157,9 @@ Mooncakes 精确版本的库消费与 CLI 安装另行验收。结果与失败�
 packslip 保证安装内容与允许的签名身份一致；它不验证链接的构建来源证明，两者的区别见
 [packslip 信任说明](https://packslip.dev/docs/trust/)。
 
-清单的固定版本安装器与官方 Action 都来自 packslip 正式发行，前者校验固定 SHA-256，
-后者固定完整 release commit。PR 构建不执行 OIDC 签名与公开安装，这两项由标签发布执行。
+packslip CLI 通过官方推荐的 [mise](https://packslip.dev/docs/install/#install-with-mise) 安装，
+下载、签名校验和 `PATH` 设置由 mise 及其官方 Action 负责；mise 与 packslip 均固定正式版本，
+两个上游 Action 均固定完整 release commit。PR 构建不执行 OIDC 签名与公开安装，这两项由标签发布执行。
 
 0.0.1 的双平台发行安装、库消费与重放结果见[CLI 安装验收](cli-installation-validation.md#001-发行安装验收)，
 实际安装入口见[README](../README.md#安装)。后续版本发布后按相同流程核对，再更新安装说明。

@@ -320,14 +320,11 @@ jobs:
           node-version: "26.3.1"
           package-manager-cache: false
       - name: Install packslip
-        run: |
-          installer="$RUNNER_TEMP/install-packslip.sh"
-          curl --proto '=https' --tlsv1.2 -fsSL \
-            https://github.com/jdx/packslip/releases/download/v1.11.3/install.sh -o "$installer"
-          printf '%s  %s\n' c8efeebd9e7af0f7951defb0a8a4513adb9a2e595018b87ea957f96e52299243 "$installer" |
-            shasum -a 256 --check
-          PACKSLIP_BIN_DIR="$RUNNER_TEMP/packslip/bin" sh "$installer"
-          echo "$RUNNER_TEMP/packslip/bin" >> "$GITHUB_PATH"
+        uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+        with:
+          version: "2026.10.25"
+          tool_versions: packslip 1.11.3
+          cache: false
       - name: Install and replay the signed release
         env:
           GH_TOKEN: ${{ github.token }}
