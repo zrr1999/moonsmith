@@ -48,8 +48,8 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
   README、许可证和模块清单与原文件一致；类型检查和全部原生行为测试使用解包后的源码与 C 文件。
   测试所需固定案例和任务配置另行复制，不将仓库产品源码混入包验收。
 - [公开库示例](https://github.com/zrr1999/moonsmith/blob/main/examples/library/main.mbt)可以生成等价组并调用 Engine；CLI 可以从解包模块安装。
-- 安装后的程序执行种子 42 的五配置普通任务和等价任务；搬迁材料后重放仍成功，
-  原始文件保持不变，新执行及组记录追加。
+- 解包模块的行为测试验证普通与等价任务、材料搬迁、原始记录保持不变和执行记录追加。
+- 安装后的程序在仓库外执行种子 42 的五配置任务，搬迁保存的案例后重放仍成功。
 - 标签上的完整验收额外执行种子 0–99 的五配置等价检查，记录每份源码、配置、原始观察和任务汇总。
 - 当前编译器分别执行种子 1272、3745、6968；存在独立确认材料时再次重放，保存实际结果。
 
@@ -59,7 +59,8 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
 
 包验收与已发布产物验收共用[本地安装验收 Action](https://github.com/zrr1999/moonsmith/blob/main/.github/actions/check-installed/action.yml)，
 传入已安装程序的路径和尚不存在的输出目录，保留执行日志、原始材料和重放结果。
-Action 读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/examples/quickstart.toml)，依赖 Bash、jq 和 SHA-256 工具。
+Action 读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/examples/quickstart.toml)，只核对已安装程序的运行与重放入口；
+任务语义和存储完整性由解包模块的 MoonBit 行为测试负责。
 本地可直接使用工作流中的 MoonBit 命令检查解包模块，按[CLI 安装验收](cli-installation-validation.md)运行与重放。
 
 ## 正式发布
