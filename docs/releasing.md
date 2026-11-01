@@ -93,7 +93,9 @@ Action 固定到正式发行的完整提交，清单直接附于 Draft Release�
 
 创建 Draft Release 时，通过 GitHub 自动生成发行说明，包含已合并 PR、贡献者和完整变更对比链接。
 重试复用 Draft 和最终公开时沿用已有正文，保留人工补充的迁移要求或破坏性变更说明。
-后续发行无需维护逐版本 Markdown 文件；[0.0.1 发行记录](releases/0.0.1.md)保留为历史验收证据。
+后续发行无需维护逐版本 Markdown 文件；0.0.1 的能力与边界保留在
+[公开发行记录](https://github.com/zrr1999/moonsmith/releases/tag/v0.0.1)，
+历史运行及安装结果见 [0.0.1 发行验收记录](cli-installation-validation.md#001-发行安装验收)。
 
 发布沿用官方 [async](https://github.com/moonbitlang/async/blob/main/.github/workflows/publish.yml)
 和 [x](https://github.com/moonbitlang/x/blob/main/.github/workflows/publish.yml) 的 `moon publish` 入口。
