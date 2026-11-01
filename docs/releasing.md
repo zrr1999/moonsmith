@@ -74,7 +74,7 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 
 推送该提交的 `vVERSION` 标签后，`CD - Publish` 同时进行构建和完整验收，二者都通过后才发布：
 
-1. 核对标签指向检出提交、提交属于 `main`、四模块版本与标签一致，并存在对应发行说明。
+1. 核对标签指向检出提交、提交属于 `main`、四模块版本与标签一致。
 2. 在两个平台执行与 PR 相同的 native release 构建、打包、解包启动和模块归档检查。
 3. 在两个平台执行包检查、历史种子重放和种子 0–99 的五配置等价验收。任一平台失败则不创建 Release，
    也不执行 `moon publish`。
@@ -90,6 +90,10 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 签名与上传使用同一个发布 job，共享内容写入、OIDC 与来源证明权限。构建和包验收保持只读。
 Action 固定到正式发行的完整提交，清单直接附于 Draft Release，不再经过中间 Actions artifact。
 签名失败会留下 Draft，但不会发布 Mooncakes 模块或公开 Release。
+
+创建 Draft Release 时，通过 GitHub 自动生成发行说明，包含已合并 PR、贡献者和完整变更对比链接。
+重试复用 Draft 和最终公开时沿用已有正文，保留人工补充的迁移要求或破坏性变更说明。
+后续发行无需维护逐版本 Markdown 文件；[0.0.1 发行记录](releases/0.0.1.md)保留为历史验收证据。
 
 发布沿用官方 [async](https://github.com/moonbitlang/async/blob/main/.github/workflows/publish.yml)
 和 [x](https://github.com/moonbitlang/x/blob/main/.github/workflows/publish.yml) 的 `moon publish` 入口。

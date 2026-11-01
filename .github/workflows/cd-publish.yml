@@ -62,7 +62,6 @@ jobs:
           test "$RELEASE_TAG" = "v$VERSION"
           test "$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")" = "$(git rev-parse HEAD)"
           git merge-base --is-ancestor HEAD origin/main
-          test -f "docs/releases/${RELEASE_TAG#v}.md"
       - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
         with:
           version: "0.10.18+6c83a7f62"
@@ -262,7 +261,7 @@ jobs:
             test "$(cat .artifacts/is-draft)" = true
           else
             gh release create "$RELEASE_TAG" --verify-tag --draft --title "MoonSmith $RELEASE_TAG" \
-              --notes-file "docs/releases/${RELEASE_TAG#v}.md"
+              --generate-notes
           fi
           cd .artifacts/release
           sha256sum moonsmith-*.tar.gz > SHA256SUMS
@@ -290,8 +289,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release edit "$RELEASE_TAG" --draft=false --title "MoonSmith $RELEASE_TAG" \
-            --notes-file "docs/releases/${RELEASE_TAG#v}.md"
+          gh release edit "$RELEASE_TAG" --draft=false --title "MoonSmith $RELEASE_TAG"
   distribution:
     name: Install and replay (${{ matrix.platform }})
     needs: publish
