@@ -90,6 +90,7 @@ hooks = [
 [[repos]]
 repo = "local"
 hooks = [
+  { id = "no-scripts-directory", name = "No scripts directory", entry = "Use justfile and upstream tools for development commands, or local Actions for shared CI steps.", language = "fail", files = "^scripts/" },
   { id = "ast-grep", name = "Host monotonic clock contract", entry = "ast-grep scan", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "(\\.c$|^quality/ast-grep/|^sgconfig\\.yml$)" },
   { id = "ast-grep-tests", name = "Clock rule examples", entry = "ast-grep test --skip-snapshot-tests", language = "python", additional_dependencies = ["ast-grep-cli==0.51.0"], pass_filenames = false, files = "^quality/ast-grep" },
 ]

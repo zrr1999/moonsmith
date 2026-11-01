@@ -176,13 +176,16 @@ jobs:
           moon check --target native --deny-warn
           moon test --target native
           moon -C consumer run . --target native --deny-warn
-      - name: Install and replay outside the workspace
+      - name: Install outside the workspace
         working-directory: ${{ runner.temp }}/moonsmith-packages
         env:
           PACKAGE_ROOT: ${{ runner.temp }}/moonsmith-packages
-        run: |
-          moon install ./modules/cli/src/cmd/moonsmith --bin "$PACKAGE_ROOT/bin"
-          bash "$GITHUB_WORKSPACE/scripts/check-installed.sh" "$PACKAGE_ROOT/bin/moonsmith" "$PACKAGE_ROOT/installed"
+        run: moon install ./modules/cli/src/cmd/moonsmith --bin "$PACKAGE_ROOT/bin"
+      - name: Check the installed package
+        uses: $/.github/actions/check-installed
+        with:
+          binary: ${{ runner.temp }}/moonsmith-packages/bin/moonsmith
+          output-directory: ${{ runner.temp }}/moonsmith-packages/installed
       - name: Check current results for the historical seeds
         working-directory: ${{ runner.temp }}/moonsmith-packages
         shell: bash
@@ -323,7 +326,7 @@ jobs:
           version: "2026.10.25"
           tool_versions: packslip 1.11.3
           cache: false
-      - name: Install and replay the signed release
+      - name: Install the signed release
         env:
           GH_TOKEN: ${{ github.token }}
           DISTRIBUTION_ROOT: ${{ runner.temp }}/moonsmith-distribution
@@ -335,7 +338,11 @@ jobs:
             --install-dir "$DISTRIBUTION_ROOT/packslip/tree" --bin-dir "$DISTRIBUTION_ROOT/packslip/bin"
           jq -e --arg version "$version" --arg commit "$GITHUB_SHA" --arg platform "$PLATFORM" \
             '.version == $version and .commit == $commit and .platform == $platform' "$DISTRIBUTION_ROOT/packslip/tree/build.json"
-          bash scripts/check-installed.sh "$DISTRIBUTION_ROOT/packslip/bin/moonsmith" "$DISTRIBUTION_ROOT/binary"
+      - name: Check the signed release
+        uses: $/.github/actions/check-installed
+        with:
+          binary: ${{ runner.temp }}/moonsmith-distribution/packslip/bin/moonsmith
+          output-directory: ${{ runner.temp }}/moonsmith-distribution/binary
       - name: Install exact packages from Mooncakes
         shell: bash
         env:
@@ -356,7 +363,11 @@ jobs:
                 .[0].version == $version and .[0].source.kind == "registry"' dependencies.json
           done
           moon install "zrr1999/moonsmith/cmd/moonsmith@$version" --bin "$DISTRIBUTION_ROOT/bin"
-          bash "$GITHUB_WORKSPACE/scripts/check-installed.sh" "$DISTRIBUTION_ROOT/bin/moonsmith" "$DISTRIBUTION_ROOT/registry"
+      - name: Check the registry installation
+        uses: $/.github/actions/check-installed
+        with:
+          binary: ${{ runner.temp }}/moonsmith-distribution/bin/moonsmith
+          output-directory: ${{ runner.temp }}/moonsmith-distribution/registry
       - name: Archive distribution evidence
         if: ${{ !cancelled() }}
         shell: bash

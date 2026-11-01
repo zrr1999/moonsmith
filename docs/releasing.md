@@ -57,15 +57,10 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
 `0.10.14+7d59c7ec9` 和 `0.10.11+6ff76a5f9`。`0.10.14` 在仓库外验证三例构建异常的自动归约、独立确认和重放；
 入口见[贡献指南](https://github.com/zrr1999/moonsmith/blob/main/CONTRIBUTING.md#变更与验证)。
 
-本地可直接使用工作流中的 MoonBit 命令检查解包模块，或对已安装程序运行共享的入口：
-
-```shell
-bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-installed-check
-```
-
-输出目录必须尚不存在，用于保留执行日志、原始材料和重放结果。该入口由包验收与已发布产物验收共用，
-读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/examples/quickstart.toml)，依赖 Bash、jq 和 SHA-256 工具。
-验收不维护自定义 Python 框架。
+包验收与已发布产物验收共用[本地安装验收 Action](https://github.com/zrr1999/moonsmith/blob/main/.github/actions/check-installed/action.yml)，
+传入已安装程序的路径和尚不存在的输出目录，保留执行日志、原始材料和重放结果。
+Action 读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/examples/quickstart.toml)，依赖 Bash、jq 和 SHA-256 工具。
+本地可直接使用工作流中的 MoonBit 命令检查解包模块，按[CLI 安装验收](cli-installation-validation.md)运行与重放。
 
 ## 正式发布
 
