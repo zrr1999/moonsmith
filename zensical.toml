@@ -5,14 +5,14 @@ site_url = "https://docs.moonsmith.zrr.dev/"
 repo_url = "https://github.com/zrr1999/moonsmith"
 repo_name = "zrr1999/moonsmith"
 edit_uri = "edit/main/docs/"
-docs_dir = ".artifacts/docs/source"
+docs_dir = "docs"
+exclude_docs = "/glossary.md"
 site_dir = ".artifacts/docs/site"
 strict = true
 
 nav = [
   { "首页" = "index.md" },
   { "项目申报书" = "project-proposal.md" },
-  { "术语" = "glossary.md" },
   { "验收" = [
     { "规模验收" = "acceptance-validation.md" },
     { "五配置矩阵" = "five-configuration-pilot.md" },
@@ -68,7 +68,7 @@ pymdownx.superfences.custom_fences = [
 markdown_description = "MoonSmith 保存 MoonBit 编译器差分测试的可重放异常证据，并归约失败程序。"
 
 [project.plugins.llmstxt.sections]
-"说明" = ["index.md", "project-proposal.md", "glossary.md", "documentation.md"]
+"说明" = ["index.md", "project-proposal.md", "documentation.md"]
 "验收" = [
   "acceptance-validation.md",
   "five-configuration-pilot.md",

@@ -94,7 +94,7 @@ jobs:
           version: "0.13.5"
           python-version: "3.13"
       - name: Build documentation
-        run: uv run --project tools/moonbit-lexer --group docs --no-build --locked python scripts/docs.py build
+        run: uv run --project tools/moonbit-lexer --group docs --no-build --locked zensical build --strict
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"

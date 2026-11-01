@@ -1,7 +1,7 @@
 # 发行与验收
 
 MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的固定提交构建，工具链及宿主依赖见
-[安装要求](../README.md#安装)。预编译程序覆盖 macOS arm64 与 Linux x86_64，分别在 macOS 15
+[安装要求](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)。预编译程序覆盖 macOS arm64 与 Linux x86_64，分别在 macOS 15
 与 Ubuntu 24.04 的官方 runner 上构建。
 
 ## 工作流职责
@@ -12,9 +12,9 @@ MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的�
 
 | 工作流 | 职责 |
 | --- | --- |
-| [CI - Static Checks](../.github/workflows/ci-static-checks.yml) | 仓库静态门禁与 CodeQL |
-| [CI - Tests](../.github/workflows/ci-tests.yml) | 行为测试、覆盖率与双平台固定旧工具链的历史复现 |
-| [CD - Publish](../.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 验收与签名后发布，再核对已发布产物 |
+| [CI - Static Checks](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/ci-static-checks.yml) | 仓库静态门禁与 CodeQL |
+| [CI - Tests](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/ci-tests.yml) | 行为测试、覆盖率与双平台固定旧工具链的历史复现 |
+| [CD - Publish](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 验收与签名后发布，再核对已发布产物 |
 
 各工作流的检查结果和验收材料由对应运行保存。`All Required Checks Passed (Tests)` 和 `All Required Checks Passed (Static Checks)` 分别汇总对应工作流的上游 job，任一结果为 `failure` 时失败。合并规则还要求 `All Required Checks Passed (Policy)`。
 推送版本标签后，构建和完整验收都通过才执行发布。
@@ -47,7 +47,7 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
 - 通过 `moon work sync` 检查内部依赖版本，打包四模块后解包到仓库外。
   README、许可证和模块清单与原文件一致；类型检查和全部原生行为测试使用解包后的源码与 C 文件。
   测试所需固定案例和任务配置另行复制，不将仓库产品源码混入包验收。
-- [公开库示例](../examples/library/main.mbt)可以生成等价组并调用 Engine；CLI 可以从解包模块安装。
+- [公开库示例](https://github.com/zrr1999/moonsmith/blob/main/examples/library/main.mbt)可以生成等价组并调用 Engine；CLI 可以从解包模块安装。
 - 安装后的程序执行种子 42 的五配置普通任务和等价任务；搬迁材料后重放仍成功，
   原始文件保持不变，新执行及组记录追加。
 - 标签上的完整验收额外执行种子 0–99 的五配置等价检查，记录每份源码、配置、原始观察和任务汇总。
@@ -55,7 +55,7 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
 
 静态检查、覆盖率和性能基准由各自 CI/CE 负责。`CI - Tests` 用 `0.10.18` 构建 MoonSmith，再分别调用
 `0.10.14+7d59c7ec9` 和 `0.10.11+6ff76a5f9`。`0.10.14` 在仓库外验证三例构建异常的自动归约、独立确认和重放；
-入口见[贡献指南](../CONTRIBUTING.md#变更与验证)。
+入口见[贡献指南](https://github.com/zrr1999/moonsmith/blob/main/CONTRIBUTING.md#变更与验证)。
 
 本地可直接使用工作流中的 MoonBit 命令检查解包模块，或对已安装程序运行共享的入口：
 
@@ -64,7 +64,7 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 ```
 
 输出目录必须尚不存在，用于保留执行日志、原始材料和重放结果。该入口由包验收与已发布产物验收共用，
-读取[公开 CLI 配置](../examples/quickstart.toml)，依赖 Bash、jq 和 SHA-256 工具。
+读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/examples/quickstart.toml)，依赖 Bash、jq 和 SHA-256 工具。
 验收不维护自定义 Python 框架。
 
 ## 正式发布
@@ -115,9 +115,9 @@ Action 固定到正式发行的完整提交，清单直接附于 Draft Release�
 | `CI - Tests` 的历史证据 artifact | 固定旧工具链的异常复现、归约、确认和重放记录 |
 | `CD - Publish` 的 `distribution-PLATFORM` artifact | 已发布二进制与 registry 安装的验收材料 |
 
-安装签名发行使用 [README](../README.md#安装) 的 `packslip install` 入口：它以指定的 GitHub
+安装签名发行使用 [README](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装) 的 `packslip install` 入口：它以指定的 GitHub
 仓库为信任依据，只下载本机平台的附件，验证签名与摘要后导出命令，并记住后续安装的信任状态。
-清单声明必需的 `moon` 命令；C 编译器及运行时要求仍见[安装要求](../README.md#安装)。
+清单声明必需的 `moon` 命令；C 编译器及运行时要求仍见[安装要求](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)。
 签名来自 `cd-publish.yml`；迁移签名工作流可能要求使用者确认信任变化。
 
 手动下载仍可使用 `SHA256SUMS`：macOS 运行 `shasum -a 256 -c SHA256SUMS`，Linux 运行
@@ -138,7 +138,7 @@ moonsmith replay /absolute/path/to/group-directory
 ```
 
 原万例实验与人工调查材料已附于 [0.0.1 Release](https://github.com/zrr1999/moonsmith/releases/tag/v0.0.1)，
-其摘要见[历史材料清单](../.github/release-evidence.json)，
+其摘要见[历史材料清单](https://github.com/zrr1999/moonsmith/blob/main/.github/release-evidence.json)，
 可在历史压缩包所在目录使用 `jq` 和 `shasum` 校验：
 
 ```shell
@@ -168,4 +168,4 @@ packslip CLI 通过官方推荐的 [mise](https://packslip.dev/docs/install/#ins
 两个上游 Action 均固定完整 release commit。PR 构建不执行 OIDC 签名与公开安装，这两项由标签发布执行。
 
 0.0.1 的双平台发行安装、库消费与重放结果见[CLI 安装验收](cli-installation-validation.md#001-发行安装验收)，
-实际安装入口见[README](../README.md#安装)。后续版本发布后按相同流程核对，再更新安装说明。
+实际安装入口见[README](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)。后续版本发布后按相同流程核对，再更新安装说明。

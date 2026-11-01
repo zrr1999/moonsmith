@@ -4,7 +4,7 @@
 
 ## 目标、输入与方法
 
-演示入口为 [`modules/cli/src/examples/reduction/main.mbt`](../modules/cli/src/examples/reduction/main.mbt)，调用现有库入口。它以显式种子 7 和最多 16 个候选运行归约。初始程序来自[固定归约输入](../cases/moonbit/reduce-root-call/main.mbt)，生成规则为 `template-rules-v1`，预算为 128 个节点、深度 6、256 次构造尝试。
+演示入口为 [`modules/cli/src/examples/reduction/main.mbt`](https://github.com/zrr1999/moonsmith/blob/main/modules/cli/src/examples/reduction/main.mbt)，调用现有库入口。它以显式种子 7 和最多 16 个候选运行归约。初始程序来自[固定归约输入](https://github.com/zrr1999/moonsmith/blob/main/cases/moonbit/reduce-root-call/main.mbt)，生成规则为 `template-rules-v1`，预算为 128 个节点、深度 6、256 次构造尝试。
 
 | 环境条件 | 实测值 |
 | --- | --- |
@@ -47,7 +47,7 @@ fn main {
 
 ## 结论与边界
 
-这次演示中，归约、独立确认和源码重放都保持了注入的配置对输出差异；搜索仅遍历所述候选，未验证全局最小性。真实工具链历史案例见[历史回归报告](historical-regressions.md)；案例与尝试的保存格式及重放行为见[CLI 差分执行与存证说明](../modules/cli/README.md#差分执行与存证)。
+这次演示中，归约、独立确认和源码重放都保持了注入的配置对输出差异；搜索仅遍历所述候选，未验证全局最小性。真实工具链历史案例见[历史回归报告](historical-regressions.md)；案例与尝试的保存格式及重放行为见[CLI 差分执行与存证说明](https://github.com/zrr1999/moonsmith/blob/main/modules/cli/README.md#差分执行与存证)。
 
 ## 真实构建异常的产品演示
 
