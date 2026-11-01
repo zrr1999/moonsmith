@@ -78,15 +78,18 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 2. 在两个平台执行与 PR 相同的 native release 构建、打包、解包启动和模块归档检查。
 3. 在两个平台执行包检查、历史种子重放和种子 0–99 的五配置等价验收。任一平台失败则不创建 Release，
    也不执行 `moon publish`。
-4. 独立的 `sign` job 为两份 CLI 压缩包创建 GitHub 来源证明，并通过 packslip 生成
-   `packslip.sigstore.json`。签名使用当前工作流的 GitHub OIDC 身份，不保管长期签名私钥。
-   此 job 只有内容读取、OIDC 与来源证明权限，不能修改 Release；签名失败时不进入发布。
-5. 创建或复用该标签的 Draft Release，按 contracts → engine → moonbit → CLI 顺序直接运行
-   `moon publish`。任一模块失败即停止后续发布。
-6. 为两份 CLI 附件生成 `SHA256SUMS`，将附件、校验和及签名清单一起上传，再公开 GitHub Release。
-7. 核对公开附件的校验和与 GitHub 来源证明，再通过 packslip 验签并安装精确版本，
-   检查安装包内的版本、提交和平台。随后验收 CLI 与 Mooncakes 安装、库消费、材料搬迁和重放。
+4. `publish` job 创建或复用该标签的 Draft Release，上传两份 CLI 附件及 `SHA256SUMS`。
+   官方 packslip Action 为附件生成来源证明和签名清单，验证后直接上传 `packslip.sigstore.json`。
+   签名使用当前工作流的 GitHub OIDC 身份，不保管长期签名私钥。
+5. 签名成功后，按 contracts → engine → moonbit → CLI 顺序直接运行 `moon publish`。
+   任一模块失败即停止后续发布；全部成功才公开 GitHub Release。
+6. 两个平台分别通过 packslip 验签并安装精确版本，检查安装包内的版本、提交和平台，
+   随后验收 CLI 与 Mooncakes 安装、库消费、材料搬迁和重放。
    这一步失败不会撤回已经公开的 Release 或已发布的模块。
+
+签名与上传使用同一个发布 job，共享内容写入、OIDC 与来源证明权限。构建和包验收保持只读。
+Action 固定到正式发行的完整提交，清单直接附于 Draft Release，不再经过中间 Actions artifact。
+签名失败会留下 Draft，但不会发布 Mooncakes 模块或公开 Release。
 
 发布沿用官方 [async](https://github.com/moonbitlang/async/blob/main/.github/workflows/publish.yml)
 和 [x](https://github.com/moonbitlang/x/blob/main/.github/workflows/publish.yml) 的 `moon publish` 入口。
@@ -106,25 +109,18 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 | `CI - Tests` 的历史证据 artifact | 固定旧工具链的异常复现、归约、确认和重放记录 |
 | `CD - Publish` 的 `distribution-PLATFORM` artifact | 已发布二进制与 registry 安装的验收材料 |
 
-下载 CLI 附件后，macOS 使用 `shasum -a 256 -c SHA256SUMS`，Linux 使用
-`sha256sum -c SHA256SUMS` 校验。校验和列出两个平台附件，完整校验时应一并下载。
+安装签名发行使用 [README](../README.md#安装) 的 `packslip install` 入口：它以指定的 GitHub
+仓库为信任依据，只下载本机平台的附件，验证签名与摘要后导出命令，并记住后续安装的信任状态。
+清单声明必需的 `moon` 命令；C 编译器及运行时要求仍见[安装要求](../README.md#安装)。
+签名来自 `cd-publish.yml`；迁移签名工作流可能要求使用者确认信任变化。
 
-packslip 清单通过 GitHub Actions 的 OIDC 身份签名。发行使用同一个
-`cd-publish.yml` 工作流；移动签名工作流可能需要使用者重新确认信任。
-清单声明必需的 `moon` 命令；C 编译器及按执行配置选择的运行时要求仍见[安装要求](../README.md#安装)。
-验证下载时同时指定预期仓库，不能仅以附件自身声明的项目作为身份依据：
-
-```shell
-packslip verify packslip.sigstore.json --artifact moonsmith-VERSION-linux-x86_64.tar.gz \
-  --source-repository https://github.com/zrr1999/moonsmith \
-  --issuer https://token.actions.githubusercontent.com
-gh attestation verify moonsmith-VERSION-linux-x86_64.tar.gz --repo zrr1999/moonsmith
-```
-
-将 `VERSION` 和平台替换为实际下载项。packslip 的文件验签不读取链接的 GitHub 来源证明，
-因此第二条命令独立检查证明。
-首次签名发行通过上述核对后，维护者运行 `packslip pin packslip.sigstore.json`，
-将结果补充到安装文档，供使用者通过 `--pin` 固定仓库身份；不能从本地测试签名推导该指纹。
+手动下载仍可使用 `SHA256SUMS`：macOS 运行 `shasum -a 256 -c SHA256SUMS`，Linux 运行
+`sha256sum -c SHA256SUMS`，通过后解包并将 `moonsmith` 加入 `PATH`。校验和列出两个平台附件，
+完整校验时应一并下载；校验和本身不提供签名身份保证。
+需要独立审计构建来源时，可对下载的附件运行 `gh attestation verify ARCHIVE --repo zrr1999/moonsmith`。
+这项检查独立于 packslip 安装，来源证明的生成仍由官方 Action 负责。
+首次正式签名发行后，可用 `packslip pin packslip.sigstore.json` 取得 signer fingerprint，
+供需要预先固定仓库身份的使用者通过 `--pin` 安装；它不是日常安装的额外步骤。
 
 验收材料使用标准 `tar` 归档并由 GitHub Actions artifact 保存，构建缓存不入包。
 历史异常的生成 C 文件随历史证据保存。执行记录可能包含当时的绝对路径，重放时使用实际解包位置。
@@ -152,10 +148,14 @@ jq -r '"\(.sha256)  \(.file)"' /absolute/path/to/moonsmith/.github/release-evide
 
 ## 已发布产物验收
 
-发布公开后，`CD - Publish` 以只读权限核对两份 CLI 附件的校验和，以及对应仓库、标签、提交和
-签名工作流的 GitHub 来源证明。packslip 负责选择本机产物、核对签名身份与摘要并安装精确版本；
-安装后的 `build.json` 必须匹配版本、提交和平台。随后运行现有五配置任务与重放验收，
-并从 Mooncakes 安装精确版本验证库消费与 CLI。结果与失败材料保留在该次运行中，不撤回已完成的发布。
+发布公开后，`CD - Publish` 在两个平台以只读权限执行同一个 `packslip install` 入口，
+将签名身份限制为本次标签的 `cd-publish.yml`。packslip 负责选包、下载、验签、摘要核对和安装，
+每个平台只取对应附件。安装后的 `build.json` 必须匹配版本、提交和平台，再运行五配置任务与重放验收。
+Mooncakes 精确版本的库消费与 CLI 安装另行验收。结果与失败材料保留在该次运行中，不撤回已完成的发布。
+
+发行安装不再重复下载其他平台附件、校验 `SHA256SUMS` 或独立验证来源证明。
+packslip 保证安装内容与允许的签名身份一致；它不验证链接的构建来源证明，两者的区别见
+[packslip 信任说明](https://packslip.dev/docs/trust/)。
 
 清单的固定版本安装器与官方 Action 都来自 packslip 正式发行，前者校验固定 SHA-256，
 后者固定完整 release commit。PR 构建不执行 OIDC 签名与公开安装，这两项由标签发布执行。
