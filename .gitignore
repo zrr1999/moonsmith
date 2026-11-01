@@ -6,4 +6,5 @@ pkg.generated.mbti
 /runs/
 /.artifacts/
 .wrangler/
+.venv/
 .DS_Store

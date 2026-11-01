@@ -95,14 +95,14 @@ docs *args:
           echo "Usage: just docs [serve [PORT]]" >&2
           exit 2
         fi
-        uv run --locked --script scripts/docs.py build
+        uv run --project tools/moonbit-lexer --group docs --no-build --locked python scripts/docs.py build
         ;;
       serve)
         if [[ $# -gt 2 ]]; then
           echo "Usage: just docs [serve [PORT]]" >&2
           exit 2
         fi
-        uv run --locked --script scripts/docs.py serve --port "${2:-8000}"
+        uv run --project tools/moonbit-lexer --group docs --no-build --locked python scripts/docs.py serve --port "${2:-8000}"
         ;;
       *)
         echo "Usage: just docs [serve [PORT]]" >&2

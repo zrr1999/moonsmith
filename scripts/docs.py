@@ -1,14 +1,4 @@
-#!/usr/bin/env -S uv run --script
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   "moonbit-pygments",
-#   "zensical==0.0.74",
-# ]
-#
-# [tool.uv.sources]
-# moonbit-pygments = { path = "../tools/moonbit-lexer" }
-# ///
+#!/usr/bin/env python3
 """Stage docs/ and build or serve the Zensical site."""
 
 import argparse

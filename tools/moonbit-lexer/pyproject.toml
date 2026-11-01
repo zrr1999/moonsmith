@@ -9,6 +9,9 @@ dependencies = ["pygments>=2.19"]
 [project.entry-points."pygments.lexers"]
 moonbit = "moonbit_pygments:MoonBitLexer"
 
+[dependency-groups]
+docs = ["zensical==0.0.74"]
+
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.33.0"]
 build-backend = "hatchling.build"
