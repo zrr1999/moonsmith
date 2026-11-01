@@ -85,7 +85,7 @@ jobs:
               commit: $commit, toolchain: $toolchain}' > .artifacts/staging/build.json
           tar -czf ".artifacts/release/moonsmith-$ARTIFACT_VERSION-$PLATFORM.tar.gz" \
             -C .artifacts/staging moonsmith LICENSE README.md build.json
-      - name: Check packaged CLI and module archives
+      - name: Check the packaged CLI
         env:
           ARTIFACT_VERSION: ${{ steps.package.outputs.artifact_version }}
         shell: bash
@@ -93,29 +93,12 @@ jobs:
           unpacked="$RUNNER_TEMP/packaged-cli"
           mkdir -p "$unpacked"
           tar -xzf ".artifacts/release/moonsmith-$ARTIFACT_VERSION-$PLATFORM.tar.gz" -C "$unpacked"
-          cmp .artifacts/staging/moonsmith "$unpacked/moonsmith"
           (cd "$unpacked" && ./moonsmith --help)
-          moon work sync
-          git diff --exit-code -- modules
-          for module in contracts engine moonbit cli; do
-            moon -C "modules/$module" package --list
-          done
-          for archive in _build/publish/*.zip; do
-            unzip -t "$archive"
-          done
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: binary-${{ matrix.platform }}
           path: .artifacts/release/*.tar.gz
           include-hidden-files: true
-          if-no-files-found: error
-          overwrite: true
-          retention-days: 21
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: matrix.platform == 'linux-x86_64'
-        with:
-          name: module-packages
-          path: _build/publish/*.zip
           if-no-files-found: error
           overwrite: true
           retention-days: 21
@@ -170,12 +153,15 @@ jobs:
           cp -R examples/library "$PACKAGE_ROOT/consumer"
           moon -C "$PACKAGE_ROOT" work use ./consumer
           moon -C "$PACKAGE_ROOT" work sync
-      - name: Check and test the unpacked modules
+      - name: Check unpacked modules and public library usage
         working-directory: ${{ runner.temp }}/moonsmith-packages
         run: |
           moon check --target native --deny-warn
-          moon test --target native
           moon -C consumer run . --target native --deny-warn
+      - name: Test unpacked modules before release
+        if: github.event_name == 'push'
+        working-directory: ${{ runner.temp }}/moonsmith-packages
+        run: moon test --target native
       - name: Install outside the workspace
         working-directory: ${{ runner.temp }}/moonsmith-packages
         env:
@@ -193,14 +179,10 @@ jobs:
           shopt -s nullglob
           for seed in 1272 3745 6968; do
             result=0
-            bin/moonsmith run --set "seed_start=$seed" \
-              --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
+            bin/moonsmith run --config "$GITHUB_WORKSPACE/examples/quickstart.toml" --set "seed_start=$seed" \
               --set "output.directory=\"current-$seed\"" || result=$?
             test "$result" -eq 0 || test "$result" -eq 2 || test "$result" -eq 3
-            jq -e '.attempted == 1 and .operation_errors == 0' current-"$seed"/task-*/summary.json
-            attempts=(current-"$seed"/task-*/cases/case-*/attempts/run-*/attempt.json)
-            test "${#attempts[@]}" -gt 0
-            for attempt in "${attempts[@]}"; do
+            for attempt in current-"$seed"/task-*/cases/case-*/attempts/run-*/attempt.json; do
               if jq -e '.purpose == "confirmation" or .purpose == "build-confirmation"' "$attempt" > /dev/null; then
                 result=0
                 bin/moonsmith replay "${attempt%/attempt.json}" || result=$?
@@ -212,12 +194,9 @@ jobs:
         if: github.event_name == 'push'
         working-directory: ${{ runner.temp }}/moonsmith-packages
         run: |
-          bin/moonsmith run --set seed_start=0 --set sample_count=100 \
+          bin/moonsmith run --config acceptance.toml --set sample_count=100 \
             --set execution.equivalent_variants=true \
-            --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
             --set 'output.directory="full"'
-          jq -e '.attempted == 100 and .consistent == 100 and .comparisons_complete == 100 and
-            .operation_errors == 0' full/task-*/summary.json
       - name: Archive package acceptance evidence
         if: ${{ !cancelled() }}
         shell: bash

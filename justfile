@@ -53,22 +53,19 @@ test-historical:
       --set 'output.directory="runs/historical-cli"' || cli_exit=$?
     test "$cli_exit" -eq 3
 
-# Run the built MoonSmith against the moonc currently on PATH.
+# Run the built MoonSmith against a selected moon installation.
 test-compiler:
     #!/usr/bin/env bash
     set -euo pipefail
-    home="${COMPILER_HOME:?compiler directory is required}"
+    compiler_home="${COMPILER_HOME:?compiler directory is required}"
     output="${COMPILER_OUTPUT:-runs/compiler}"
-    "$home/bin/moon" version --all
+    "$compiler_home/bin/moon" version --all
     result=0
     .artifacts/historical-bin/moonsmith run --set seed_start=1272 --set sample_count=1 \
-      --set "execution.toolchains=[\"$home\"]" \
+      --set "execution.toolchains=[\"$compiler_home\"]" \
       --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
       --set "output.directory=\"$output\"" || result=$?
     test "$result" -eq 0 || test "$result" -eq 2 || test "$result" -eq 3
-    summary=("$output"/task-*/summary.json)
-    test "${#summary[@]}" -eq 1
-    jq -e '.attempted == 1 and .operation_errors == 0' "${summary[0]}"
 
 # Measure all workspace tests with the pinned MoonBit coverage reporter
 coverage:

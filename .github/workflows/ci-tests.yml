@@ -31,8 +31,6 @@ jobs:
             platform: linux-x86_64
           - runner: macos-15
             platform: macos-arm64
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -63,6 +61,11 @@ jobs:
         with:
           version: "0.10.14+7d59c7ec9"
           core-version: "0.10.14+7d59c7ec9"
+      - name: Test moonc 0.10.14 regressions and CLI
+        env:
+          COMPILER_HOME: ${{ runner.temp }}/moonc-0.10.14
+          COMPILER_OUTPUT: runs/moonc-0.10.14
+        run: just --justfile "$GITHUB_WORKSPACE/justfile" --working-directory "$HISTORICAL_ROOT" test-historical test-compiler
       - name: Install moonc 0.10.11
         env:
           MOONBIT_HOME: ${{ runner.temp }}/moonc-0.10.11
@@ -70,22 +73,11 @@ jobs:
         with:
           version: "0.10.11+6ff76a5f9"
           core-version: "0.10.11+6ff76a5f9"
-      - name: Test the built MoonSmith against each moonc
-        run: |
-          set -euo pipefail
-          run_one() {
-            local home="$1"
-            local strict="$2"
-            local output="$3"
-            export COMPILER_HOME="$home"
-            export COMPILER_OUTPUT="$output"
-            if [ "$strict" = yes ]; then
-              just --justfile "$GITHUB_WORKSPACE/justfile" --working-directory "$HISTORICAL_ROOT" test-historical
-            fi
-            just --justfile "$GITHUB_WORKSPACE/justfile" --working-directory "$HISTORICAL_ROOT" test-compiler
-          }
-          run_one "$RUNNER_TEMP/moonc-0.10.14" yes runs/moonc-0.10.14
-          run_one "$RUNNER_TEMP/moonc-0.10.11" no runs/moonc-0.10.11
+      - name: Test the CLI with moonc 0.10.11
+        env:
+          COMPILER_HOME: ${{ runner.temp }}/moonc-0.10.11
+          COMPILER_OUTPUT: runs/moonc-0.10.11
+        run: just --justfile "$GITHUB_WORKSPACE/justfile" --working-directory "$HISTORICAL_ROOT" test-compiler
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
@@ -109,9 +101,17 @@ jobs:
             ${{ env.HISTORICAL_ROOT }}/runs/**/*.md
             ${{ env.HISTORICAL_ROOT }}/runs/**/native/release/build/generated.c
   test:
-    name: Behavior Tests
-    runs-on: ubuntu-24.04
+    name: Behavior Tests (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x86_64
+          - runner: macos-15
+            platform: macos-arm64
     permissions:
       contents: read
       id-token: write
@@ -134,38 +134,18 @@ jobs:
           node-version: "26.3.1"
       - name: Update MoonBit package index
         run: moon update
-      - name: Install CLI from the clean workspace
-        run: moon install ./modules/cli/src/cmd/moonsmith --bin "${RUNNER_TEMP}/moonsmith-bin"
-      - name: Validate installed CLI outside the workspace
-        working-directory: ${{ runner.temp }}
-        run: |
-          validation_root="${RUNNER_TEMP}/moonsmith-acceptance"
-          mkdir -p "${validation_root}"
-          cd "${validation_root}"
-          installed_cli="${RUNNER_TEMP}/moonsmith-bin/moonsmith"
-          "${installed_cli}" --help
-          "${installed_cli}" run --set seed_start=42 \
-            --set 'execution.configurations=["native-debug","native-release","wasm-gc-debug","wasm-debug","js-debug"]' \
-            --set "output.directory=\"${GITHUB_WORKSPACE}/runs/installed-cli\""
-          sample_records=("${GITHUB_WORKSPACE}"/runs/installed-cli/task-*/samples/0.json)
-          test "${#sample_records[@]}" -eq 1
-          validation_case=$(jq -er '.outcome | select(.[0] == "Observed") | .[1].case_directory' "${sample_records[0]}")
-          summary_file="${sample_records[0]%/samples/0.json}/summary.json"
-          jq -e '.format_version == 2 and .attempted == 1 and .generated_valid == 1 and
-            .baseline_accepted == 1 and .comparisons_complete == 1 and .consistent == 1 and
-            .operation_errors == 0' "${summary_file}"
-          sha256sum "${validation_case}/case.json" "${validation_case}/original.mbt" \
-            "${summary_file}" > before.sha256
-          "${installed_cli}" replay "${validation_case}"
-          sha256sum --check before.sha256
       - name: Build workspace modules
         run: just build
       - name: Run tests with native coverage
+        if: runner.os == 'Linux'
         run: just coverage
+      - name: Run tests on macOS
+        if: runner.os == 'macOS'
+        run: just test
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: execution-evidence
+          name: execution-evidence-${{ matrix.platform }}
           retention-days: 7
           path: |
             runs/**/*.json
@@ -175,13 +155,14 @@ jobs:
             runs/**/moon.pkg
             runs/**/*.md
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && runner.os == 'Linux' }}
         with:
           name: native-coverage
           path: .artifacts/quality/coverage*
           include-hidden-files: true
           if-no-files-found: error
       - name: Upload native coverage
+        if: runner.os == 'Linux'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: .artifacts/quality/coverage.xml

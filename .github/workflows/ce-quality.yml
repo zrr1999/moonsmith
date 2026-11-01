@@ -22,15 +22,15 @@ jobs:
         with:
           version: "0.13.5"
           python-version: "3.13"
+      - name: Install Gitleaks
+        uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+        with:
+          version: "2026.10.25"
+          tool_versions: gitleaks 8.30.1
+          cache: false
       - name: Scan full Git history for secrets
         if: ${{ !cancelled() }}
-        run: |
-          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
-            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
-            --output "$RUNNER_TEMP/gitleaks.tar.gz"
-          printf '%s  %s\n' '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb' "$RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check
-          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
-          "$RUNNER_TEMP/gitleaks" git . --config .gitleaks.toml --redact --no-banner
+        run: gitleaks git . --config .gitleaks.toml --redact --no-banner
       - run: |
           mkdir -p .artifacts/quality
           git ls-files -z '*.md' ':(exclude).agents/notes/**' |
