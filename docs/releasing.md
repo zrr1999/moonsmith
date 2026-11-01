@@ -14,7 +14,7 @@ MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的�
 | --- | --- |
 | [CI - Static Checks](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/ci-static-checks.yml) | 仓库静态门禁与 CodeQL |
 | [CI - Tests](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/ci-tests.yml) | 行为测试、覆盖率与双平台固定旧工具链的历史复现 |
-| [CD - Publish](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 的完整验收后发布，再核对已发布产物 |
+| [CD - Publish](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 验收与签名后发布，再核对已发布产物 |
 
 各工作流的检查结果和验收材料由对应运行保存。`All Required Checks Passed (Tests)` 和 `All Required Checks Passed (Static Checks)` 分别汇总对应工作流的上游 job，任一结果为 `failure` 时失败。合并规则还要求 `All Required Checks Passed (Policy)`。
 推送版本标签后，构建和完整验收都通过才执行发布。
@@ -48,8 +48,8 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
   README、许可证和模块清单与原文件一致；类型检查和全部原生行为测试使用解包后的源码与 C 文件。
   测试所需固定案例和任务配置另行复制，不将仓库产品源码混入包验收。
 - [公开库示例](https://github.com/zrr1999/moonsmith/blob/main/examples/library/main.mbt)可以生成等价组并调用 Engine；CLI 可以从解包模块安装。
-- 安装后的程序执行种子 42 的五配置普通任务和等价任务；搬迁材料后重放仍成功，
-  原始文件保持不变，新执行及组记录追加。
+- 解包模块的行为测试验证普通与等价任务、材料搬迁、原始记录保持不变和执行记录追加。
+- 安装后的程序在仓库外执行种子 42 的五配置任务，搬迁保存的案例后重放仍成功。
 - 标签上的完整验收额外执行种子 0–99 的五配置等价检查，记录每份源码、配置、原始观察和任务汇总。
 - 当前编译器分别执行种子 1272、3745、6968；存在独立确认材料时再次重放，保存实际结果。
 
@@ -57,15 +57,11 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
 `0.10.14+7d59c7ec9` 和 `0.10.11+6ff76a5f9`。`0.10.14` 在仓库外验证三例构建异常的自动归约、独立确认和重放；
 入口见[贡献指南](https://github.com/zrr1999/moonsmith/blob/main/CONTRIBUTING.md#变更与验证)。
 
-本地可直接使用工作流中的 MoonBit 命令检查解包模块，或对已安装程序运行共享的入口：
-
-```shell
-bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-installed-check
-```
-
-输出目录必须尚不存在，用于保留执行日志、原始材料和重放结果。该入口由包验收与已发布产物验收共用，
-读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/examples/quickstart.toml)，依赖 Bash、jq 和 SHA-256 工具。
-验收不维护自定义 Python 框架。
+包验收与已发布产物验收共用[本地安装验收 Action](https://github.com/zrr1999/moonsmith/blob/main/.github/actions/check-installed/action.yml)，
+传入已安装程序的路径和尚不存在的输出目录，保留执行日志、原始材料和重放结果。
+Action 读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/examples/quickstart.toml)，只核对已安装程序的运行与重放入口；
+任务语义和存储完整性由解包模块的 MoonBit 行为测试负责。
+本地可直接使用工作流中的 MoonBit 命令检查解包模块，按[CLI 安装验收](cli-installation-validation.md)运行与重放。
 
 ## 正式发布
 
@@ -74,15 +70,28 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 
 推送该提交的 `vVERSION` 标签后，`CD - Publish` 同时进行构建和完整验收，二者都通过后才发布：
 
-1. 核对标签指向检出提交、提交属于 `main`、四模块版本与标签一致，并存在对应发行说明。
+1. 核对标签指向检出提交、提交属于 `main`、四模块版本与标签一致。
 2. 在两个平台执行与 PR 相同的 native release 构建、打包、解包启动和模块归档检查。
 3. 在两个平台执行包检查、历史种子重放和种子 0–99 的五配置等价验收。任一平台失败则不创建 Release，
    也不执行 `moon publish`。
-4. 创建或复用该标签的 Draft Release，按 contracts → engine → moonbit → CLI 顺序直接运行
-   `moon publish`。任一模块失败即停止后续发布。
-5. 为两份 CLI 附件生成 `SHA256SUMS`，上传附件并公开 GitHub Release。
-6. 下载已公开的两份 CLI 附件并校验摘要，再从 Mooncakes 安装精确版本，验证库消费、CLI、材料搬迁和重放。
+4. `publish` job 创建或复用该标签的 Draft Release，上传两份 CLI 附件及 `SHA256SUMS`。
+   官方 packslip Action 为附件生成来源证明和签名清单，验证后直接上传 `packslip.sigstore.json`。
+   签名使用当前工作流的 GitHub OIDC 身份，不保管长期签名私钥。
+5. 签名成功后，按 contracts → engine → moonbit → CLI 顺序直接运行 `moon publish`。
+   任一模块失败即停止后续发布；全部成功才公开 GitHub Release。
+6. 两个平台分别通过 packslip 验签并安装精确版本，检查安装包内的版本、提交和平台，
+   随后验收 CLI 与 Mooncakes 安装、库消费、材料搬迁和重放。
    这一步失败不会撤回已经公开的 Release 或已发布的模块。
+
+签名与上传使用同一个发布 job，共享内容写入、OIDC 与来源证明权限。构建和包验收保持只读。
+Action 固定到正式发行的完整提交，清单直接附于 Draft Release，不再经过中间 Actions artifact。
+签名失败会留下 Draft，但不会发布 Mooncakes 模块或公开 Release。
+
+创建 Draft Release 时，通过 GitHub 自动生成发行说明，包含已合并 PR、贡献者和完整变更对比链接。
+重试复用 Draft 和最终公开时沿用已有正文，保留人工补充的迁移要求或破坏性变更说明。
+后续发行无需维护逐版本 Markdown 文件；0.0.1 的能力与边界保留在
+[公开发行记录](https://github.com/zrr1999/moonsmith/releases/tag/v0.0.1)，
+历史运行及安装结果见 [0.0.1 发行验收记录](cli-installation-validation.md#001-发行安装验收)。
 
 发布沿用官方 [async](https://github.com/moonbitlang/async/blob/main/.github/workflows/publish.yml)
 和 [x](https://github.com/moonbitlang/x/blob/main/.github/workflows/publish.yml) 的 `moon publish` 入口。
@@ -97,12 +106,23 @@ bash scripts/check-installed.sh /absolute/path/to/moonsmith /tmp/moonsmith-insta
 | `moonsmith-VERSION-macos-arm64.tar.gz` | macOS arm64 CLI、许可证、README 及构建身份 |
 | `moonsmith-VERSION-linux-x86_64.tar.gz` | Linux x86_64 CLI、许可证、README 及构建身份 |
 | Release 中的 `SHA256SUMS` | 上述两份 CLI 附件的 SHA-256 |
+| Release 中的 `packslip.sigstore.json` | 两份 CLI 附件的签名摘要、平台、执行入口、源提交与来源证明链接；0.0.1 不提供 |
 | `CD - Publish` 的 `acceptance-PLATFORM` artifact | 模块包、解包测试、历史种子与安装重放；标签运行还包含种子 0–99 |
 | `CI - Tests` 的历史证据 artifact | 固定旧工具链的异常复现、归约、确认和重放记录 |
 | `CD - Publish` 的 `distribution-PLATFORM` artifact | 已发布二进制与 registry 安装的验收材料 |
 
-下载 CLI 附件后，macOS 使用 `shasum -a 256 -c SHA256SUMS`，Linux 使用
-`sha256sum -c SHA256SUMS` 校验。校验和列出两个平台附件，完整校验时应一并下载。
+安装签名发行使用 [README](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装) 的 `packslip install` 入口：它以指定的 GitHub
+仓库为信任依据，只下载本机平台的附件，验证签名与摘要后导出命令，并记住后续安装的信任状态。
+清单声明必需的 `moon` 命令；C 编译器及运行时要求仍见[安装要求](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)。
+签名来自 `cd-publish.yml`；迁移签名工作流可能要求使用者确认信任变化。
+
+手动下载仍可使用 `SHA256SUMS`：macOS 运行 `shasum -a 256 -c SHA256SUMS`，Linux 运行
+`sha256sum -c SHA256SUMS`，通过后解包并将 `moonsmith` 加入 `PATH`。校验和列出两个平台附件，
+完整校验时应一并下载；校验和本身不提供签名身份保证。
+需要独立审计构建来源时，可对下载的附件运行 `gh attestation verify ARCHIVE --repo zrr1999/moonsmith`。
+这项检查独立于 packslip 安装，来源证明的生成仍由官方 Action 负责。
+首次正式签名发行后，可用 `packslip pin packslip.sigstore.json` 取得 signer fingerprint，
+供需要预先固定仓库身份的使用者通过 `--pin` 安装；它不是日常安装的额外步骤。
 
 验收材料使用标准 `tar` 归档并由 GitHub Actions artifact 保存，构建缓存不入包。
 历史异常的生成 C 文件随历史证据保存。执行记录可能包含当时的绝对路径，重放时使用实际解包位置。
@@ -130,9 +150,18 @@ jq -r '"\(.sha256)  \(.file)"' /absolute/path/to/moonsmith/.github/release-evide
 
 ## 已发布产物验收
 
-发布公开后，`CD - Publish` 以只读权限在该标签的提交上继续核对已发布产物。它下载两份 CLI
-附件并校验摘要，在各自平台解包运行五配置普通任务与等价任务，再从 Mooncakes 安装精确版本，
-验证库消费、CLI、材料搬迁和重放。结果与失败材料保留在该次运行中，不撤回已经完成的发布。
+发布公开后，`CD - Publish` 在两个平台以只读权限执行同一个 `packslip install` 入口，
+将签名身份限制为本次标签的 `cd-publish.yml`。packslip 负责选包、下载、验签、摘要核对和安装，
+每个平台只取对应附件。安装后的 `build.json` 必须匹配版本、提交和平台，再运行五配置任务与重放验收。
+Mooncakes 精确版本的库消费与 CLI 安装另行验收。结果与失败材料保留在该次运行中，不撤回已完成的发布。
+
+发行安装不再重复下载其他平台附件、校验 `SHA256SUMS` 或独立验证来源证明。
+packslip 保证安装内容与允许的签名身份一致；它不验证链接的构建来源证明，两者的区别见
+[packslip 信任说明](https://packslip.dev/docs/trust/)。
+
+packslip CLI 通过官方推荐的 [mise](https://packslip.dev/docs/install/#install-with-mise) 安装，
+下载、签名校验和 `PATH` 设置由 mise 及其官方 Action 负责；mise 与 packslip 均固定正式版本，
+两个上游 Action 均固定完整 release commit。PR 构建不执行 OIDC 签名与公开安装，这两项由标签发布执行。
 
 0.0.1 的双平台发行安装、库消费与重放结果见[CLI 安装验收](cli-installation-validation.md#001-发行安装验收)，
 实际安装入口见[README](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)。后续版本发布后按相同流程核对，再更新安装说明。

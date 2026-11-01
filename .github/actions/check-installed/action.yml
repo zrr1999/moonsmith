@@ -1,0 +1,26 @@
+name: Check installed CLI
+description: Run the installed CLI outside the workspace and replay a relocated case.
+inputs:
+  binary:
+    description: Absolute path to the installed MoonSmith executable.
+    required: true
+  output-directory:
+    description: New directory for execution logs and replay materials.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Run and replay outside the workspace
+      shell: bash
+      env:
+        CLI_BINARY: ${{ inputs.binary }}
+        OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
+      run: |
+        mkdir "$OUTPUT_DIRECTORY"
+        cd "$OUTPUT_DIRECTORY"
+        "$CLI_BINARY" run --config "$GITHUB_WORKSPACE/examples/quickstart.toml" \
+          --set 'output.directory="runs"' | tee run.log
+        cases=(runs/task-*/cases/case-*)
+        test "${#cases[@]}" -eq 1
+        mv "${cases[0]}" saved-case
+        "$CLI_BINARY" replay saved-case | tee replay.log

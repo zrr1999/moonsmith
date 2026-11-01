@@ -27,8 +27,11 @@
 覆盖率和性能报告写入 `.artifacts/quality/`。PR 通过[测试工作流](.github/workflows/ci-tests.yml) 运行原生覆盖率并上传到 Codecov。[静态 CI](.github/workflows/ci-static-checks.yml) 在指向 `main` 的 PR 和 `main` 分支推送时运行 CodeQL。测试、静态检查、PR policy 和持续评估各有一个 `required` job，名称是 `All Required Checks Passed` 加括号中的短名。它使用 `always()` 汇总本文件的上游 job，任一结果为 `failure` 时失败。分支规则要求 `All Required Checks Passed (Tests)`、`All Required Checks Passed (Static Checks)` 和 `All Required Checks Passed (Policy)`。[持续评估工作流](.github/workflows/ce-quality.yml) 独立维护每周性能、外部链接、完整 Git 历史密钥扫描和在线审计，也可手动触发，具体低频检查命令保留在对应 job。本地 hooks 检查仓库内链接和锚点。严格在线 workflow 审计仅由受信任主分支的 CE 执行，查询失败或跳过视为失败。
 
 jactionlint、Lychee 和 Vale 使用上游正式发布的 hooks；工作流离线检查统一通过 prek 执行。
-Shell 脚本使用 jactionlint hook 环境提供的 ShellCheck。ast-grep 的固定版本尚未提供官方 hook；
+工作流和本地 Action 的 Shell 步骤由 jactionlint 调用 ShellCheck 检查。ast-grep 的固定版本尚未提供官方 hook；
 它与 MoonBit 命令保留本地入口。
+
+仓库不使用 `scripts/` 目录，prek 拒绝该目录下的文件。开发命令保留在 `justfile`，直接调用上游工具；
+CI 专用的共享步骤使用 `.github/actions/` 中的本地 Action。
 
 MoonBit 源码由官方格式器、类型检查器、测试、覆盖率和基准运行器检查。SonarQube Cloud 与 CodeQL 分析它们支持的 GitHub Actions 和 C 时钟适配层；这些结果不代表 MoonBit 源码分析。ast-grep 的时钟规则有正反例，模块依赖边界继续由 alint 检查。当前 Semgrep、OSV、jscpd、Lizard 和变异工具不支持本仓库的 MoonBit 源码或依赖格式；CodSpeed 尚无可用的正式 MoonBit 集成，因此性能采集保留原生报告，不将未执行的扫描记为通过。
 

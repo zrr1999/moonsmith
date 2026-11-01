@@ -77,3 +77,20 @@ Node.js 为 `26.3.1`。本节独立于上面的 2026-10-21 源码安装记录。
 artifacts。复现入口见[已发布产物验收](releasing.md#已发布产物验收)，安装与最小使用入口见
 [README](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)和[可运行示例](https://github.com/zrr1999/moonsmith/blob/main/examples/README.md)。该结果验证指定工具链、
 平台和有限种子，不将原万例实验记为在 0.0.1 上重新执行。
+
+### 历史发行证据
+
+以下运行均核对发行提交 `70ab5fbe08b4569055e273f4c666aaaee3cdcbae`：
+
+| 范围 | 记录 |
+| --- | --- |
+| 静态检查与 CodeQL | [CI - Static Checks](https://github.com/zrr1999/moonsmith/actions/runs/41165572730) |
+| 行为测试与双平台旧编译器复现 | [CI - Tests](https://github.com/zrr1999/moonsmith/actions/runs/41165572693) |
+| 解包测试、库消费、安装与历史种子检查 | [CI - Acceptance](https://github.com/zrr1999/moonsmith/actions/runs/41165572698)，本次主分支运行不含 100 种子扩展任务 |
+| 四模块与双平台二进制发布 | [CD - Publish](https://github.com/zrr1999/moonsmith/actions/runs/41167096291) |
+| 公开二进制与 Mooncakes 安装、五配置执行及搬迁重放 | [CI - Distribution](https://github.com/zrr1999/moonsmith/actions/runs/41171404514) |
+
+能力与边界见 [0.0.1 公开发行记录](https://github.com/zrr1999/moonsmith/releases/tag/v0.0.1)。
+Actions artifacts 有保留期限；长期材料已附于该 Release，来源和校验方法见
+[发行材料说明](releasing.md#产物与材料)。原万例材料的摘要和 SHA-256 仍由
+[历史材料清单](https://github.com/zrr1999/moonsmith/blob/main/.github/release-evidence.json)维护。

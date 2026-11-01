@@ -62,7 +62,6 @@ jobs:
           test "$RELEASE_TAG" = "v$VERSION"
           test "$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")" = "$(git rev-parse HEAD)"
           git merge-base --is-ancestor HEAD origin/main
-          test -f "docs/releases/${RELEASE_TAG#v}.md"
       - uses: hustcer/setup-moonbit@87e2bdf5cf20d3b6f5c5f266a8a513f503bb5b76 # v1.25
         with:
           version: "0.10.18+6c83a7f62"
@@ -177,13 +176,16 @@ jobs:
           moon check --target native --deny-warn
           moon test --target native
           moon -C consumer run . --target native --deny-warn
-      - name: Install and replay outside the workspace
+      - name: Install outside the workspace
         working-directory: ${{ runner.temp }}/moonsmith-packages
         env:
           PACKAGE_ROOT: ${{ runner.temp }}/moonsmith-packages
-        run: |
-          moon install ./modules/cli/src/cmd/moonsmith --bin "$PACKAGE_ROOT/bin"
-          bash "$GITHUB_WORKSPACE/scripts/check-installed.sh" "$PACKAGE_ROOT/bin/moonsmith" "$PACKAGE_ROOT/installed"
+        run: moon install ./modules/cli/src/cmd/moonsmith --bin "$PACKAGE_ROOT/bin"
+      - name: Check the installed package
+        uses: $/.github/actions/check-installed
+        with:
+          binary: ${{ runner.temp }}/moonsmith-packages/bin/moonsmith
+          output-directory: ${{ runner.temp }}/moonsmith-packages/installed
       - name: Check current results for the historical seeds
         working-directory: ${{ runner.temp }}/moonsmith-packages
         shell: bash
@@ -239,6 +241,8 @@ jobs:
     timeout-minutes: 20
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -252,7 +256,7 @@ jobs:
           pattern: binary-*
           merge-multiple: true
           path: .artifacts/release
-      - name: Prepare GitHub release
+      - name: Stage GitHub release assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -260,8 +264,16 @@ jobs:
             test "$(cat .artifacts/is-draft)" = true
           else
             gh release create "$RELEASE_TAG" --verify-tag --draft --title "MoonSmith $RELEASE_TAG" \
-              --notes-file "docs/releases/${RELEASE_TAG#v}.md"
+              --generate-notes
           fi
+          cd .artifacts/release
+          sha256sum moonsmith-*.tar.gz > SHA256SUMS
+          gh release upload "$RELEASE_TAG" ./*.tar.gz SHA256SUMS --clobber
+      - uses: jdx/packslip@44e50e5f64551234b4a382d991bd7f7f7d021d06 # v1.11.3
+        with:
+          artifacts: .artifacts/release/*.tar.gz
+          bin: moonsmith
+          require: bin:moon
       - name: Publish modules in dependency order
         env:
           MOONCAKES_CREDENTIALS: ${{ secrets.MOONCAKES_CREDENTIALS }}
@@ -276,16 +288,11 @@ jobs:
             moon update
             moon -C "modules/$module" publish
           done
-      - name: Upload assets and publish GitHub release
+      - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cd .artifacts/release
-          sha256sum "moonsmith-${RELEASE_TAG#v}-linux-x86_64.tar.gz" \
-            "moonsmith-${RELEASE_TAG#v}-macos-arm64.tar.gz" > SHA256SUMS
-          gh release upload "$RELEASE_TAG" ./*.tar.gz SHA256SUMS --clobber
-          gh release edit "$RELEASE_TAG" --draft=false --title "MoonSmith $RELEASE_TAG" \
-            --notes-file "../../docs/releases/${RELEASE_TAG#v}.md"
+          gh release edit "$RELEASE_TAG" --draft=false --title "MoonSmith $RELEASE_TAG"
   distribution:
     name: Install and replay (${{ matrix.platform }})
     needs: publish
@@ -313,20 +320,29 @@ jobs:
         with:
           node-version: "26.3.1"
           package-manager-cache: false
-      - name: Download and verify published binaries
+      - name: Install packslip
+        uses: jdx/mise-action@6612f0ef07ed2a736cd1e00a94a065522dd41195 # v5.2.5
+        with:
+          version: "2026.10.25"
+          tool_versions: packslip 1.11.3
+          cache: false
+      - name: Install the signed release
         env:
           GH_TOKEN: ${{ github.token }}
           DISTRIBUTION_ROOT: ${{ runner.temp }}/moonsmith-distribution
         shell: bash
         run: |
           version=${RELEASE_TAG#v}
-          download="$DISTRIBUTION_ROOT/download"
-          mkdir -p "$download"
-          gh release download "$RELEASE_TAG" --dir "$download" --pattern "moonsmith-$version-linux-x86_64.tar.gz" \
-            --pattern "moonsmith-$version-macos-arm64.tar.gz" --pattern SHA256SUMS
-          (cd "$download" && shasum -a 256 --check SHA256SUMS)
-          tar -xzf "$download/moonsmith-$version-$PLATFORM.tar.gz" -C "$download"
-          bash scripts/check-installed.sh "$download/moonsmith" "$DISTRIBUTION_ROOT/binary"
+          packslip install "github.com/$GITHUB_REPOSITORY" --version "$version" \
+            --identity "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/.github/workflows/cd-publish.yml@refs/tags/$RELEASE_TAG" \
+            --install-dir "$DISTRIBUTION_ROOT/packslip/tree" --bin-dir "$DISTRIBUTION_ROOT/packslip/bin"
+          jq -e --arg version "$version" --arg commit "$GITHUB_SHA" --arg platform "$PLATFORM" \
+            '.version == $version and .commit == $commit and .platform == $platform' "$DISTRIBUTION_ROOT/packslip/tree/build.json"
+      - name: Check the signed release
+        uses: $/.github/actions/check-installed
+        with:
+          binary: ${{ runner.temp }}/moonsmith-distribution/packslip/bin/moonsmith
+          output-directory: ${{ runner.temp }}/moonsmith-distribution/binary
       - name: Install exact packages from Mooncakes
         shell: bash
         env:
@@ -347,7 +363,11 @@ jobs:
                 .[0].version == $version and .[0].source.kind == "registry"' dependencies.json
           done
           moon install "zrr1999/moonsmith/cmd/moonsmith@$version" --bin "$DISTRIBUTION_ROOT/bin"
-          bash "$GITHUB_WORKSPACE/scripts/check-installed.sh" "$DISTRIBUTION_ROOT/bin/moonsmith" "$DISTRIBUTION_ROOT/registry"
+      - name: Check the registry installation
+        uses: $/.github/actions/check-installed
+        with:
+          binary: ${{ runner.temp }}/moonsmith-distribution/bin/moonsmith
+          output-directory: ${{ runner.temp }}/moonsmith-distribution/registry
       - name: Archive distribution evidence
         if: ${{ !cancelled() }}
         shell: bash

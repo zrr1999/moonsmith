@@ -23,7 +23,6 @@ nav = [
   ] },
   { "发行" = [
     { "发行与验收" = "releasing.md" },
-    { "0.0.1" = "releases/0.0.1.md" },
   ] },
   { "文档站" = "documentation.md" },
 ]
@@ -78,4 +77,4 @@ markdown_description = "MoonSmith 保存 MoonBit 编译器差分测试的可重�
   "historical-regressions.md",
   "native-release-analysis.md",
 ]
-"发行" = ["releasing.md", "releases/0.0.1.md"]
+"发行" = ["releasing.md"]

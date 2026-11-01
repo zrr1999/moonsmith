@@ -5,6 +5,8 @@
 
 - 先读 [README](README.md) 和[项目申报书](docs/project-proposal.md)，核实当前实现状态。
 - 文档统一使用 Markdown，架构图使用 Mermaid。更新原文，不维护并行的 Typst 或 PDF 源稿。
+- 不创建 `scripts/` 目录。开发命令使用 `justfile` 和上游工具；CI 专用的共享步骤放在
+  `.github/actions/` 的本地 Action 中。
 - `.agents/` 只存内部工作材料；其余文档都是正式文档。正式文档不得引用内部笔记或依赖其补充契约，采纳的结论核实后写入所属正式文档。
 - 贡献指南只维护协作流程、检查入口和文档分工；具体 API、执行行为与约束由所属 FP 和模块 README 维护。
 - 跨文档概念从[术语索引](docs/glossary.md)定位所属 FP 的定义；新定义按 FP-0000 登记 `defines` 和锚点，其他文档引用定义。

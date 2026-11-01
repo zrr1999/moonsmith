@@ -10,5 +10,5 @@
 - [历史回归](historical-regressions.md)
 - [构建异常分析](native-release-analysis.md)
 - [发行与验收](releasing.md)
-- [0.0.1 发行说明](releases/0.0.1.md)
+- [0.0.1 发行说明](https://github.com/zrr1999/moonsmith/releases/tag/v0.0.1)
 - [文档站维护](documentation.md)
