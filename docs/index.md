@@ -1,9 +1,8 @@
 # MoonSmith 文档
 
-本站发布 `docs/` 里的正式说明。安装、命令和模块 API 仍以仓库 README 与各模块 README 为准；指向这些文件的链接在构建时改到 GitHub。
+本站发布项目介绍、使用验收和维护说明。安装、命令和模块 API 见仓库 README 与各模块 README。
 
 - [项目申报书](project-proposal.md)
-- [术语索引](glossary.md)
 - [规模验收](acceptance-validation.md)
 - [五配置矩阵](five-configuration-pilot.md)
 - [归约演示](reduction-demonstration.md)

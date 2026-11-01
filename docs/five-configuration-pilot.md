@@ -26,7 +26,7 @@
 ## 方法与判定标准
 
 原实验通过 `just build` 产出的 native debug 可执行文件启动任务。
-独立复测时，可在相同源码版本下准备[开发环境](../CONTRIBUTING.md#开发准备)，
+独立复测时，可在相同源码版本下准备[开发环境](https://github.com/zrr1999/moonsmith/blob/main/CONTRIBUTING.md#开发准备)，
 通过以下 CLI 源码入口启动相同参数的任务：
 
 ```shell
@@ -35,7 +35,7 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- \
   --set 'name="five-config-pilot"' --set 'output.directory="runs/five-config-pilot"'
 ```
 
-任务读取该版本的 [acceptance.toml](../acceptance.toml)，使用表中的生成预算与超时。
+任务读取该版本的 [acceptance.toml](https://github.com/zrr1999/moonsmith/blob/main/acceptance.toml)，使用表中的生成预算与超时。
 每份输入先通过内部完整程序检查，再按既定顺序执行五配置。判定标准为：
 
 - 每个配置的构建和执行均正常退出，输出满足该程序的 Int 或 Bool 观察协议。
@@ -43,8 +43,8 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- \
 - 保存案例包含源码、构建描述符、配置与原始观察，外部运行时版本探测完成。
 - 对保存案例重放时取得新的执行证据，原例和原任务汇总保持不变。
 
-观察协议与执行行为分别由 [MoonBit 模块](../modules/moonbit/README.md)和
-[CLI 模块](../modules/cli/README.md#差分执行与存证)定义。
+观察协议与执行行为分别由 [MoonBit 模块](https://github.com/zrr1999/moonsmith/blob/main/modules/moonbit/README.md)和
+[CLI 模块](https://github.com/zrr1999/moonsmith/blob/main/modules/cli/README.md#差分执行与存证)定义。
 
 ## 验证结果
 

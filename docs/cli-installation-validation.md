@@ -55,7 +55,7 @@ CASE_DIR=/absolute/path/to/saved-case
 
 该验证确认完整源码安装、工作区外启动、五配置单样本执行及保存源码重放路径可用。它使用宿主已安装的 MoonBit、Node.js 和用户级依赖下载缓存；没有验证全新操作系统上的工具链安装。
 
-安装入口和用户可见安装要求见[根目录安装说明](../README.md#安装)；CLI 的案例、尝试与重放存储行为见[差分执行与存证](../modules/cli/README.md#差分执行与存证)。项目规模目标见[项目申报书](project-proposal.md#预期验收产物)。
+安装入口和用户可见安装要求见[根目录安装说明](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)；CLI 的案例、尝试与重放存储行为见[差分执行与存证](https://github.com/zrr1999/moonsmith/blob/main/modules/cli/README.md#差分执行与存证)。项目规模目标见[项目申报书](project-proposal.md#预期验收产物)。
 
 ## 0.0.1 发行安装验收
 
@@ -75,5 +75,5 @@ Node.js 为 `26.3.1`。本节独立于上面的 2026-10-21 源码安装记录。
 
 原始日志与材料保存在该运行的 `distribution-linux-x86_64` 和 `distribution-macos-arm64`
 artifacts。复现入口见[已发布产物验收](releasing.md#已发布产物验收)，安装与最小使用入口见
-[README](../README.md#安装)和[可运行示例](../examples/README.md)。该结果验证指定工具链、
+[README](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)和[可运行示例](https://github.com/zrr1999/moonsmith/blob/main/examples/README.md)。该结果验证指定工具链、
 平台和有限种子，不将原万例实验记为在 0.0.1 上重新执行。
