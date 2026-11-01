@@ -95,4 +95,5 @@ moon run modules/cli/src/cmd/moonsmith --target native --deny-warn -- replay run
 | [项目演进](EVOLUTION.md) | 过去的方向变化与原因 |
 | [长期路线图](ROADMAP.md) | MoonSmith 向 SemaForge 渐进提取的目标、依赖与推进门槛 |
 | [贡献指南](CONTRIBUTING.md) | 开发流程、检查入口、文档分工与交付约定 |
+| [文档站](docs/documentation.md) | `docs/` 的 Zensical 站点、MoonBit 代码块着色与 Cloudflare 托管 |
 | [Contracts](modules/contracts/README.md)、[Engine](modules/engine/README.md)、[MoonBit](modules/moonbit/README.md)、[CLI](modules/cli/README.md) | 各模块现有 API、使用方式与实现限制 |

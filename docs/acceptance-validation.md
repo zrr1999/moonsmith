@@ -80,7 +80,7 @@ Host 操作错误。
 
 被测构建的差分判定要求正常输出可比较，因此三例结论为 `Incomplete`，CLI 返回 3。原始构建失败的状态与诊断单独保留，
 不会冒充输出分歧。该构建仅对正常输出分歧自动归约，三例未启动归约；现行产品行为见
-[CLI 模块说明](../modules/cli/README.md#差分执行与存证)。
+[CLI 模块说明](https://github.com/zrr1999/moonsmith/blob/main/modules/cli/README.md#差分执行与存证)。
 
 可在相同代码、生成器和工具链条件下重新生成第一例，另两例替换起始种子：
 
@@ -92,8 +92,8 @@ moonsmith run --config acceptance.toml --set seed_start=1272 --set sample_count=
 
 ## 规模任务复现
 
-在被测源码提交下按[安装说明](../README.md#安装)安装 CLI。
-[acceptance.toml](../acceptance.toml)固定生成器、预算和五配置。分别执行：
+在被测源码提交下按[安装说明](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装)安装 CLI。
+[acceptance.toml](https://github.com/zrr1999/moonsmith/blob/main/acceptance.toml)固定生成器、预算和五配置。分别执行：
 
 ```shell
 moonsmith run --config acceptance.toml \
@@ -119,13 +119,13 @@ moonsmith run --config acceptance.toml \
 
 | 申报书目标 | 实现与证据 | 适用边界 |
 | --- | --- | --- |
-| 布尔、整数、绑定、分支、非递归函数、元组和非递归枚举 | [MoonBit 模块](../modules/moonbit/README.md)；程序模型、类型检查、源码生成与版本化生成规则 | 内部复合值，最终观察保持 Int / Bool；不支持递归类型和递归调用 |
-| 四后端五配置与可重复任务 | [CLI 模块](../modules/cli/README.md)及本次规模结果 | 指明的子集、预算及工具链；不同种子不保证不同源码 |
-| 有限语义保持变换 | [输出等价变体](../modules/moonbit/README.md)；检查原程序与变换程序的合法性并比较真实工具链输出 | 库入口已实现；被测构建的 `run` 仅比较原程序的配置间输出，现行接入见 CLI 模块说明 |
+| 布尔、整数、绑定、分支、非递归函数、元组和非递归枚举 | [MoonBit 模块](https://github.com/zrr1999/moonsmith/blob/main/modules/moonbit/README.md)；程序模型、类型检查、源码生成与版本化生成规则 | 内部复合值，最终观察保持 Int / Bool；不支持递归类型和递归调用 |
+| 四后端五配置与可重复任务 | [CLI 模块](https://github.com/zrr1999/moonsmith/blob/main/modules/cli/README.md)及本次规模结果 | 指明的子集、预算及工具链；不同种子不保证不同源码 |
+| 有限语义保持变换 | [输出等价变体](https://github.com/zrr1999/moonsmith/blob/main/modules/moonbit/README.md)；检查原程序与变换程序的合法性并比较真实工具链输出 | 库入口已实现；被测构建的 `run` 仅比较原程序的配置间输出，现行接入见 CLI 模块说明 |
 | 合法且保持同一失败的归约 | [归约演示](reduction-demonstration.md)：128 → 1 节点、约 99.2% 移除、3419 毫秒，独立确认及源码重放 | 受控注入的配置间输出差异 |
 | 至少三个历史候选、至少一个实测复现 | [历史回归记录](historical-regressions.md)：#1006、#1070、#1266；旧版工具链实测复现 #1266 | 公开源码案例的旧版实测 |
-| 可安装命令、库、API 说明与示例 | [源码安装验收](cli-installation-validation.md)、四个模块 README 和[可运行示例](../examples/README.md) | 本次实验验证完整源码安装；后续 0.0.1 已发布 registry 包与双平台 CLI，入口见[安装说明](../README.md#安装) |
-| Markdown / JSON 报告、环境及原始记录、追加式重放 | 任务、案例、尝试和归约材料；[存证说明](../modules/cli/README.md#差分执行与存证) | 重放使用当前宿主工具链，并提示已知版本变化 |
+| 可安装命令、库、API 说明与示例 | [源码安装验收](cli-installation-validation.md)、四个模块 README 和[可运行示例](https://github.com/zrr1999/moonsmith/blob/main/examples/README.md) | 本次实验验证完整源码安装；后续 0.0.1 已发布 registry 包与双平台 CLI，入口见[安装说明](https://github.com/zrr1999/moonsmith/blob/main/README.md#安装) |
+| Markdown / JSON 报告、环境及原始记录、追加式重放 | 任务、案例、尝试和归约材料；[存证说明](https://github.com/zrr1999/moonsmith/blob/main/modules/cli/README.md#差分执行与存证) | 重放使用当前宿主工具链，并提示已知版本变化 |
 
 ## 结论边界
 

@@ -1,0 +1,89 @@
+"""Pygments lexer for MoonBit.
+
+Derived from the MoonBit documentation website lexer at tag v0.10.16
+(https://github.com/moonbitlang/moonbit-docs/blob/v0.10.16/next/_ext/lexer.py,
+commit e20f699d2085fdcf7bc6c6c8a11aef6d7896c27e). That website code is
+Apache-2.0. The Sphinx extension entry point is not included. ``aliases``
+lets Pygments resolve ``moonbit`` and ``mbt`` code fences.
+"""
+
+from pygments.lexer import RegexLexer, bygroups, include, words
+import pygments.token as token
+
+class MoonBitLexer(RegexLexer):
+    name = "MoonBit"
+    aliases = ["moonbit", "mbt"]
+    filenames = ["*.mbt", "*.mbti", "*.mbtx"]
+
+    tokens = {
+        'root': [
+            (r"#.*$", token.Comment.Preproc),
+            (r"//.*$", token.Comment.Single),
+            (r"b?'(?:\\.|[^\\'\n])+'", token.Literal),
+            (r"#\|.*$", token.String),
+            (r"(b)(\")", bygroups(token.String.Affix, token.String), "string.inline"),
+            ("\"", token.String, "string.inline"),
+            (r"\$\|", token.String, "string.multiline"),
+            (r"0(b|B)[01]+", token.Number.Bin),
+            (r"0(o|O)[0-7]+", token.Number.Oct),
+            (r"0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\.[0-9a-fA-F][0-9a-fA-F_]*(P|p)(\+|\-)?[0-9][0-9]*", token.Number.Float),
+            (r"0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\.?(P|p)(\+|\-)?[0-9][0-9]*", token.Number.Float),
+            (r"0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\.[0-9a-fA-F][0-9a-fA-F_]*", token.Number.Float),
+            (r"0(x|X)[0-9a-fA-F][0-9a-fA-F_]*\.", token.Number.Float),
+            (r"0(x|X)[0-9a-fA-F][0-9a-fA-F_]*", token.Number.Hex),
+            (r"\d(_|\d)*U?L", token.Number.Integer.Long),
+            (r"\d(_|\d)*U?", token.Number.Integer),
+            (r"\d+(.\d+)?", token.Number),
+            (words(('type', 'enum', 'struct', 'trait', 'suberror', 'extenum', 'declare'), suffix=r"\b"), token.Keyword.Declaration),
+            (words(('async', 'fn', 'const', 'let', 'mut', 'impl', 'extend', 'with', 'derive'), suffix=r"\b"), token.Keyword.Declaration),
+            (words(('self', 'Self'), suffix=r"\b"), token.Keyword),
+            (words(('guard', 'if', 'while', 'match', 'lexmatch', 'lexscan', 'else', 'loop', 'for', 'in', 'is'), suffix=r"\b"), token.Keyword),
+            (words(('return', 'break', 'continue'), suffix=r"\b"), token.Keyword),
+            (words(('try', 'catch', 'raise', 'noraise'), suffix=r"\b"), token.Keyword),
+            (r"\bas\b", token.Keyword),
+            (words(('extern', 'pub', 'priv', 'pub(all)', 'pub(readonly)', 'pub(open)', 'test', 'wbtest'), suffix=r"\b"), token.Keyword),
+            (words(('true', 'false'), suffix=r"\b"), token.Keyword.Constant),
+            (words(('Eq', 'Compare', 'Hash', 'Show', 'Default', 'ToJson', 'FromJson'), suffix=r"\b"), token.Name.Builtin),
+            (words(('Array', 'FixedArray', 'Int', 'Int64', 'UInt', 'UInt64', 'Option', 'Result', 'Byte', 'Bool', 'Unit', 'String', 'Float', 'Double'), suffix=r"\b"), token.Name.Builtin),
+            (words(('+', '-', '*', '/', '%', '|>', '>>', '<<', '&&', '||', '&', '|', '<', '>', '==', '!=', '<=', '>=')), token.Operator),
+            (words(('not', 'lsl', 'lsr', 'asr', 'op_add', 'op_sub', 'op_div', 'op_mul', 'op_mod', '...')), token.Operator.Word),
+            # @namespace.
+            (r"@[A-Za-z][A-Za-z0-9_/]*\.", token.Name.Namespace),
+            # @alias
+            (r"@[A-Za-z][A-Za-z0-9_]*", token.Name.Namespace),
+            # Function alias
+            (r"([a-z][A-Za-z0-9_]*)(\s+)(as)(\s+)([a-z][A-Za-z0-9_]*)", bygroups(token.Name.Function, token.Whitespace, token.Keyword, token.Whitespace, token.Name.Function)),
+            (r"([A-Za-z][A-Za-z0-9_]*)(::)([A-Za-z][A-Za-z0-9_]*)(\s+)(as)(\s+)([a-z][A-Za-z0-9_]*)", bygroups(token.Name.Class, token.Punctuation, token.Name.Function, token.Whitespace, token.Keyword, token.Whitespace, token.Name.Function)),
+            # Type::function
+            (r"([A-Za-z][A-Za-z0-9_]*)(::)([A-Za-z][A-Za-z0-9_]*)", bygroups(token.Name.Class, token.Punctuation, token.Name.Function)),
+            # function(
+            (r"([a-z][A-Za-z0-9_]*)(?=!?\()", token.Name.Function),
+            ("Error", token.Name.Exception),
+            (r"(=>)|(->)|[\(\)\{\}\[\]:,\.=!?~;]", token.Punctuation),
+            (r"[a-z][a-zA-Z0-9_]*", token.Name.Variable),
+            (r"[A-Z_][a-zA-Z0-9_]*", token.Name.Class),
+            (r"[\s]", token.Whitespace),
+        ],
+        'string.inline': [
+            include('escape'),
+            (r"\\{", token.String.Escape, "interpolation"),
+            ("\"", token.String, "#pop"),
+            (r".", token.String.Double)
+        ],
+        'string.multiline': [
+            include('escape'),
+            (r"\\{", token.String.Escape, "interpolation"),
+            (r"\Z", token.String, "#pop"),
+            (r".", token.String)
+        ],
+        'interpolation': [
+            (r"}", token.String.Escape, "#pop"),
+            include('root')
+        ],
+        'escape': [
+            (r"\\[0\\tnrb\"']", token.String.Escape),
+            (r"\\x[0-9a-fA-f]{2}", token.String.Escape),
+            (r"\\u[0-9a-fA-f]{4}", token.String.Escape),
+            (r"\\u[0-9a-fA-f]*", token.String.Escape),
+        ]
+    }

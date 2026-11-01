@@ -83,3 +83,7 @@ coverage:
 benchmark:
     mkdir -p .artifacts/quality
     moon bench modules/moonbit/src --target native --release --deny-warn 2>&1 | tee .artifacts/quality/benchmarks.log
+
+# Build the documentation site, or preview it with `just docs serve`
+docs +args="build":
+    uv run --project tools/moonbit-lexer --group docs --no-build --locked zensical {{ args }}

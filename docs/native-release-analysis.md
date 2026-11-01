@@ -212,7 +212,7 @@ struct _M0DTP29moonsmith9generated1E1B* _M0L4_2aBS83 =
 
 ## 相关实现
 
-构建异常的当前 CLI 判据、归约、证据保存及退出码见[CLI 模块说明](../modules/cli/README.md#差分执行与存证)。
+构建异常的当前 CLI 判据、归约、证据保存及退出码见[CLI 模块说明](https://github.com/zrr1999/moonsmith/blob/main/modules/cli/README.md#差分执行与存证)。
 本调查的手工缩减与阶段对照不等同于产品执行结果。
 
 ## 证据范围
