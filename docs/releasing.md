@@ -13,7 +13,7 @@ MoonSmith 的四个模块共用一个版本号。发布从已合入 `main` 的�
 | 工作流 | 职责 |
 | --- | --- |
 | [CI - Static Checks](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/ci-static-checks.yml) | 仓库静态门禁与 CodeQL |
-| [CI - Tests](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/ci-tests.yml) | 行为测试、覆盖率与双平台固定旧工具链的历史复现 |
+| [CI - Tests](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/ci-tests.yml) | 双平台行为测试、Linux 覆盖率与固定旧工具链的历史复现 |
 | [CD - Publish](https://github.com/zrr1999/moonsmith/blob/main/.github/workflows/cd-publish.yml) | PR 与标签的构建、包验收和打包；标签推送时完成种子 0–99 验收与签名后发布，再核对已发布产物 |
 
 各工作流的检查结果和验收材料由对应运行保存。`All Required Checks Passed (Tests)` 和 `All Required Checks Passed (Static Checks)` 分别汇总对应工作流的上游 job，任一结果为 `failure` 时失败。合并规则还要求 `All Required Checks Passed (Policy)`。
@@ -23,13 +23,14 @@ CD 不调用测试或历史复现工作流。
 ## PR 发布构建
 
 每个指向 `main` 的 PR 创建、更新或重新打开时，都会触发 CD 的双平台 `build` job。
-它与正式发布共用 native release 构建、CLI 打包、解包启动检查、四模块打包检查和包验收。
-种子 0–99 的完整验收、`publish` 和已发布产物核对只在推送版本标签时执行。
+它与正式发布共用 native release 构建、CLI 打包和解包启动检查。
+四模块统一由 `acceptance` job 打包、解包、检查公开库消费和安装行为。
+解包后的完整行为测试、种子 0–99 验收、`publish` 和已发布产物核对只在推送版本标签时执行。
 
 PR 产物文件名包含版本、PR 编号与实际检出提交的短 SHA，例如
 `moonsmith-0.0.1-pr.49-COMMIT-macos-arm64.tar.gz`。默认检出 GitHub 的 PR 合并测试提交，
 完整提交身份写入 `build.json`，便于区分 PR 更新及基线变化。
-两个平台的 CLI 与模块 zip 包保存为 Actions artifacts，保留 21 天。
+两个平台的 CLI 与模块 zip 包分别保存在构建和包验收的 Actions artifacts 中，保留 21 天。
 构建只需要只读权限，也适用于 fork PR；凭据只属于标签发布 job。
 
 重跑使用相同构建步骤，不修改模块版本、Git 标签或 registry。
@@ -38,17 +39,18 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
 
 ## 产品验收
 
-`CD - Publish` 在指向 `main` 的 PR 上执行包验收。推送 `vVERSION` 标签时，同一验收额外执行种子 0–99
-的完整验收；任一平台失败则不发布。PR 上的验收结果不能代替该标签上的完整验收。
+`CI - Tests` 在 Linux 和 macOS 各执行一次完整行为测试，Linux 同时采集覆盖率。
+`CD - Publish` 在指向 `main` 的 PR 上检查包的交付边界。推送 `vVERSION` 标签时，额外在解包模块上
+执行完整行为测试和种子 0–99 验收；任一平台失败则不发布。PR 上的验收结果不能代替该标签上的完整验收。
 
 包验收参考 MoonBit 官方 [x 的工作流](https://github.com/moonbitlang/x/blob/main/.github/workflows/package.yml)，
 直接使用 MoonBit 命令在两个平台验证：
 
 - 通过 `moon work sync` 检查内部依赖版本，打包四模块后解包到仓库外。
-  README、许可证和模块清单与原文件一致；类型检查和全部原生行为测试使用解包后的源码与 C 文件。
+  README、许可证和模块清单与原文件一致；类型检查使用解包后的源码与 C 文件。
   测试所需固定案例和任务配置另行复制，不将仓库产品源码混入包验收。
 - [公开库示例](https://github.com/zrr1999/moonsmith/blob/main/examples/library/main.mbt)可以生成等价组并调用 Engine；CLI 可以从解包模块安装。
-- 解包模块的行为测试验证普通与等价任务、材料搬迁、原始记录保持不变和执行记录追加。
+- 标签发布时，解包模块的行为测试验证普通与等价任务、材料搬迁、原始记录保持不变和执行记录追加。
 - 安装后的程序在仓库外执行种子 42 的五配置任务，搬迁保存的案例后重放仍成功。
 - 标签上的完整验收额外执行种子 0–99 的五配置等价检查，记录每份源码、配置、原始观察和任务汇总。
 - 当前编译器分别执行种子 1272、3745、6968；存在独立确认材料时再次重放，保存实际结果。
@@ -60,7 +62,7 @@ PR 的新提交取消该 PR 的旧构建，正式发布之间继续串行执行�
 包验收与已发布产物验收共用[本地安装验收 Action](https://github.com/zrr1999/moonsmith/blob/main/.github/actions/check-installed/action.yml)，
 传入已安装程序的路径和尚不存在的输出目录，保留执行日志、原始材料和重放结果。
 Action 读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/examples/quickstart.toml)，只核对已安装程序的运行与重放入口；
-任务语义和存储完整性由解包模块的 MoonBit 行为测试负责。
+任务语义和存储完整性由 MoonBit 行为测试负责，CLI 退出码负责报告任务执行结果。
 本地可直接使用工作流中的 MoonBit 命令检查解包模块，按[CLI 安装验收](cli-installation-validation.md)运行与重放。
 
 ## 正式发布
@@ -71,8 +73,8 @@ Action 读取[公开 CLI 配置](https://github.com/zrr1999/moonsmith/blob/main/
 推送该提交的 `vVERSION` 标签后，`CD - Publish` 同时进行构建和完整验收，二者都通过后才发布：
 
 1. 核对标签指向检出提交、提交属于 `main`、四模块版本与标签一致。
-2. 在两个平台执行与 PR 相同的 native release 构建、打包、解包启动和模块归档检查。
-3. 在两个平台执行包检查、历史种子重放和种子 0–99 的五配置等价验收。任一平台失败则不创建 Release，
+2. 在两个平台执行与 PR 相同的 native release 构建、打包和解包启动检查。
+3. 在两个平台执行模块打包与解包测试、历史种子重放和种子 0–99 的五配置等价验收。任一平台失败则不创建 Release，
    也不执行 `moon publish`。
 4. `publish` job 创建或复用该标签的 Draft Release，上传两份 CLI 附件及 `SHA256SUMS`。
    官方 packslip Action 为附件生成来源证明和签名清单，验证后直接上传 `packslip.sigstore.json`。
@@ -107,7 +109,7 @@ Action 固定到正式发行的完整提交，清单直接附于 Draft Release�
 | `moonsmith-VERSION-linux-x86_64.tar.gz` | Linux x86_64 CLI、许可证、README 及构建身份 |
 | Release 中的 `SHA256SUMS` | 上述两份 CLI 附件的 SHA-256 |
 | Release 中的 `packslip.sigstore.json` | 两份 CLI 附件的签名摘要、平台、执行入口、源提交与来源证明链接；0.0.1 不提供 |
-| `CD - Publish` 的 `acceptance-PLATFORM` artifact | 模块包、解包测试、历史种子与安装重放；标签运行还包含种子 0–99 |
+| `CD - Publish` 的 `acceptance-PLATFORM` artifact | 模块包、包检查、历史种子与安装重放；标签运行还包含解包测试与种子 0–99 |
 | `CI - Tests` 的历史证据 artifact | 固定旧工具链的异常复现、归约、确认和重放记录 |
 | `CD - Publish` 的 `distribution-PLATFORM` artifact | 已发布二进制与 registry 安装的验收材料 |
 
